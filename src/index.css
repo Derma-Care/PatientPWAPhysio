@@ -1,0 +1,177 @@
+@import '@coreui/coreui/dist/css/coreui.min.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --primary-color: #1B4F8A;
+  --primary-hover: #153d6d;
+  --accent-orange: #FF8C00;
+  --accent-orange-hover: #e67e00;
+  --light-blue: #F0F6FF;
+  --primary-gradient: linear-gradient(135deg, #1B4F8A 0%, #2462ad 100%);
+  --orange-gradient: linear-gradient(135deg, #FF8C00 0%, #ffae42 100%);
+  --surface-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --shadow-premium: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --cui-body-bg: #f8fafc;
+  --cui-body-color: #1e293b;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8fafc;
+  color: #1e293b;
+  overflow-x: hidden;
+}
+
+.wrapper {
+  background-color: #f8fafc !important;
+}
+
+.premium-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: var(--shadow-premium);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+  color: #1e293b;
+}
+
+.premium-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+.premium-card h1:not(.text-white), 
+.premium-card h2:not(.text-white), 
+.premium-card h3:not(.text-white), 
+.premium-card h4:not(.text-white), 
+.premium-card h5:not(.text-white), 
+.premium-card h6:not(.text-white), 
+.premium-card .text-dark {
+  color: #1e293b !important;
+}
+
+.premium-card .text-secondary {
+  color: #64748b !important;
+}
+
+.gradient-text {
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+}
+
+.btn-premium {
+  background: var(--orange-gradient);
+  color: white !important;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(255, 140, 0, 0.3);
+}
+
+.btn-premium:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 25px rgba(255, 140, 0, 0.5);
+  color: white !important;
+}
+
+.glass-morphism {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+}
+
+.sidebar {
+  --cui-sidebar-bg: #fff !important;
+  --cui-sidebar-color: #1e293b !important;
+  --cui-sidebar-nav-link-color: #64748b !important;
+  --cui-sidebar-nav-link-hover-bg: var(--light-blue) !important;
+  --cui-sidebar-nav-link-active-bg: var(--light-blue) !important;
+  --cui-sidebar-nav-link-active-color: var(--primary-color) !important;
+}
+
+.header {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.nav-link.active {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* Ensure white text for active items in premium/pills navigation */
+.premium-nav .nav-link.active {
+  color: #ffffff !important;
+}
+
+.footer {
+  background: #fff !important;
+  color: #64748b !important;
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Custom Utilities */
+.text-primary {
+  color: var(--primary-color) !important;
+}
+
+.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+.text-orange {
+  color: var(--accent-orange) !important;
+}
+
+.premium-social-link {
+  transition: all 0.3s ease;
+}
+
+.premium-social-link:hover {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.premium-social-link:hover .text-dark,
+.premium-social-link:hover .text-secondary,
+.premium-social-link:hover .text-info,
+.premium-social-link:hover .text-danger,
+.premium-social-link:hover .text-primary,
+.premium-social-link:hover svg {
+  color: white !important;
+}
+
+.premium-social-link:hover .bg-light {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .premium-card {
+    border-radius: 16px;
+  }
+}
