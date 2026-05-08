@@ -63,6 +63,10 @@ export const physiotherapyService = {
     const response = await api.get(`/api/physiotherapy-doctor/payment/getExerciseSessionsWithRecords/${clinicId}/${branchId}/${bookingId}/${patientId}/${therapistRecordId}`);
     return response.data;
   },
+  saveHomeExercise: async (data) => {
+    const response = await api.post('/api/physiotherapy-doctor/saveHomeExercise', data);
+    return response.data;
+  },
 };
 
 export default api;
