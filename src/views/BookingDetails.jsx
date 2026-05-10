@@ -96,13 +96,53 @@ const BookingDetails = () => {
         <CButton color="link" className="p-0 text-decoration-none text-secondary mb-3 d-flex align-items-center gap-2" onClick={() => navigate('/bookings')}>
           <ArrowLeft size={18} /> Back to Bookings
         </CButton>
-        <div className="d-flex justify-content-between align-items-center">
+        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
           <h2 className="fw-bold text-dark m-0">Booking Details</h2>
           <CBadge style={{ backgroundColor: 'var(--primary-color)' }} shape="pill" className="px-4 py-2 fs-6 text-capitalize text-white shadow-sm">
             {booking.status}
           </CBadge>
         </div>
       </div>
+
+      {/* Doctor Info Card - Show on top in mobile */}
+      {doctor && (
+        <div className="d-block d-lg-none mb-4">
+          <CCard className="premium-card border-0">
+            <CCardBody className="p-4">
+              <div className="d-flex align-items-center gap-3 mb-3">
+                <CAvatar
+                  src={doctor.doctorPicture || "https://ui-avatars.com/api/?name=" + doctor.doctorName}
+                  className="shadow-sm border border-3 border-white"
+                  style={{ width: '64px', height: '64px', borderRadius: '16px' }}
+                />
+                <div style={{ minWidth: 0 }}>
+                  <h6 className="fw-bold text-dark mb-0 text-truncate">{doctor.doctorName}</h6>
+                  <div className="text-primary small fw-bold">{doctor.specialization}</div>
+                  <div className="small text-secondary mt-1">Exp: {doctor.experience} Yrs</div>
+                </div>
+              </div>
+
+              <div className="d-flex flex-column gap-2 mb-3">
+                <div className="d-flex align-items-center gap-3 p-2 bg-light rounded-3">
+                  <Stethoscope size={16} className="text-secondary" style={{ flexShrink: 0 }} />
+                  <div className="small"><span className="text-secondary">Licence: </span><span className="fw-bold text-dark">{doctor.doctorLicence}</span></div>
+                </div>
+                <div className="d-flex align-items-center gap-3 p-2 bg-light rounded-3">
+                  <MapPin size={16} className="text-secondary" style={{ flexShrink: 0 }} />
+                  <div className="small text-truncate"><span className="text-secondary">Available: </span><span className="fw-bold text-dark">{doctor.availableDays} • {doctor.availableTimes}</span></div>
+                </div>
+              </div>
+
+              <a
+                href={`tel:${doctor.doctorMobileNumber}`}
+                className="btn btn-premium w-100 py-3 rounded-4 d-flex align-items-center justify-content-center gap-2 text-decoration-none"
+              >
+                <Phone size={18} /> Call Doctor
+              </a>
+            </CCardBody>
+          </CCard>
+        </div>
+      )}
 
       <CRow>
         <CCol lg={8}>
@@ -119,89 +159,83 @@ const BookingDetails = () => {
                 </div>
               </div>
 
-              <CRow className="g-4">
-                <CCol md={4}>
-                  <div className="d-flex flex-column gap-3">
-                    <div className="d-flex align-items-center gap-3">
-                      <Calendar size={18} className="text-secondary" />
-                      <div>
-                        <div className="small text-secondary">Date</div>
-                        <div className="fw-bold text-dark">{booking.serviceDate}</div>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center gap-3">
-                      <Clock size={18} className="text-secondary" />
-                      <div>
-                        <div className="small text-secondary">Time Slot</div>
-                        <div className="fw-bold text-dark">{booking.servicetime}</div>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center gap-3">
-                      <Activity size={18} className="text-secondary" />
-                      <div>
-                        <div className="small text-secondary">Problem</div>
-                        <div className="fw-bold text-dark text-truncate" style={{ maxWidth: '150px' }}>{booking.problem || 'Not specified'}</div>
-                      </div>
+              {/* Mobile-optimized info layout */}
+              <div className="booking-detail-grid">
+                <div className="booking-detail-section">
+                  <div className="booking-detail-row">
+                    <Calendar size={16} className="text-secondary" style={{ flexShrink: 0 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div className="small text-secondary">Date</div>
+                      <div className="fw-bold text-dark">{booking.serviceDate}</div>
                     </div>
                   </div>
-                </CCol>
-                <CCol md={4}>
-                  <div className="d-flex flex-column gap-3">
-                    <div className="d-flex align-items-center gap-3">
-                      <MapPin size={18} className="text-secondary" />
-                      <div>
-                        <div className="small text-secondary">Clinic Branch</div>
-                        <div className="fw-bold text-dark">{booking.branchname}</div>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center gap-3">
-                      <User size={18} className="text-secondary" />
-                      <div>
-                        <div className="small text-secondary">Patient Details</div>
-                        <div className="fw-bold text-dark">{booking.name}</div>
-                        <div className="small text-secondary">{booking.age} Yrs • {booking.gender}</div>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center gap-3">
-                      <Phone size={18} className="text-secondary" />
-                      <div>
-                        <div className="small text-secondary">Contact</div>
-                        <div className="fw-bold text-dark">{booking.patientMobileNumber}</div>
-                      </div>
+                  <div className="booking-detail-row">
+                    <Clock size={16} className="text-secondary" style={{ flexShrink: 0 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div className="small text-secondary">Time Slot</div>
+                      <div className="fw-bold text-dark">{booking.servicetime}</div>
                     </div>
                   </div>
-                </CCol>
-                <CCol md={4}>
-                  <div className="d-flex flex-column gap-3 border-start ps-md-4">
-                    <h6 className="fw-bold small text-secondary mb-1">Payment Summary</h6>
+                  <div className="booking-detail-row">
+                    <Activity size={16} className="text-secondary" style={{ flexShrink: 0 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div className="small text-secondary">Problem</div>
+                      <div className="fw-bold text-dark text-truncate">{booking.problem || 'Not specified'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="booking-detail-section">
+                  <div className="booking-detail-row">
+                    <MapPin size={16} className="text-secondary" style={{ flexShrink: 0 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div className="small text-secondary">Clinic Branch</div>
+                      <div className="fw-bold text-dark">{booking.branchname}</div>
+                    </div>
+                  </div>
+                  <div className="booking-detail-row">
+                    <User size={16} className="text-secondary" style={{ flexShrink: 0 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div className="small text-secondary">Patient Details</div>
+                      <div className="fw-bold text-dark">{booking.name}</div>
+                      <div className="small text-secondary">{booking.age} Yrs • {booking.gender}</div>
+                    </div>
+                  </div>
+                  <div className="booking-detail-row">
+                    <Phone size={16} className="text-secondary" style={{ flexShrink: 0 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div className="small text-secondary">Contact</div>
+                      <div className="fw-bold text-dark">{booking.patientMobileNumber}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="booking-detail-section booking-payment-section">
+                  <h6 className="fw-bold small text-secondary mb-2">Payment Summary</h6>
+                  <div className="d-flex justify-content-between small mb-1">
+                    <span>Consultation Fee:</span>
+                    <span className="fw-bold">₹{booking.consultationFee || '0'}</span>
+                  </div>
+                  {booking.totalBill && (
                     <div className="d-flex justify-content-between small mb-1">
-                      <span>Consultation Fee:</span>
-                      <span className="fw-bold">₹{booking.consultationFee || '0'}</span>
+                      <span>Total Bill:</span>
+                      <span className="fw-bold">₹{booking.totalBill}</span>
                     </div>
-                    {booking.totalBill && (
-                      <div className="d-flex justify-content-between small mb-1">
-                        <span>Total Bill:</span>
-                        <span className="fw-bold">₹{booking.totalBill}</span>
-                      </div>
-                    )}
-                    {booking.paidAmount && (
-                      <div className="d-flex justify-content-between small mb-1 text-success">
-                        <span>Paid:</span>
-                        <span className="fw-bold">₹{booking.paidAmount}</span>
-                      </div>
-                    )}
-                    {booking.balance && (
-                      <div className="d-flex justify-content-between small mb-1 text-danger">
-                        <span>Balance:</span>
-                        <span className="fw-bold">₹{booking.balance}</span>
-                      </div>
-                    )}
-                    {/* <CBadge color={booking.paymentStatus === 'Paid' ? 'success' : 'warning'} className="mt-2 py-2">
-                      {booking.paymentStatus || 'Pending'}
-                    </CBadge> */}
-                  </div>
-                </CCol>
-              </CRow>
+                  )}
+                  {booking.paidAmount && (
+                    <div className="d-flex justify-content-between small mb-1 text-success">
+                      <span>Paid:</span>
+                      <span className="fw-bold">₹{booking.paidAmount}</span>
+                    </div>
+                  )}
+                  {booking.balance && (
+                    <div className="d-flex justify-content-between small mb-1 text-danger">
+                      <span>Balance:</span>
+                      <span className="fw-bold">₹{booking.balance}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </CCardBody>
           </CCard>
 
@@ -234,21 +268,25 @@ const BookingDetails = () => {
                   }
 
                   return allReports.map((report, rIdx) => (
-                    <CCol md={6} key={rIdx}>
+                    <CCol sm={6} key={rIdx}>
                       <div
                         className="p-3 border rounded-4 d-flex justify-content-between align-items-center cursor-pointer hover-bg-light h-100 transition-all shadow-sm-hover"
-                        onClick={() => {
+                        onClick={async () => {
                           const fileData = report.reportFile?.[0];
                           if (fileData) {
                             try {
-                              const byteCharacters = atob(fileData);
-                              const byteNumbers = new Array(byteCharacters.length);
-                              for (let i = 0; i < byteCharacters.length; i++) {
-                                byteNumbers[i] = byteCharacters.charCodeAt(i);
+                              let url;
+                              let isBlobUrl = false;
+                              if (fileData.startsWith('http://') || fileData.startsWith('https://')) {
+                                url = fileData;
+                              } else {
+                                const base64String = fileData.includes('base64,') ? fileData.split('base64,')[1] : fileData;
+                                const cleanBase64 = base64String.replace(/\s/g, '');
+                                const res = await fetch(`data:application/pdf;base64,${cleanBase64}`);
+                                const blob = await res.blob();
+                                url = URL.createObjectURL(blob);
+                                isBlobUrl = true;
                               }
-                              const byteArray = new Uint8Array(byteNumbers);
-                              const blob = new Blob([byteArray], { type: 'application/pdf' });
-                              const url = URL.createObjectURL(blob);
 
                               const link = document.createElement('a');
                               link.href = url;
@@ -256,7 +294,9 @@ const BookingDetails = () => {
                               document.body.appendChild(link);
                               link.click();
                               document.body.removeChild(link);
-                              URL.revokeObjectURL(url);
+                              if (isBlobUrl) {
+                                URL.revokeObjectURL(url);
+                              }
                             } catch (e) {
                               console.error('Error downloading report:', e);
                               Swal.fire({
@@ -277,16 +317,16 @@ const BookingDetails = () => {
                           }
                         }}
                       >
-                        <div className="d-flex align-items-center gap-3">
-                          <div className={`bg-${report.reportStatus === 'Normal' ? 'info' : 'danger'} bg-opacity-10 p-2 rounded-3 text-${report.reportStatus === 'Normal' ? 'info' : 'danger'}`}>
+                        <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
+                          <div className={`bg-${report.reportStatus === 'Normal' ? 'info' : 'danger'} bg-opacity-10 p-2 rounded-3 text-${report.reportStatus === 'Normal' ? 'info' : 'danger'}`} style={{ flexShrink: 0 }}>
                             <FileSearch size={22} />
                           </div>
-                          <div>
-                            <div className="fw-bold text-dark small text-truncate" style={{ maxWidth: '180px' }}>{report.reportName}</div>
-                            <div className="small text-secondary">{report.reportType} • {report.reportDate}</div>
+                          <div style={{ minWidth: 0 }}>
+                            <div className="fw-bold text-dark small text-truncate">{report.reportName}</div>
+                            <div className="small text-secondary text-truncate">{report.reportType} • {report.reportDate}</div>
                           </div>
                         </div>
-                        <CButton color="link" className="p-0 text-primary hover-scale">
+                        <CButton color="link" className="p-0 text-primary hover-scale" style={{ flexShrink: 0 }}>
                           <Download size={20} />
                         </CButton>
                       </div>
@@ -300,7 +340,7 @@ const BookingDetails = () => {
           {/* Visit History Summary */}
           <CCard className="premium-card border-0 mb-4">
             <CCardBody className="p-4">
-              <div className="d-flex justify-content-between align-items-center mb-4">
+              <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
                 <div className="d-flex align-items-center gap-3">
                   <div className="bg-info bg-opacity-10 p-3 rounded-4">
                     <Activity size={24} className="text-info" />
@@ -315,6 +355,7 @@ const BookingDetails = () => {
                     color="primary"
                     variant="outline"
                     className="rounded-4 fw-bold"
+                    size="sm"
                     onClick={() => navigate(`/bookings/${booking.bookingId}/history?patientId=${booking.patientId}`)}
                   >
                     View Full History <ChevronRight size={16} />
@@ -323,41 +364,74 @@ const BookingDetails = () => {
               </div>
 
               {visitHistory.length > 0 ? (
-                <div className="table-responsive">
-                  <CTable align="middle" hover borderless className="mb-0">
-                    <CTableHead className="text-secondary small text-uppercase">
-                      <CTableRow>
-                        <CTableHeaderCell className="border-bottom-0 ps-0">Visit</CTableHeaderCell>
-                        <CTableHeaderCell className="border-bottom-0">Date</CTableHeaderCell>
-                        <CTableHeaderCell className="border-bottom-0">Diagnosis</CTableHeaderCell>
-                        <CTableHeaderCell className="border-bottom-0 text-end pe-0">Action</CTableHeaderCell>
-                      </CTableRow>
-                    </CTableHead>
-                    <CTableBody>
-                      {visitHistory.slice(0, 3).map((visit, idx) => (
-                        <CTableRow key={idx} className="cursor-pointer">
-                          <CTableDataCell className="ps-0">
-                            <div className="fw-bold text-dark">{visit.visitNumber}</div>
-                          </CTableDataCell>
-                          <CTableDataCell>
-                            <div className="small text-secondary">{visit.visitDate}</div>
-                            <div className="small fw-semibold">{visit.visitTime}</div>
-                          </CTableDataCell>
-                          <CTableDataCell>
-                            <div className="small text-dark fw-semibold">
-                              {visit.physiotherapyDoctorData?.diagnosis?.physioDiagnosis || 'N/A'}
-                            </div>
-                          </CTableDataCell>
-                          <CTableDataCell className="text-end pe-0">
-                            <CButton color="link" className="p-0 text-primary" onClick={() => navigate(`/bookings/${booking.bookingId}/history?patientId=${booking.patientId}`)}>
-                              <ChevronRight size={18} />
-                            </CButton>
-                          </CTableDataCell>
+                <>
+                  {/* Desktop Table */}
+                  <div className="d-none d-md-block table-responsive">
+                    <CTable align="middle" hover borderless className="mb-0">
+                      <CTableHead className="text-secondary small text-uppercase">
+                        <CTableRow>
+                          <CTableHeaderCell className="border-bottom-0 ps-0">Visit</CTableHeaderCell>
+                          <CTableHeaderCell className="border-bottom-0">Date</CTableHeaderCell>
+                          <CTableHeaderCell className="border-bottom-0">Diagnosis</CTableHeaderCell>
+                          <CTableHeaderCell className="border-bottom-0 text-end pe-0">Action</CTableHeaderCell>
                         </CTableRow>
-                      ))}
-                    </CTableBody>
-                  </CTable>
-                </div>
+                      </CTableHead>
+                      <CTableBody>
+                        {visitHistory.slice(0, 3).map((visit, idx) => (
+                          <CTableRow key={idx} className="cursor-pointer">
+                            <CTableDataCell className="ps-0">
+                              <div className="fw-bold text-dark">{visit.visitNumber}</div>
+                            </CTableDataCell>
+                            <CTableDataCell>
+                              <div className="small text-secondary">{visit.visitDate}</div>
+                              <div className="small fw-semibold">{visit.visitTime}</div>
+                            </CTableDataCell>
+                            <CTableDataCell>
+                              <div className="small text-dark fw-semibold">
+                                {visit.physiotherapyDoctorData?.diagnosis?.physioDiagnosis || 'N/A'}
+                              </div>
+                            </CTableDataCell>
+                            <CTableDataCell className="text-end pe-0">
+                              <CButton color="link" className="p-0 text-primary" onClick={() => navigate(`/bookings/${booking.bookingId}/history?patientId=${booking.patientId}`)}>
+                                <ChevronRight size={18} />
+                              </CButton>
+                            </CTableDataCell>
+                          </CTableRow>
+                        ))}
+                      </CTableBody>
+                    </CTable>
+                  </div>
+
+                  {/* Mobile Cards */}
+                  <div className="d-flex d-md-none flex-column gap-2">
+                    {visitHistory.slice(0, 3).map((visit, idx) => (
+                      <div
+                        key={idx}
+                        className="visit-mobile-card"
+                        onClick={() => navigate(`/bookings/${booking.bookingId}/history?patientId=${booking.patientId}`)}
+                      >
+                        <div className="d-flex justify-content-between align-items-start">
+                          <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
+                            <div className="visit-mobile-number">{idx + 1}</div>
+                            <div style={{ minWidth: 0 }}>
+                              <div className="fw-bold text-dark small">{visit.visitNumber}</div>
+                              <div className="text-secondary" style={{ fontSize: '0.75rem' }}>{visit.visitDate} • {visit.visitTime}</div>
+                            </div>
+                          </div>
+                          <ChevronRight size={16} className="text-secondary" style={{ flexShrink: 0 }} />
+                        </div>
+                        {visit.physiotherapyDoctorData?.diagnosis?.physioDiagnosis && (
+                          <div className="mt-2 pt-2 border-top">
+                            <div className="small text-secondary">Diagnosis</div>
+                            <div className="small fw-semibold text-dark text-truncate">
+                              {visit.physiotherapyDoctorData.diagnosis.physioDiagnosis}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <div className="text-center py-4 text-secondary opacity-50">
                   <p>No visit history available for this booking.</p>
@@ -367,8 +441,8 @@ const BookingDetails = () => {
           </CCard>
         </CCol>
 
-        <CCol lg={4}>
-          {/* Doctor Info Card */}
+        {/* Doctor Info - Desktop Sidebar */}
+        <CCol lg={4} className="d-none d-lg-block">
           {doctor && (
             <CCard className="premium-card border-0 mb-4 sticky-top" style={{ top: '100px' }}>
               <CCardBody className="p-4">
@@ -379,9 +453,6 @@ const BookingDetails = () => {
                   <div className="d-flex justify-content-center gap-2 mb-4">
                     <CBadge color="light" className="text-dark py-2 px-3 border">
                       Exp: {doctor.experience} Yrs
-                    </CBadge>
-                    <CBadge color="light" className="text-dark py-2 px-3 border">
-                      Rating: {doctor.doctorAverageRating || '5.0'} ⭐
                     </CBadge>
                   </div>
                 </div>
@@ -416,9 +487,12 @@ const BookingDetails = () => {
                   </div>
                 </div>
 
-                <CButton className="btn-premium w-100 py-3 rounded-4 d-flex align-items-center justify-content-center gap-2">
+                <a
+                  href={`tel:${doctor.doctorMobileNumber}`}
+                  className="btn btn-premium w-100 py-3 rounded-4 d-flex align-items-center justify-content-center gap-2 text-decoration-none"
+                >
                   <Phone size={18} /> Contact Doctor
-                </CButton>
+                </a>
               </CCardBody>
             </CCard>
           )}

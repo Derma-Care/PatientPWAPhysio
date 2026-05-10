@@ -29,7 +29,9 @@ import {
   PlayCircle,
   Video,
   Image as ImageIcon,
-  X
+  X,
+  AlertCircle,
+  Download
 } from 'lucide-react';
 import { physiotherapyService, customerService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -50,12 +52,12 @@ const MediaPreviewModal = ({ visible, onClose, mediaUrl, type }) => {
     <CModal visible={visible} onClose={onClose} size="lg" alignment="center" className="premium-modal" backdrop="static">
       <CModalHeader className="border-0 px-4 pt-4 pb-0">
         <CModalTitle className="fw-bold d-flex align-items-center gap-2">
-          {isYouTube ? <PlayCircle size={20} className="text-danger" /> : (type === 'video' ? <Video size={20} /> : <ImageIcon size={20} />)}
-          {isYouTube ? 'Exercise Tutorial' : (type === 'video' ? 'Video Update' : 'Media Preview')}
+          {isYouTube ? <PlayCircle size={20} className="text-danger" /> : (type === 'pdf' ? <FileText size={20} className="text-primary" /> : type === 'video' ? <Video size={20} /> : <ImageIcon size={20} />)}
+          {isYouTube ? 'Exercise Tutorial' : (type === 'pdf' ? 'Document Preview' : type === 'video' ? 'Video Update' : 'Media Preview')}
         </CModalTitle>
         <CButton variant="ghost" onClick={onClose} className="p-0"><X size={28} /></CButton>
       </CModalHeader>
-      <CModalBody className="p-0 bg-black rounded-bottom-4 overflow-hidden d-flex justify-content-center align-items-center mt-3" style={{ minHeight: '350px' }}>
+      <CModalBody className={`p-0 ${type === 'pdf' ? 'bg-light' : 'bg-black'} rounded-bottom-4 overflow-hidden d-flex justify-content-center align-items-center mt-3`} style={{ minHeight: '350px', height: type === 'pdf' ? '75vh' : 'auto' }}>
         {isYouTube ? (
           <iframe
             width="100%"
@@ -66,6 +68,8 @@ const MediaPreviewModal = ({ visible, onClose, mediaUrl, type }) => {
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           ></iframe>
+        ) : type === 'pdf' ? (
+          <iframe src={mediaUrl} width="100%" height="100%" title="PDF Preview" style={{ border: 'none', minHeight: '75vh' }} />
         ) : type === 'video' ? (
           <video src={mediaUrl} controls className="w-100 h-100" style={{ maxHeight: '70vh' }} autoPlay />
         ) : (
@@ -150,147 +154,238 @@ const VisitHistory = () => {
         <CCol lg={10} className="mx-auto">
           {history.length > 0 ? (
             <>
-              <CAccordion flush className="rounded-4 overflow-hidden border shadow-sm bg-white">
+              <CAccordion flush className="visit-history-accordion">
                 {history.map((visit, idx) => (
-                  <CAccordionItem itemKey={idx} key={idx} className="border-bottom">
-                  <CAccordionHeader className="p-2">
+                  <CAccordionItem itemKey={idx} key={idx} className="visit-accordion-item">
+                  <CAccordionHeader className="visit-accordion-header">
                     <div className="w-100 d-flex justify-content-between align-items-center pe-3">
                       <div className="d-flex align-items-center gap-3">
-                        <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style={{ width: '45px', height: '45px' }}>
+                        <div className="visit-number-badge">
                           {idx + 1}
                         </div>
                         <div>
-                          <div className="fw-bold text-dark fs-5">{visit.visitNumber}</div>
+                          <div className="fw-bold text-dark visit-title">{visit.visitNumber}</div>
                           <div className="small text-secondary fw-semibold">
                             {visit.visitDate} • {visit.visitTime}
                           </div>
                         </div>
                       </div>
-                      {/* <CBadge color="primary" shape="pill" className="px-3 py-2 bg-opacity-10 text-white fw-bold">
-                        Completed
-                      </CBadge> */}
                     </div>
                   </CAccordionHeader>
-                  <CAccordionBody className="p-4 bg-light bg-opacity-25">
-                    <CRow className="g-4">
+                  <CAccordionBody className="visit-accordion-body">
+                    {/* Mobile: Stacked layout | Desktop: Side by side */}
+                    <div className="visit-details-grid">
                       {/* Section 1: Complaints & Investigation */}
-                      <CCol md={6}>
-                        <div className="premium-card p-3 bg-white mb-4">
-                          <h6 className="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                      <div className="visit-detail-panel">
+                        <div className="visit-section-card h-100">
+                          <h6 className="fw-bold text-dark mb-3 d-flex align-items-center gap-2 border-bottom pb-2">
                             <Activity size={18} className="text-danger" /> Complaints & Investigation
                           </h6>
-                          <div className="small mb-3">
-                            <span className="text-secondary d-block">Details:</span>
-                            <span className="fw-semibold text-dark">{visit.physiotherapyDoctorData?.complaints?.complaintDetails || 'None'}</span>
+                          
+                          <div className="mb-4">
+                            <div className="text-secondary small fw-bold text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>Details</div>
+                            <div className="fw-semibold text-dark p-3 bg-light rounded-3" style={{ fontSize: '0.95rem', lineHeight: '1.5' }}>
+                              {visit.physiotherapyDoctorData?.complaints?.complaintDetails || 'No complaints recorded.'}
+                            </div>
                           </div>
-                          <div className="small">
-                            <span className="text-secondary d-block">Tests Performed:</span>
-                            <div className="d-flex flex-wrap gap-2 mt-1">
-                              {visit.physiotherapyDoctorData?.investigation?.tests?.map((test, i) => (
-                                <CBadge key={i} color="info" variant="outline" shape="pill" className="fw-bold px-3">{test}</CBadge>
-                              )) || <span className="text-secondary">None</span>}
+                          
+                          <div>
+                            <div className="text-secondary small fw-bold text-uppercase mb-2" style={{ letterSpacing: '0.5px' }}>Tests Performed</div>
+                            <div className="d-flex flex-wrap gap-2">
+                              {visit.physiotherapyDoctorData?.investigation?.tests?.length > 0 ? (
+                                visit.physiotherapyDoctorData.investigation.tests.map((test, i) => (
+                                  <CBadge key={i} color="info" className="fw-bold px-3 py-2" style={{ fontSize: '0.8rem' }}>{test}</CBadge>
+                                ))
+                              ) : (
+                                <span className="text-secondary small fst-italic">None recorded</span>
+                              )}
                             </div>
                           </div>
                         </div>
 
-                        {/* Follow-up Section (Flow Update) - Now on the left side */}
+                        {/* Follow-up Section */}
                         {visit.physiotherapyDoctorData?.followUp?.nextVisitDate && (
-                          <div className="mt-3 p-3 rounded-4 bg-primary bg-opacity-10 border border-white border-opacity-10">
+                          <div className="visit-followup-card shadow-sm">
                             <h6 className="fw-bold text-white mb-2 d-flex align-items-center gap-2">
-                              <Calendar size={16} /> Next Follow-up
+                              <Calendar size={18} /> Next Follow-up
                             </h6>
-                            <div className="fw-bold text-white small">{visit.physiotherapyDoctorData.followUp.nextVisitDate}</div>
+                            <div className="d-flex justify-content-between align-items-center bg-white bg-opacity-25 rounded-3 p-2 mb-2">
+                              <span className="text-white small fw-semibold">Date:</span>
+                              <span className="fw-bold text-white">{visit.physiotherapyDoctorData.followUp.nextVisitDate}</span>
+                            </div>
                             {visit.physiotherapyDoctorData.followUp.reviewNotes && (
-                              <div className="small text-white mt-1">{visit.physiotherapyDoctorData.followUp.reviewNotes}</div>
+                              <div className="small text-white opacity-90 p-2 border-start border-2 border-white">
+                                {visit.physiotherapyDoctorData.followUp.reviewNotes}
+                              </div>
                             )}
                           </div>
                         )}
 
-                        {/* Prescription File - Now on the left side */}
-                        {visit.prescriptionPdf && (
-                          <CButton
-                            className="btn-premium w-100 mt-3 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm"
-                            style={{ background: '#f43f5e', border: 'none' }}
-                            onClick={() => {
-                              const base64Data = visit.prescriptionPdf;
-                              try {
-                                const byteCharacters = atob(base64Data);
-                                const byteNumbers = new Array(byteCharacters.length);
-                                for (let i = 0; i < byteCharacters.length; i++) {
-                                  byteNumbers[i] = byteCharacters.charCodeAt(i);
-                                }
-                                const byteArray = new Uint8Array(byteNumbers);
-                                const blob = new Blob([byteArray], { type: 'application/pdf' });
-                                const url = URL.createObjectURL(blob);
-                                window.open(url, '_blank');
-                              } catch (error) {
-                                console.error('Error opening PDF:', error);
-                              }
-                            }}
-                          >
-                            <FileText size={18} /> View Prescription PDF
-                          </CButton>
-                        )}
-                      </CCol>
+                        {/* Prescription / Report File */}
+                        {(() => {
+                          const pdfData = visit.prescriptionPdf || visit.reportPdf || visit.physiotherapyDoctorData?.prescriptionPdf || visit.physiotherapyDoctorData?.reportPdf;
+                          if (!pdfData) return null;
+                          return (
+                            <div className="mt-3">
+                              <h6 className="fw-bold text-dark mb-2 d-flex align-items-center gap-2" style={{ fontSize: '0.85rem', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                                <FileText size={14} className="text-secondary" /> Prescription / Report
+                              </h6>
+                              <div className="d-flex gap-2">
+                                <CButton
+                                  className="btn-premium flex-grow-1 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                                  style={{ background: '#f43f5e', border: 'none', fontSize: '0.85rem' }}
+                                  onClick={async () => {
+                                    try {
+                                      let url;
+                                      if (pdfData.startsWith('http://') || pdfData.startsWith('https://')) {
+                                        url = pdfData;
+                                      } else {
+                                        const base64String = pdfData.includes('base64,') ? pdfData.split('base64,')[1] : pdfData;
+                                        const cleanBase64 = base64String.replace(/\s/g, '');
+                                        const res = await fetch(`data:application/pdf;base64,${cleanBase64}`);
+                                        const blob = await res.blob();
+                                        url = URL.createObjectURL(blob);
+                                      }
+                                      setPreviewData({ visible: true, url, type: 'pdf' });
+                                    } catch (error) {
+                                      console.error('Error opening PDF:', error);
+                                      alert('Failed to open PDF document. It may be corrupted or invalid.');
+                                    }
+                                  }}
+                                >
+                                  <FileText size={16} /> View
+                                </CButton>
+                                <CButton
+                                  className="btn-premium flex-grow-1 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                                  style={{ background: '#2563eb', border: 'none', fontSize: '0.85rem' }}
+                                  onClick={async () => {
+                                    try {
+                                      let url;
+                                      let isBlobUrl = false;
+                                      if (pdfData.startsWith('http://') || pdfData.startsWith('https://')) {
+                                        url = pdfData;
+                                      } else {
+                                        const base64String = pdfData.includes('base64,') ? pdfData.split('base64,')[1] : pdfData;
+                                        const cleanBase64 = base64String.replace(/\s/g, '');
+                                        const res = await fetch(`data:application/pdf;base64,${cleanBase64}`);
+                                        const blob = await res.blob();
+                                        url = URL.createObjectURL(blob);
+                                        isBlobUrl = true;
+                                      }
+                                      const link = document.createElement('a');
+                                      link.href = url;
+                                      link.download = `Report_${visit.visitDate || 'Document'}.pdf`;
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
+                                      if (isBlobUrl) {
+                                        URL.revokeObjectURL(url);
+                                      }
+                                    } catch (error) {
+                                      console.error('Error downloading PDF:', error);
+                                      alert('Failed to download PDF document.');
+                                    }
+                                  }}
+                                >
+                                  <Download size={16} /> Download
+                                </CButton>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
 
                       {/* Section 2: Diagnosis & Treatment */}
-                      <CCol md={6}>
-                        <div className="premium-card p-3 bg-white mb-4">
-                          <h6 className="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                      <div className="visit-detail-panel">
+                        <div className="visit-section-card mb-0">
+                          <h6 className="fw-bold text-dark mb-3 d-flex align-items-center gap-2 border-bottom pb-2">
                             <Stethoscope size={18} className="text-success" /> Physio Diagnosis
                           </h6>
-                          <div className="mb-3">
-                            <div className="fw-bold text-dark fs-5 mb-1">{visit.physiotherapyDoctorData?.diagnosis?.physioDiagnosis}</div>
-                            <div className="d-flex gap-2">
-                              <CBadge color="warning" className="px-2 py-1 text-dark">Severity: {visit.physiotherapyDoctorData?.diagnosis?.severity}</CBadge>
-                              <CBadge color="info" className="px-2 py-1">Stage: {visit.physiotherapyDoctorData?.diagnosis?.stage}</CBadge>
+                          <div className="mb-4">
+                            <div className="fw-bold text-dark mb-3 p-3 bg-light rounded-3" style={{ fontSize: '1.05rem', lineHeight: '1.5' }}>
+                              {visit.physiotherapyDoctorData?.diagnosis?.physioDiagnosis || 'No diagnosis recorded.'}
                             </div>
-                          </div>
-                          <div className="small text-secondary">
-                            Affected Area: <span className="text-dark fw-semibold">{visit.physiotherapyDoctorData?.diagnosis?.affectedArea}</span>
+                            <div className="d-flex flex-wrap gap-2 mb-3">
+                              <CBadge color="warning" className="px-3 py-2 text-dark fw-bold shadow-sm" style={{ fontSize: '0.8rem' }}>
+                                Severity: {visit.physiotherapyDoctorData?.diagnosis?.severity || 'N/A'}
+                              </CBadge>
+                              <CBadge color="info" className="px-3 py-2 fw-bold shadow-sm" style={{ fontSize: '0.8rem' }}>
+                                Stage: {visit.physiotherapyDoctorData?.diagnosis?.stage || 'N/A'}
+                              </CBadge>
+                            </div>
+                            <div className="d-flex align-items-center gap-2 p-2 bg-light rounded-3">
+                              <Target size={16} className="text-secondary" />
+                              <span className="small text-secondary fw-semibold">Affected Area:</span>
+                              <span className="small fw-bold text-dark">{visit.physiotherapyDoctorData?.diagnosis?.affectedArea || visit.bodyPartName || visit.physiotherapyDoctorData?.bodyPartName || 'N/A'}</span>
+                            </div>
+                            {(() => {
+                              const pImg = visit.partImage || visit.physiotherapyDoctorData?.diagnosis?.partImage || visit.physiotherapyDoctorData?.partImage;
+                              if (!pImg) return null;
+                              return (
+                                <div className="mt-3 p-2 border rounded-3 bg-light text-center cursor-pointer transition-all hover-scale" onClick={() => setPreviewData({ visible: true, url: pImg.startsWith('http') || pImg.startsWith('data:') ? pImg : `data:image/png;base64,${pImg}`, type: 'image' })}>
+                                  <span className="small text-secondary fw-bold text-uppercase d-block mb-2" style={{ letterSpacing: '0.5px' }}>Affected Area Diagram</span>
+                                  <div className="bg-white p-2 rounded shadow-sm d-inline-block">
+                                    <img 
+                                      src={pImg.startsWith('http') || pImg.startsWith('data:') ? pImg : `data:image/png;base64,${pImg}`} 
+                                      alt="Affected Area" 
+                                      className="img-fluid rounded" 
+                                      style={{ maxHeight: '120px', objectFit: 'contain' }} 
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
 
-                        <div className="premium-card p-3 bg-white">
-                          <h6 className="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
-                            <Target size={18} className="text-warning" /> Treatment Plan
+                        <div className="visit-section-card flex-grow-1 d-flex flex-column">
+                          <h6 className="fw-bold text-dark mb-3 d-flex align-items-center gap-2 border-bottom pb-2">
+                            <FlaskConical size={18} className="text-warning" /> Treatment Plan
                           </h6>
-                          <div className="small mb-2">
-                            <span className="text-secondary">Therapist:</span>
-                            <span className="ms-2 fw-bold text-dark">{visit.physiotherapyDoctorData?.treatmentPlan?.therapistName}</span>
+                          
+                          <div className="d-flex align-items-center justify-content-between p-2 bg-light rounded-3 mb-3">
+                            <span className="small text-secondary fw-semibold">Therapist:</span>
+                            <span className="fw-bold text-dark">{visit.physiotherapyDoctorData?.treatmentPlan?.therapistName || 'Not Assigned'}</span>
                           </div>
-                          <div className="small mb-4">
-                            <span className="text-secondary">Programs:</span>
-                            <div className="mt-2 d-flex flex-column gap-2">
-                              {visit.physiotherapyDoctorData?.therapySessions?.[0]?.programs?.map((prog, i) => (
-                                <div key={i} className="p-2 border rounded-3 bg-light small fw-semibold d-flex justify-content-between align-items-center">
-                                  {prog.programName}
-                                  {prog.videoUrl && (
-                                    <CButton 
-                                      color="danger" 
-                                      size="sm" 
-                                      variant="ghost" 
-                                      className="p-0 border-0"
-                                      onClick={() => setPreviewData({ visible: true, url: prog.videoUrl, type: 'youtube' })}
-                                    >
-                                      <PlayCircle size={16} />
-                                    </CButton>
-                                  )}
+
+                          <div className="mb-4 flex-grow-1">
+                            <div className="text-secondary small fw-bold text-uppercase mb-2" style={{ letterSpacing: '0.5px' }}>Prescribed Programs</div>
+                            <div className="d-flex flex-column gap-2">
+                              {visit.physiotherapyDoctorData?.therapySessions?.[0]?.programs?.length > 0 ? (
+                                visit.physiotherapyDoctorData.therapySessions[0].programs.map((prog, i) => (
+                                  <div key={i} className="p-3 border rounded-3 bg-white shadow-sm d-flex justify-content-between align-items-center transition-all hover-scale">
+                                    <span className="fw-semibold text-dark" style={{ fontSize: '0.9rem', lineHeight: '1.4' }}>{prog.programName}</span>
+                                    {prog.videoUrl && (
+                                      <CButton 
+                                        color="danger" 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        className="p-1 border-0"
+                                        style={{ flexShrink: 0 }}
+                                        onClick={() => setPreviewData({ visible: true, url: prog.videoUrl, type: 'youtube' })}
+                                      >
+                                        <PlayCircle size={22} />
+                                      </CButton>
+                                    )}
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="p-3 bg-light rounded-3 text-center text-secondary small fst-italic">
+                                  No programs prescribed yet.
                                 </div>
-                              ))}
+                              )}
                             </div>
                           </div>
 
-
-                          <div className="d-flex flex-wrap gap-2 mt-4">
+                          <div className="visit-action-buttons mt-auto">
                             <CButton
-                              className="btn-premium flex-grow-1 py-2 d-flex align-items-center justify-content-center gap-2"
+                              className="btn-premium visit-action-btn"
                               onClick={() => navigate(`/bookings/${id}/sessions?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}`)}
                             >
-                              <Activity size={18} /> Sessions
+                              <Activity size={18} /> View Sessions
                             </CButton>
                             <CButton
-                              className="btn-premium flex-grow-1 py-2 d-flex align-items-center justify-content-center gap-2"
+                              className="btn-premium visit-action-btn"
                               style={{ background: 'var(--primary-gradient)' }}
                               onClick={() => navigate(`/bookings/${id}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}`)}
                             >
@@ -298,8 +393,8 @@ const VisitHistory = () => {
                             </CButton>
                           </div>
                         </div>
-                      </CCol>
-                    </CRow>
+                      </div>
+                    </div>
                   </CAccordionBody>
                 </CAccordionItem>
               ))}
