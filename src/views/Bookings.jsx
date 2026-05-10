@@ -19,7 +19,8 @@ import {
   MapPin,
   Calendar,
   ChevronRight,
-  Stethoscope
+  Stethoscope,
+  Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { customerService } from '../services/api';
@@ -70,6 +71,15 @@ const Bookings = () => {
     );
   }
 
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'in-progress': return { bg: '#dcfce7', text: '#16a34a' };
+      case 'confirmed': return { bg: '#dbeafe', text: '#2563eb' };
+      case 'completed': return { bg: '#f3e8ff', text: '#7c3aed' };
+      default: return { bg: '#f1f5f9', text: '#64748b' };
+    }
+  };
+
   return (
     <div className="fade-in">
       <div className="mb-4">
@@ -78,8 +88,8 @@ const Bookings = () => {
             <h2 className="fw-bold text-dark m-0">My Bookings</h2>
             <p className="text-secondary m-0">Track your appointments and treatment history</p>
           </div>
-          <div className="d-flex gap-2">
-            <CInputGroup className="shadow-sm rounded-4 overflow-hidden" style={{ width: '300px' }}>
+          <div className="d-flex gap-2 w-100 w-md-auto">
+            <CInputGroup className="shadow-sm rounded-4 overflow-hidden w-100" style={{ maxWidth: '400px' }}>
               <CInputGroupText className="bg-white border-end-0 pe-0">
                 <Search size={18} className="text-secondary" />
               </CInputGroupText>
@@ -93,11 +103,11 @@ const Bookings = () => {
           </div>
         </div>
 
-        <CNav variant="pills" className="premium-nav rounded-4 p-1 bg-white shadow-sm d-inline-flex">
-          <CNavItem>
+        <CNav variant="pills" className="premium-nav rounded-4 p-1 bg-white shadow-sm d-inline-flex w-100 w-sm-auto mb-2">
+          <CNavItem className="flex-grow-1 flex-sm-grow-0 text-center">
             <CNavLink
               active={activeTab === 'ongoing'}
-              className={`rounded-3 px-4 py-2 fw-bold cursor-pointer ${activeTab === 'ongoing'
+              className={`rounded-3 px-4 py-2 fw-bold cursor-pointer w-100 ${activeTab === 'ongoing'
                 ? 'text-white'
                 : 'text-secondary'
                 }`}
@@ -115,89 +125,97 @@ const Bookings = () => {
             </CNavLink>
           </CNavItem>
 
-          <CNavLink
-            active={activeTab === 'completed'}
-            className={`rounded-3 px-4 py-2 fw-bold cursor-pointer ${activeTab === 'completed'
+          <CNavItem className="flex-grow-1 flex-sm-grow-0 text-center">
+            <CNavLink
+              active={activeTab === 'completed'}
+              className={`rounded-3 px-4 py-2 fw-bold cursor-pointer w-100 ${activeTab === 'completed'
                 ? 'text-white'
                 : 'text-secondary'
               }`}
-            onClick={() => setActiveTab('completed')}
-            style={
-              activeTab === 'completed'
-                ? {
-                  backgroundColor: 'var(--primary-color)',
-                  color: '#fff',
-                }
-                : {}
-            }
-          >
-            Completed
-          </CNavLink>
+              onClick={() => setActiveTab('completed')}
+              style={
+                activeTab === 'completed'
+                  ? {
+                    backgroundColor: 'var(--primary-color)',
+                    color: '#fff',
+                  }
+                  : {}
+              }
+            >
+              Completed
+            </CNavLink>
+          </CNavItem>
         </CNav>
       </div>
 
       <CRow>
         {filteredBookings.length > 0 ? (
-          filteredBookings.map((booking, idx) => (
-            <CCol lg={6} key={idx} className="mb-4">
-              <CCard
-                className="premium-card border-0 cursor-pointer"
-                onClick={() => navigate(`/bookings/${booking.bookingId}`)}
-              >
-                <CCardBody className="p-4">
-                  <div className="d-flex justify-content-between align-items-start mb-3">
-                    <div className="d-flex align-items-center gap-3">
-                      <div className="bg-primary bg-opacity-10 p-3 rounded-4">
-                        <Stethoscope size={24} className="text-white" />
+          filteredBookings.map((booking, idx) => {
+            const statusStyle = getStatusColor(booking.status);
+            return (
+              <CCol lg={6} key={idx} className="mb-4">
+                <CCard
+                  className="premium-card border-0 cursor-pointer h-100 bookings-list-card"
+                  onClick={() => navigate(`/bookings/${booking.bookingId}`)}
+                >
+                  <CCardBody className="p-4 d-flex flex-column h-100">
+                    <div className="d-flex justify-content-between align-items-start mb-3 gap-2">
+                      <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
+                        <div className="bg-primary bg-opacity-10 p-3 rounded-4 d-none d-sm-flex align-items-center justify-content-center" style={{ flexShrink: 0, width: '56px', height: '56px' }}>
+                          <Stethoscope size={24} className="text-white" />
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div className="fw-bold fs-5 text-dark text-truncate">{booking.doctorName}</div>
+                          <div className="small text-secondary fw-semibold text-truncate">ID: {booking.bookingId}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="fw-bold fs-5 text-dark">{booking.doctorName}</div>
-                        <div className="small text-secondary fw-semibold">ID: {booking.bookingId}</div>
-                      </div>
+                      <span 
+                        className="booking-status-chip shadow-sm"
+                        style={{ background: statusStyle.bg, color: statusStyle.text, flexShrink: 0 }}
+                      >
+                        {booking.status}
+                      </span>
                     </div>
-                    <CBadge color={booking.status === 'in-progress' ? 'success' : 'info'} shape="pill" className="px-3 py-2 text-capitalize">
-                      {booking.status}
-                    </CBadge>
-                  </div>
 
-                  <div className="bg-light p-3 rounded-4 mb-3">
-                    <CRow>
-                      <CCol xs={6} className="border-end">
-                        <div className="d-flex align-items-center gap-2 text-secondary small mb-1">
-                          <Calendar size={14} /> Date & Time
-                        </div>
-                        <div className="fw-bold text-dark small">
-                          {booking.serviceDate} • {booking.servicetime}
-                        </div>
-                      </CCol>
-                      <CCol xs={6} className="ps-4">
-                        <div className="d-flex align-items-center gap-2 text-secondary small mb-1">
-                          <MapPin size={14} /> Branch
-                        </div>
-                        <div className="fw-bold text-dark small">
-                          {booking.branchname}
-                        </div>
-                      </CCol>
-                    </CRow>
-                  </div>
+                    <div className="bg-light p-3 rounded-4 mb-3 flex-grow-1">
+                      <CRow className="g-3">
+                        <CCol xs={12} sm={6} className="bookings-list-border-right">
+                          <div className="d-flex align-items-center gap-2 text-secondary small mb-1">
+                            <Calendar size={14} style={{ flexShrink: 0 }} /> Date & Time
+                          </div>
+                          <div className="fw-bold text-dark small">
+                            {booking.serviceDate} • {booking.servicetime}
+                          </div>
+                        </CCol>
+                        <CCol xs={12} sm={6} className="bookings-list-ps-left">
+                          <div className="d-flex align-items-center gap-2 text-secondary small mb-1">
+                            <MapPin size={14} style={{ flexShrink: 0 }} /> Branch
+                          </div>
+                          <div className="fw-bold text-dark small text-truncate">
+                            {booking.branchname}
+                          </div>
+                        </CCol>
+                      </CRow>
+                    </div>
 
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div className="d-flex align-items-center gap-2">
-                      <div className="avatar-group d-flex">
-                        <div className="bg-secondary bg-opacity-10 rounded-circle small d-flex align-items-center justify-content-center fw-bold text-secondary" style={{ width: '32px', height: '32px' }}>
-                          {booking.visitCount || '1'}
+                    <div className="d-flex justify-content-between align-items-center mt-auto pt-2">
+                      <div className="d-flex align-items-center gap-2">
+                        <div className="avatar-group d-flex">
+                          <div className="bg-secondary bg-opacity-10 rounded-circle small d-flex align-items-center justify-content-center fw-bold text-secondary" style={{ width: '32px', height: '32px' }}>
+                            {booking.visitCount || '1'}
+                          </div>
                         </div>
+                        <span className="small text-secondary">Total Visits</span>
                       </div>
-                      <span className="small text-secondary">Total Visits</span>
+                      <div className="text-primary fw-bold d-flex align-items-center gap-1 small">
+                        View Details <ChevronRight size={16} />
+                      </div>
                     </div>
-                    <div className="text-primary fw-bold d-flex align-items-center gap-1">
-                      View Details <ChevronRight size={16} />
-                    </div>
-                  </div>
-                </CCardBody>
-              </CCard>
-            </CCol>
-          ))
+                  </CCardBody>
+                </CCard>
+              </CCol>
+            );
+          })
         ) : (
           <CCol className="text-center py-5">
             <div className="text-secondary opacity-50 mb-3">
