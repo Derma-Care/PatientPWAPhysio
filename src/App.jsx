@@ -16,6 +16,7 @@ import SessionTracking from './views/SessionTracking';
 import Profile from './views/Profile';
 import ClinicDetails from './views/ClinicDetails';
 import HomeExercises from './views/HomeExercises';
+import Settings from './views/Settings';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -61,6 +62,7 @@ const App = () => {
               <Route path="bookings/:id/home-exercises" element={<HomeExercises />} />
               <Route path="profile" element={<Profile />} />
               <Route path="clinic" element={<ClinicDetails />} />
+              <Route path="settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" />} />
           </Routes>

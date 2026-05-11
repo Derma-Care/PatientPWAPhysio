@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   CRow,
   CCol,
@@ -20,7 +21,8 @@ import {
   ShieldCheck,
   Edit2,
   Save,
-  Camera
+  Camera,
+  ArrowLeft
 } from 'lucide-react';
 import { customerService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -28,9 +30,12 @@ import Swal from 'sweetalert2';
 
 const Profile = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [previewImage, setPreviewImage] = useState(localStorage.getItem('profilePicture'));
+  const fileInputRef = React.useRef(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -48,6 +53,35 @@ const Profile = () => {
 
     fetchProfile();
   }, [user]);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        setPreviewImage(base64String);
+        localStorage.setItem('profilePicture', base64String);
+        Swal.fire({
+          icon: 'info',
+          title: 'Uploading...',
+          text: 'Saving your new profile picture',
+          timer: 1500,
+          showConfirmButton: false,
+          didOpen: () => Swal.showLoading()
+        }).then(() => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Profile picture updated!',
+            timer: 1500,
+            showConfirmButton: false
+          });
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleUpdate = () => {
     setEditing(false);
@@ -70,9 +104,18 @@ const Profile = () => {
 
   return (
     <div className="fade-in">
-      <div className="mb-4">
-        <h2 className="fw-bold text-dark">My Profile</h2>
-        <p className="text-secondary">Manage your personal information and account settings</p>
+      <div className="d-flex align-items-center gap-3 mb-4">
+        <CButton
+          color="light"
+          className="rounded-circle p-2 shadow-sm border-0 bg-white"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft size={20} className="text-dark" />
+        </CButton>
+        <div>
+          <h2 className="fw-bold text-dark m-0">My Profile</h2>
+          <p className="text-secondary m-0">Manage your personal information and account settings</p>
+        </div>
       </div>
 
       <CRow>
@@ -80,8 +123,25 @@ const Profile = () => {
           <CCard className="premium-card border-0 text-center">
             <CCardBody className="p-4">
               <div className="position-relative d-inline-block mb-4">
-                <CAvatar src={`https://ui-avatars.com/api/?name=${profile?.fullName}&background=6366f1&color=fff`} size="xl" className="shadow border border-4 border-white" style={{ width: '120px', height: '120px' }} />
-                <CButton color="primary" className="position-absolute bottom-0 end-0 rounded-circle p-2 shadow-sm" style={{ width: '40px', height: '40px' }}>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+                <CAvatar
+                  src={previewImage || `https://ui-avatars.com/api/?name=${profile?.fullName}&background=1B4F8A&color=fff`}
+                  size="xl"
+                  className="shadow border border-4 border-white"
+                  style={{ width: '120px', height: '120px', objectFit: 'cover' }}
+                />
+                <CButton
+                  color="primary"
+                  className="position-absolute bottom-0 end-0 rounded-circle p-2 shadow-sm border-0"
+                  style={{ width: '40px', height: '40px', backgroundColor: 'var(--primary-color)' }}
+                  onClick={() => fileInputRef.current.click()}
+                >
                   <Camera size={18} />
                 </CButton>
               </div>
@@ -120,8 +180,8 @@ const Profile = () => {
                 </h5>
                 <div className="d-flex gap-2">
                   {editing && (
-                    <CButton 
-                      color="light" 
+                    <CButton
+                      color="light"
                       className="rounded-3 fw-bold border"
                       onClick={() => setEditing(false)}
                     >
@@ -133,7 +193,7 @@ const Profile = () => {
                     className="rounded-3 fw-bold d-flex align-items-center gap-2 border-0"
                     onClick={() => editing ? handleUpdate() : setEditing(true)}
                   >
-                    {editing ? <><Save size={18} /> Save Changes</> : <><Edit2 size={18} /> Edit Profile</>}
+                    {editing ? <><Save size={18} /> Save Changes</> : <><Edit2 size={18} /> Edit</>}
                   </CButton>
                 </div>
               </div>

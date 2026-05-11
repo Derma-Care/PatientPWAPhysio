@@ -40,6 +40,7 @@ const DefaultLayout = () => {
   const navigate = useNavigate();
   const [visible, setVisible] = React.useState(true);
   const [clinic, setClinic] = React.useState(null);
+  const [userProfilePic, setUserProfilePic] = React.useState(localStorage.getItem('profilePicture'));
 
   React.useEffect(() => {
     const fetchClinic = async () => {
@@ -53,6 +54,19 @@ const DefaultLayout = () => {
       }
     };
     fetchClinic();
+    
+    // Watch for profile picture updates (this is a simple way without complex state management)
+    const handleStorageChange = () => {
+      setUserProfilePic(localStorage.getItem('profilePicture'));
+    };
+    window.addEventListener('storage', handleStorageChange);
+    // Also check periodically or on mount (since storage event only fires from other tabs)
+    const interval = setInterval(handleStorageChange, 2000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
   }, [user]);
 
   const handleLogout = () => {
@@ -158,7 +172,13 @@ const DefaultLayout = () => {
 
               <CDropdown variant="nav-item">
                 <CDropdownToggle className="py-0 pe-0 d-flex align-items-center no-caret" caret={false}>
-                  {(clinic?.hospitalLogo || clinic?.clinicLogo) ? (
+                  {userProfilePic ? (
+                    <CAvatar 
+                      src={userProfilePic} 
+                      className="shadow-sm cursor-pointer" 
+                      style={{ width: '45px', height: '45px', borderRadius: '12px', objectFit: 'cover' }} 
+                    />
+                  ) : (clinic?.hospitalLogo || clinic?.clinicLogo) ? (
                     <div
                       className="shadow-sm transition-all hover-scale cursor-pointer"
                       style={{
@@ -186,14 +206,21 @@ const DefaultLayout = () => {
                     </div>
                   ) : (
                     <CAvatar color="primary" textColor="white" className="fw-bold cursor-pointer" style={{ width: '45px', height: '45px', borderRadius: '12px' }}>
-                      {clinic?.name?.charAt(0) || 'K'}
+                      {user?.customerName?.charAt(0) || 'P'}
                     </CAvatar>
                   )}
                 </CDropdownToggle>
                 <CDropdownMenu className="pt-0 shadow-lg border-0 mt-3" placement="bottom-end" style={{ borderRadius: '16px', minWidth: '220px' }}>
                   <CDropdownHeader className="bg-light fw-bold py-3 text-dark rounded-top-4" style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <div className="d-flex align-items-center gap-3">
-                      <CAvatar color="primary" size="md" className="fw-bold">{user?.customerName?.charAt(0) || 'P'}</CAvatar>
+                      <CAvatar 
+                        src={userProfilePic || `https://ui-avatars.com/api/?name=${user?.customerName}&background=1B4F8A&color=fff`} 
+                        size="md" 
+                        className="fw-bold shadow-sm"
+                        style={{ objectFit: 'cover' }}
+                      >
+                        {!userProfilePic && (user?.customerName?.charAt(0) || 'P')}
+                      </CAvatar>
                       <div className="d-flex flex-column">
                         <span className="small text-secondary fw-semibold">Logged in as</span>
                         <span className="text-dark fw-bold text-truncate" style={{ maxWidth: '120px' }}>{user?.customerName}</span>
