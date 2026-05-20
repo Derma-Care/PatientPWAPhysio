@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, Activity } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import {
   CRow,
@@ -26,10 +26,11 @@ import {
   Info,
   ChevronRight,
   TrendingUp,
+  Activity,
   Image as ImageIcon,
   Video
 } from 'lucide-react';
-import { physiotherapyService, customerService } from '../services/api';
+import { physiotherapyService, localPhysiotherapyService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Swal from 'sweetalert2';
 
@@ -74,7 +75,13 @@ const MediaPreviewModal = ({ visible, onClose, mediaUrl, type }) => {
   );
 };
 
-const HomeExerciseCard = React.memo(({ item, index, onTrack, onPreview }) => {
+const HomeExerciseCard = React.memo(({ item, index, record, onTrack, onPreview, onViewProgress }) => {
+  const isCompleted = record?.status === 'completed';
+  const hasCompletedSession = record?.therapyrecord && record.therapyrecord.length > 0;
+  const totalSessions = parseInt(item.session || item.noOfSessions || item.sessions || 10, 10);
+  const completedSessions = record?.therapyrecord?.length || 0;
+  const remainingSessions = Math.max(0, totalSessions - completedSessions);
+
   return (
     <motion.div
       className="h-100"
@@ -98,8 +105,16 @@ const HomeExerciseCard = React.memo(({ item, index, onTrack, onPreview }) => {
               <span className="badge bg-light text-dark border px-2 py-1" style={{ fontSize: '0.7rem' }}>
                 {item.noOfSets || '3'} Sets x {item.noOfRepetitions || '10'} Reps
               </span>
+              {item.duration && (
+                <span className="badge bg-info bg-opacity-10 text-info px-2 py-1" style={{ fontSize: '0.7rem' }}>
+                  {item.duration}
+                </span>
+              )}
               <span className="badge bg-success bg-opacity-10 text-success px-2 py-1" style={{ fontSize: '0.7rem' }}>
-                Daily
+                {item.frequency || '3 times a day'}
+              </span>
+              <span className="badge bg-warning bg-opacity-10 text-warning px-2 py-1" style={{ fontSize: '0.7rem' }}>
+                {remainingSessions} sessions left
               </span>
             </div>
           </div>
@@ -164,13 +179,28 @@ const HomeExerciseCard = React.memo(({ item, index, onTrack, onPreview }) => {
         </div>
 
         {/* Compact Action */}
-        <CButton
-          className="btn-premium w-100 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm rounded-3"
-          style={{ fontSize: '0.85rem' }}
-          onClick={() => onTrack(item)}
-        >
-          Track Progress <ChevronRight size={16} />
-        </CButton>
+        <div className="d-flex gap-2 w-100 mt-2">
+          {!isCompleted && (
+            <CButton
+              className="btn-premium flex-grow-1 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm rounded-3"
+              style={{ fontSize: '0.85rem' }}
+              onClick={() => onTrack(item)}
+            >
+              Track Progress <ChevronRight size={16} />
+            </CButton>
+          )}
+          {hasCompletedSession && (
+            <CButton
+              variant="outline"
+              color="primary"
+              className="flex-grow-1 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm rounded-3"
+              style={{ fontSize: '0.85rem', borderWidth: '1.5px' }}
+              onClick={() => onViewProgress(record)}
+            >
+              View Progress <TrendingUp size={16} />
+            </CButton>
+          )}
+        </div>
       </div>
     </motion.div>
   );
@@ -181,6 +211,10 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
   const [repsDone, setRepsDone] = useState('');
   const [notes, setNotes] = useState('');
   const [completed, setCompleted] = useState(false);
+  const [beforeImage, setBeforeImage] = useState('');
+  const [afterImage, setAfterImage] = useState('');
+  const [beforeVideo, setBeforeVideo] = useState('');
+  const [afterVideo, setAfterVideo] = useState('');
 
   useEffect(() => {
     if (exercise) {
@@ -188,8 +222,113 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
       setRepsDone(exercise.noOfRepetitions || '');
       setCompleted(false);
       setNotes('');
+      setBeforeImage('');
+      setAfterImage('');
+      setBeforeVideo('');
+      setAfterVideo('');
     }
   }, [exercise, visible]);
+
+  const compressImage = (file, maxSizeMB) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          let canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          let quality = 0.9;
+          const maxBytes = maxSizeMB * 1024 * 1024;
+
+          const compress = () => {
+            canvas.width = width;
+            canvas.height = height;
+            let ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            let dataUrl = canvas.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', quality);
+            let bytes = Math.round((dataUrl.length * 3) / 4);
+
+            if (bytes <= maxBytes || quality <= 0.1 || width <= 100) {
+              resolve(dataUrl);
+            } else {
+              width = Math.floor(width * 0.8);
+              height = Math.floor(height * 0.8);
+              quality -= 0.1;
+              compress();
+            }
+          };
+          compress();
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  const handleFileChange = async (e, key, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const sizeInMB = file.size / (1024 * 1024);
+
+    if (sizeInMB > 10) {
+      Swal.fire({
+        icon: 'error',
+        title: 'File too large',
+        text: `Maximum file size is 10MB. Please select a smaller file.`,
+        customClass: { popup: 'premium-swal-popup' }
+      });
+      e.target.value = '';
+      return;
+    }
+
+    const setBase64 = (base64Str) => {
+      if (key === 'beforeImage') setBeforeImage(base64Str);
+      else if (key === 'afterImage') setAfterImage(base64Str);
+      else if (key === 'beforeVideo') setBeforeVideo(base64Str);
+      else if (key === 'afterVideo') setAfterVideo(base64Str);
+    };
+
+    if (type === 'image' && sizeInMB > 1) {
+      try {
+        const compressedDataUrl = await compressImage(file, 1);
+        setBase64(compressedDataUrl.split(',')[1]);
+      } catch (error) {
+        console.error("Compression failed", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Compression failed',
+          text: 'Could not compress the image.',
+          customClass: { popup: 'premium-swal-popup' }
+        });
+        e.target.value = '';
+      }
+      return;
+    }
+
+    if (type === 'video' && sizeInMB > 1) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Video too large',
+        text: `Video must be under 1MB. Browser compression for videos is not supported.`,
+        customClass: { popup: 'premium-swal-popup' }
+      });
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result.split(',')[1];
+      setBase64(base64String);
+    };
+    reader.readAsDataURL(file);
+  };
 
   if (!exercise) return null;
 
@@ -273,7 +412,7 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
         </div>
 
         {/* Notes */}
-        <div>
+        <div className="mb-4">
           <label className="text-secondary small fw-bold text-uppercase d-block mb-2" style={{ fontSize: '0.7rem', letterSpacing: '0.5px' }}>
             Observations (Optional)
           </label>
@@ -286,15 +425,179 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
             onChange={(e) => setNotes(e.target.value)}
           ></textarea>
         </div>
+
+        {/* File Uploads (Before & After) */}
+        <CRow className="g-3">
+          <CCol md={6}>
+            <div className="p-3 border rounded-3 bg-light h-100 d-flex flex-column gap-2">
+              <h6 className="fw-bold mb-2 text-primary d-flex align-items-center gap-2" style={{ fontSize: '0.85rem' }}>
+                <ImageIcon size={16} /> Before Session
+              </h6>
+              <div>
+                <label className="text-secondary small fw-bold text-uppercase d-block mb-1" style={{ fontSize: '0.65rem' }}>
+                  Before Image
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="form-control form-control-sm"
+                  onChange={(e) => handleFileChange(e, 'beforeImage', 'image')}
+                />
+              </div>
+              <div>
+                <label className="text-secondary small fw-bold text-uppercase d-block mb-1" style={{ fontSize: '0.65rem' }}>
+                  Before Video
+                </label>
+                <input
+                  type="file"
+                  accept="video/*"
+                  className="form-control form-control-sm"
+                  onChange={(e) => handleFileChange(e, 'beforeVideo', 'video')}
+                />
+              </div>
+            </div>
+          </CCol>
+          <CCol md={6}>
+            <div className="p-3 border rounded-3 bg-light h-100 d-flex flex-column gap-2">
+              <h6 className="fw-bold mb-2 text-success d-flex align-items-center gap-2" style={{ fontSize: '0.85rem' }}>
+                <ImageIcon size={16} /> After Session
+              </h6>
+              <div>
+                <label className="text-secondary small fw-bold text-uppercase d-block mb-1" style={{ fontSize: '0.65rem' }}>
+                  After Image
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="form-control form-control-sm"
+                  onChange={(e) => handleFileChange(e, 'afterImage', 'image')}
+                />
+              </div>
+              <div>
+                <label className="text-secondary small fw-bold text-uppercase d-block mb-1" style={{ fontSize: '0.65rem' }}>
+                  After Video
+                </label>
+                <input
+                  type="file"
+                  accept="video/*"
+                  className="form-control form-control-sm"
+                  onChange={(e) => handleFileChange(e, 'afterVideo', 'video')}
+                />
+              </div>
+            </div>
+          </CCol>
+        </CRow>
       </CModalBody>
 
       <CModalFooter className="border-0 px-4 pb-4 pt-0">
         <CButton
-          className="btn-premium w-100 py-2 fw-bold rounded-3 shadow-sm"
+          className="btn-premium w-100 py-2 fw-bold rounded-3 shadow-sm mt-3"
           style={{ background: 'var(--primary-gradient)', border: 'none', fontSize: '0.9rem' }}
-          onClick={() => onSave({ exercise, setsDone: setsDone || '0', repsDone: repsDone || '0', notes, completed: true })}
+          onClick={() => onSave({ exercise, setsDone: setsDone || '0', repsDone: repsDone || '0', notes, completed, beforeImage, afterImage, beforeVideo, afterVideo })}
         >
           {saving ? <CSpinner size="sm" /> : 'Save Activity Log'}
+        </CButton>
+      </CModalFooter>
+    </CModal>
+  );
+};
+
+const ViewProgressModal = ({ record, visible, onClose, onPreview }) => {
+  if (!record) return null;
+
+  return (
+    <CModal visible={visible} onClose={onClose} alignment="center" className="premium-modal" size="lg" backdrop="static">
+      <CModalHeader className="border-0 px-4 pt-4 pb-0" closeButton={false}>
+        <CModalTitle className="fw-bold fs-5 ls-n1 d-flex align-items-center gap-2">
+          <TrendingUp size={20} className="text-primary" /> Exercise Progress History
+        </CModalTitle>
+        <CButton variant="ghost" onClick={onClose} className="p-0 border-0"><X size={24} /></CButton>
+      </CModalHeader>
+
+      <CModalBody className="p-4">
+        <div className="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
+          <div>
+            <h5 className="fw-bold text-dark m-0">{record.name ? `${record.name}'s Routine` : "Exercise Routine"}</h5>
+            <p className="text-secondary small mt-1 mb-0">Logged sessions and observations</p>
+          </div>
+          <span className={`badge ${record.status?.toLowerCase() === 'completed' ? 'bg-success' : 'bg-primary'} px-3 py-2 rounded-pill fw-bold`}>
+            Status: {record.status}
+          </span>
+        </div>
+
+        <div className="timeline-container" style={{ maxHeight: '50vh', overflowY: 'auto', paddingRight: '8px' }}>
+          {record.therapyrecord?.map((session, index) => (
+            <div key={index} className="mb-4 p-3 rounded-3 border bg-light position-relative">
+              <div className="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+                <span className="badge bg-primary px-2 py-1" style={{ fontSize: '0.75rem' }}>
+                  Session {session.sessioncount} of {session.session}
+                </span>
+                <span className="text-secondary small fw-bold d-flex align-items-center gap-1">
+                  <Calendar size={12} /> {session.date}
+                </span>
+              </div>
+
+              <div className="d-flex flex-wrap gap-3 mb-3">
+                <span className="small text-dark fw-semibold">
+                  Sets Done: <span className="fw-bold text-primary">{session.setsdone}</span>
+                </span>
+                <span className="small text-dark fw-semibold">
+                  Repetitions Completed: <span className={`fw-bold ${session.repitationdone ? 'text-success' : 'text-danger'}`}>{session.repitationdone ? 'Yes' : 'No'}</span>
+                </span>
+                <span className="small text-dark fw-semibold">
+                  Session Completed: <span className={`fw-bold ${session.sessioncompleted ? 'text-success' : 'text-danger'}`}>{session.sessioncompleted ? 'Yes' : 'No'}</span>
+                </span>
+              </div>
+
+              {session.notes && (
+                <div className="p-2 rounded bg-white border small text-secondary mb-3">
+                  <strong>Notes:</strong> {session.notes}
+                </div>
+              )}
+
+              {/* Media Previews in Timeline */}
+              <div className="d-flex flex-wrap gap-2">
+                {(() => {
+                  const ensureBase64Prefix = (str, type) => {
+                    if (!str || str === "null") return null;
+                    if (str.startsWith('data:') || str.startsWith('http')) return str;
+                    return `data:${type === 'video' ? 'video/mp4' : 'image/jpeg'};base64,${str}`;
+                  };
+
+                  const mediaItems = [
+                    { key: 'beforeImage', label: 'Before Image', type: 'image', icon: ImageIcon, color: 'primary' },
+                    { key: 'afterImage', label: 'After Image', type: 'image', icon: ImageIcon, color: 'success' },
+                    { key: 'beforeVideo', label: 'Before Video', type: 'video', icon: Video, color: 'info' },
+                    { key: 'afterVideo', label: 'After Video', type: 'video', icon: Video, color: 'warning' }
+                  ];
+
+                  return mediaItems.map(m => {
+                    const data = session[m.key];
+                    if (!data || data === "null") return null;
+                    const fullUrl = ensureBase64Prefix(data, m.type);
+                    return (
+                      <CButton
+                        key={m.key}
+                        color={m.color}
+                        variant="ghost"
+                        size="sm"
+                        className={`d-flex align-items-center gap-1 rounded-pill px-2 py-1 bg-${m.color} bg-opacity-10`}
+                        onClick={() => onPreview(fullUrl, m.type)}
+                        style={{ fontSize: '0.7rem', fontWeight: '600' }}
+                      >
+                        <m.icon size={12} /> {m.label}
+                      </CButton>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          ))}
+        </div>
+      </CModalBody>
+      <CModalFooter className="border-0 px-4 pb-4 pt-0">
+        <CButton color="secondary" className="w-100 py-2 fw-bold rounded-3" onClick={onClose}>
+          Close History
         </CButton>
       </CModalFooter>
     </CModal>
@@ -312,6 +615,12 @@ const HomeExercises = () => {
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [previewData, setPreviewData] = useState({ visible: false, url: '', type: '' });
+  const [doctorId, setDoctorId] = useState('');
+  const [patientId, setPatientId] = useState('');
+  const [therapyRecords, setTherapyRecords] = useState({});
+  const [patientName, setPatientName] = useState('');
+  const [viewModalVisible, setViewModalVisible] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
 
   const queryParams = useMemo(() => {
     const query = new URLSearchParams(location.search);
@@ -320,6 +629,7 @@ const HomeExercises = () => {
       therapistRecordId: query.get('therapistRecordId'),
       clinicId: query.get('clinicId'),
       branchId: query.get('branchId'),
+      doctorId: query.get('doctorId') || '',
     };
   }, [location.search]);
 
@@ -327,16 +637,10 @@ const HomeExercises = () => {
     const fetchExercises = async () => {
       try {
         setLoading(true);
-        let pid = queryParams.patientId;
-
-        // Robust patientId recovery
-        if (!pid && user?.customerId) {
-          const bookingsRes = await customerService.getBookings(user.customerId);
-          const currentBooking = bookingsRes.data?.find(b => b.bookingId === id);
-          pid = currentBooking?.patientId;
-        }
-
+        const pid = queryParams.patientId;
         if (!pid) return;
+
+        setPatientId(pid);
 
         const response = await physiotherapyService.getVisitHistory(pid, id);
         const history = response.data || [];
@@ -346,28 +650,68 @@ const HomeExercises = () => {
           ? history.find(v => v.physiotherapyDoctorData?.therapistRecordId === queryParams.therapistRecordId)
           : history[0];
 
-        const therapyPrograms = visit?.physiotherapyDoctorData?.therapySessions?.[0]?.programs || [];
-        const homeExercisePlan = visit?.physiotherapyDoctorData?.exercisePlan?.homeExercises || [];
+        if (!visit) return;
 
-        // If we have a specific home exercise plan, show only that.
-        // Otherwise, fallback to the session programs.
+        const physioData = visit.physiotherapyDoctorData;
+
+        // Extract doctorId from treatmentPlan (as per API response)
+        const resolvedDoctorId =
+          physioData?.treatmentPlan?.doctorId ||
+          queryParams.doctorId ||
+          "";
+        if (resolvedDoctorId) setDoctorId(resolvedDoctorId);
+
+        // Extract patientName from patientInfo (as per API response)
+        const resolvedPatientName = physioData?.patientInfo?.patientName || "";
+        if (resolvedPatientName) setPatientName(resolvedPatientName);
+
+        // Use clinicId/branchId from visit data if not in URL
+        const resolvedClinicId = queryParams.clinicId || physioData?.clinicId || "";
+        const resolvedBranchId = queryParams.branchId || physioData?.branchId || "";
+
+        // Build exercise list from homeExercises plan
+        const homeExercisePlan = physioData?.exercisePlan?.homeExercises || [];
+        const therapyPrograms = physioData?.therapySessions?.[0]?.programs || [];
+
         let allExercises = [];
-
         if (homeExercisePlan.length > 0) {
           allExercises = homeExercisePlan.map(ex => ({
             ...ex,
             exerciseName: ex.name,
             noOfSets: ex.sets,
             noOfRepetitions: ex.reps,
-            // Ensure instructions and videoUrl are mapped correctly
             instructions: ex.instructions,
-            youtubeUrl: ex.videoUrl
+            youtubeUrl: ex.videoUrl,
           }));
         } else {
           allExercises = therapyPrograms;
         }
 
         setExercises(allExercises);
+
+        // Fetch existing therapy records for each exercise
+        const recordsMap = {};
+        if (resolvedClinicId && resolvedBranchId) {
+          await Promise.all(
+            allExercises.map(async (ex) => {
+              const exId = (ex.id && ex.id.trim()) || ex.exerciseId || ex.programId || ex.therapyExercisesId
+                || (ex.name ? ex.name.trim().replace(/\s+/g, '_').toUpperCase() : '');
+              if (exId) {
+                try {
+                  const record = await localPhysiotherapyService.getByClinicBranchExercise(
+                    resolvedClinicId,
+                    resolvedBranchId,
+                    exId
+                  );
+                  if (record) recordsMap[exId] = record;
+                } catch (err) {
+                  console.warn(`No existing therapy record for exercise ${exId}:`, err);
+                }
+              }
+            })
+          );
+        }
+        setTherapyRecords(recordsMap);
       } catch (error) {
         console.error('Error fetching home exercises:', error);
       } finally {
@@ -376,7 +720,7 @@ const HomeExercises = () => {
     };
 
     fetchExercises();
-  }, [id, queryParams.patientId, queryParams.therapistRecordId, user]);
+  }, [id, queryParams.patientId, queryParams.therapistRecordId, queryParams.clinicId, queryParams.branchId, queryParams.doctorId]);
 
   const handleTrack = (exercise) => {
     setSelectedExercise(exercise);
@@ -390,15 +734,103 @@ const HomeExercises = () => {
   const handleSave = async (data) => {
     try {
       setSaving(true);
-      await physiotherapyService.saveHomeExercise({
-        patientId: queryParams.patientId,
-        exerciseId: data.exercise.exerciseId || data.exercise.programId,
-        notes: data.notes,
-        setsDone: data.setsDone,
-        repsDone: data.repsDone,
+      const exerciseId = (data.exercise.id && data.exercise.id.trim())
+        || data.exercise.exerciseId
+        || data.exercise.programId
+        || data.exercise.therapyExercisesId
+        || (data.exercise.name ? data.exercise.name.trim().replace(/\s+/g, '_').toUpperCase() : '')
+        || "";
+      const existingRecord = therapyRecords[exerciseId];
+
+      const totalSessions = parseInt(data.exercise.session || data.exercise.noOfSessions || data.exercise.sessions || 10, 10);
+      const sessionCountDone = existingRecord ? (existingRecord.therapyrecord?.length || 0) + 1 : 1;
+      const remainingSessions = Math.max(0, totalSessions - sessionCountDone);
+
+      const newSession = {
+        setsdone: parseInt(data.setsDone, 10) || 0,
+        repitationdone: parseInt(data.repsDone, 10) > 0,
+        sessioncount: sessionCountDone,
+        session: totalSessions,
+        sessioncompleted: data.completed,
         date: new Date().toISOString().split('T')[0],
-        status: 'Completed'
-      });
+        excerciseId: exerciseId,
+        notes: data.notes || "",
+        beforeImage: data.beforeImage || "",
+        afterImage: data.afterImage || "",
+        beforeVideo: data.beforeVideo || "",
+        afterVideo: data.afterVideo || "",
+        // sessioncountremaining: remainingSessions
+      };
+
+      let updatedRecord;
+      if (existingRecord) {
+        const updatedSessions = [...(existingRecord.therapyrecord || []), newSession];
+        const isCompleted = updatedSessions.length >= newSession.session;
+        updatedRecord = {
+          ...existingRecord,
+          // status: isCompleted ? "COMPLETED" : "ACTIVE",
+          doctorid: existingRecord.doctorid || doctorId || "",
+          frequency: data.exercise.frequency || existingRecord.frequency || "3 times a day",
+          duration: data.exercise.duration || existingRecord.duration || "",
+          // sessioncountremaining: remainingSessions,
+          therapyrecord: updatedSessions
+        };
+      } else {
+        const isCompleted = 1 >= newSession.session;
+        updatedRecord = {
+          clincinid: queryParams.clinicId || "",
+          brnchid: queryParams.branchId || "",
+          patientid: patientId || "",
+          doctorid: doctorId || "",
+          name: patientName || "",
+          // status: isCompleted ? "COMPLETED" : "ACTIVE",
+          excerciseId: exerciseId,
+          frequency: data.exercise.frequency || " ",
+          duration: data.exercise.duration || "",
+          // sessioncountremaining: remainingSessions,
+          therapyrecord: [newSession]
+        };
+      }
+
+      console.log("========== THERAPY RECORD PAYLOAD ==========");
+      console.log("Existing Record Found:", !!existingRecord);
+      console.log("Exercise ID:", exerciseId);
+      console.log("Total Sessions Expected:", totalSessions);
+      console.log("Current Session Count:", sessionCountDone);
+      console.log("Full Payload to Send:", JSON.stringify(updatedRecord, null, 2));
+      console.log("=========================================");
+
+      let response;
+      if (existingRecord) {
+        const recordId = existingRecord.id || existingRecord.therapyrecordid;
+        console.log("Updating existing record with ID:", recordId);
+        console.log("PUT Endpoint: /api/customer/therapy-records/update/" + recordId);
+        response = await localPhysiotherapyService.updateTherapyRecord(recordId, updatedRecord);
+        console.log("Update Response:", response);
+      } else {
+        console.log("Creating new therapy record");
+        console.log("POST Endpoint: /api/customer/therapy-records/create");
+        response = await localPhysiotherapyService.createTherapyRecord(updatedRecord);
+        console.log("Create Response:", response);
+      }
+
+      // Re-fetch the therapy record for this exercise
+      try {
+        const freshRecord = await localPhysiotherapyService.getByClinicBranchExercise(
+          queryParams.clinicId || "",
+          queryParams.branchId || "",
+          exerciseId
+        );
+        if (freshRecord) {
+          console.log("Fresh record after save:", freshRecord);
+          setTherapyRecords(prev => ({
+            ...prev,
+            [exerciseId]: freshRecord
+          }));
+        }
+      } catch (err) {
+        console.error("Error re-fetching therapy record after save:", err);
+      }
 
       setModalVisible(false);
       Swal.fire({
@@ -411,17 +843,29 @@ const HomeExercises = () => {
         customClass: { popup: 'premium-swal-popup' }
       });
     } catch (error) {
+      console.error("========== SAVE ERROR ==========");
+      console.error("Error Message:", error.message);
+      console.error("Error Status:", error.response?.status);
+      console.error("Error Data:", error.response?.data);
+      console.error("Full Error:", error);
+      console.error("===============================");
+
       setModalVisible(false);
       Swal.fire({
-        icon: 'success',
-        title: 'Logged Successfully',
-        text: 'Your progress was saved.',
-        timer: 2000,
-        showConfirmButton: false
+        icon: 'error',
+        title: 'Error Logging Progress',
+        text: error.response?.data?.message || 'There was an issue saving your progress. Please try again.',
+        timer: 3000,
+        showConfirmButton: true
       });
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleViewProgress = (record) => {
+    setSelectedRecord(record);
+    setViewModalVisible(true);
   };
 
   if (loading) {
@@ -469,11 +913,21 @@ const HomeExercises = () => {
 
       <CRow className="g-4">
         {exercises.length > 0 ? (
-          exercises.map((item, index) => (
-            <CCol key={index} xs={12} sm={6} lg={4} xl={3}>
-              <HomeExerciseCard item={item} index={index} onTrack={handleTrack} onPreview={handlePreview} />
-            </CCol>
-          ))
+          exercises.map((item, index) => {
+            const exerciseId = item.id || item.exerciseId || item.programId || item.therapyExercisesId || "";
+            return (
+              <CCol key={index} xs={12} sm={6} lg={4} xl={3}>
+                <HomeExerciseCard
+                  item={item}
+                  index={index}
+                  record={therapyRecords[exerciseId]}
+                  onTrack={handleTrack}
+                  onPreview={handlePreview}
+                  onViewProgress={handleViewProgress}
+                />
+              </CCol>
+            );
+          })
         ) : (
           <CCol xs={12}>
             <div className="empty-state-container shadow-sm">
@@ -495,6 +949,13 @@ const HomeExercises = () => {
         onClose={() => setModalVisible(false)}
         onSave={handleSave}
         saving={saving}
+      />
+
+      <ViewProgressModal
+        record={selectedRecord}
+        visible={viewModalVisible}
+        onClose={() => setViewModalVisible(false)}
+        onPreview={handlePreview}
       />
 
       <MediaPreviewModal

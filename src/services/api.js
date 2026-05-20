@@ -10,18 +10,51 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000,
 });
 
 // Request interceptor for adding tokens if needed
 api.interceptors.request.use(
   (config) => {
+    console.log(`[API Request] ${config.method.toUpperCase()} ${config.baseURL}${config.url}`);
+    console.log('[Request Headers]', config.headers);
+    console.log('[Request Data]', config.data);
+
     const user = JSON.parse(sessionStorage.getItem('user'));
     if (user && user.token) {
       config.headers.Authorization = `Bearer ${user.token}`;
+      console.log('[Auth Token Added]', `Bearer ${user.token.substring(0, 20)}...`);
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('[Request Error]', error);
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor for logging
+api.interceptors.response.use(
+  (response) => {
+    console.log(`[API Response] ${response.status} - ${response.statusText}`);
+    console.log('[Response Data]', response.data);
+    return response;
+  },
+  (error) => {
+    console.error('[API Error]', {
+      message: error.message,
+      code: error.code,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        baseURL: error.config?.baseURL,
+      }
+    });
+    return Promise.reject(error);
+  }
 );
 
 export const authService = {
@@ -67,9 +100,27 @@ export const physiotherapyService = {
     return response.data;
   },
   saveHomeExercise: async (data) => {
-    const response = await api.post('/api/physiotherapy-doctor/saveHomeExercise', data);
+    const response = await api.post('/api/customer/therapy-records/create', data);
     return response.data;
   },
+};
+
+export const localPhysiotherapyService = {
+  getByClinicBranchExercise: async (clinicId, branchId, exerciseId) => {
+    console.log(`[localPhysiotherapyService] Fetching record for: clinic=${clinicId}, branch=${branchId}, exercise=${exerciseId}`);
+    const response = await api.get(`/api/customer/therapy-records/getByClinicBranchExercise/${clinicId}/${branchId}/${exerciseId}`);
+    return response.data;
+  },
+  createTherapyRecord: async (data) => {
+    console.log('[localPhysiotherapyService] Creating therapy record');
+    const response = await api.post(`/api/customer/therapy-records/create`, data);
+    return response.data;
+  },
+  updateTherapyRecord: async (id, data) => {
+    console.log(`[localPhysiotherapyService] Updating therapy record with ID: ${id}`);
+    const response = await api.put(`/api/customer/therapy-records/update/${id}`, data);
+    return response.data;
+  }
 };
 
 export default api;

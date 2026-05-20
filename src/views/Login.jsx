@@ -207,11 +207,11 @@ const Login = () => {
                 </div>
               )}
 
-              <div className="mt-4 text-center">
+              {/* <div className="mt-4 text-center">
                 <p className="text-xs text-secondary">
                   Forgot password? <span className="text-primary fw-bold cursor-pointer hover-primary">Reset here</span>
                 </p>
-              </div>
+              </div> */}
             </form>
           )}
         </div>

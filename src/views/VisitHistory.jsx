@@ -387,7 +387,7 @@ const VisitHistory = () => {
                             <CButton
                               className="btn-premium visit-action-btn"
                               style={{ background: 'var(--primary-gradient)' }}
-                              onClick={() => navigate(`/bookings/${id}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}`)}
+                              onClick={() => navigate(`/bookings/${id}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&doctorId=${visit.physiotherapyDoctorData?.doctorId || ''}`)}
                             >
                               <Home size={18} /> Home Exercises
                             </CButton>
