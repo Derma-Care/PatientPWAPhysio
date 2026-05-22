@@ -189,7 +189,7 @@ const VisitHistory = () => {
     return () => abortController.abort();
   }, [id, location.search, user]);
 
-  /* Loading */
+  /* ── Loading ── */
   if (loading) {
     return (
       <div className="app-loading">
@@ -217,9 +217,24 @@ const VisitHistory = () => {
 
         {history.length > 0 ? (
           <>
+            {/* Summary count strip */}
+            <div
+              className="app-card d-flex align-items-center gap-2 mb-2"
+              style={{ padding: '10px 16px' }}
+            >
+              <ClipboardList size={15} style={{ color: 'var(--c-navy)' }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-text-1)' }}>
+                {history.length} Visit{history.length !== 1 ? 's' : ''} Recorded
+              </span>
+            </div>
+
             <CAccordion flush>
               {history.map((visit, idx) => (
-                <div className="app-card" key={idx} style={{ padding: 0, marginBottom: 12 }}>
+                <div
+                  className="app-card"
+                  key={idx}
+                  style={{ padding: 0, marginBottom: 10 }}
+                >
                   <CAccordionItem itemKey={idx}>
 
                     {/* ── Accordion Header ── */}
@@ -228,32 +243,66 @@ const VisitHistory = () => {
                         className="w-100 d-flex align-items-center gap-3 pe-2"
                         style={{ minWidth: 0 }}
                       >
-                        {/* visit number badge */}
+                        {/* Visit number badge */}
                         <div className="app-visit-num" style={{ flexShrink: 0 }}>
                           {idx + 1}
                         </div>
 
-                        {/* visit info */}
+                        {/* Visit info */}
                         <div style={{ minWidth: 0, flex: 1 }}>
-                          <p className="app-card-title" style={{ marginBottom: 2 }}>
+                          <p className="app-card-title" style={{ marginBottom: 3 }}>
                             Visit #{visit.visitNumber}
                           </p>
-                          <p className="app-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <p
+                            className="app-card-sub"
+                            style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}
+                          >
                             <Calendar size={11} />
                             {visit.visitDate}
-                            <Clock size={11} style={{ marginLeft: 4 }} />
+                            <Clock size={11} style={{ marginLeft: 2 }} />
                             {visit.visitTime}
                           </p>
                         </div>
 
-
-
+                        {/* PDF indicator chip — only if report exists */}
+                        {(visit.prescriptionPdf ||
+                          visit.reportPdf ||
+                          visit.physiotherapyDoctorData?.prescriptionPdf ||
+                          visit.physiotherapyDoctorData?.reportPdf) && (
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                background: 'var(--c-navy-soft, #eef2ff)',
+                                color: 'var(--c-navy)',
+                                borderRadius: 20,
+                                padding: '3px 10px',
+                                fontSize: 11,
+                                fontWeight: 700,
+                                flexShrink: 0,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              <FileText size={11} />
+                              Report
+                            </div>
+                          )}
                       </div>
                     </CAccordionHeader>
 
                     {/* ── Accordion Body ── */}
                     <CAccordionBody style={{ padding: '0 0 4px' }}>
-                      <div style={{ padding: '4px 20px 20px' }}>
+                      <div style={{ padding: '8px 16px 20px' }}>
+
+                        {/* Divider */}
+                        <div
+                          style={{
+                            height: 1,
+                            background: 'var(--c-border, #e9ecef)',
+                            marginBottom: 16,
+                          }}
+                        />
 
                         {/* Prescription / Report File */}
                         {(() => {
@@ -262,7 +311,19 @@ const VisitHistory = () => {
                             visit.reportPdf ||
                             visit.physiotherapyDoctorData?.prescriptionPdf ||
                             visit.physiotherapyDoctorData?.reportPdf;
-                          if (!pdfData) return null;
+
+                          if (!pdfData) return (
+                            <div
+                              className="d-flex flex-column align-items-center justify-content-center gap-2"
+                              style={{
+                                padding: '28px 0',
+                                color: 'var(--c-text-3, #adb5bd)',
+                              }}
+                            >
+                              <FileText size={36} strokeWidth={1.2} />
+                              <p style={{ fontSize: 13, margin: 0 }}>No documents for this visit</p>
+                            </div>
+                          );
 
                           const openPdf = async () => {
                             try {
@@ -286,21 +347,34 @@ const VisitHistory = () => {
                           };
 
                           return (
-                            <div className="  normal d-flex flex-column gap-2 justify-content-start align-items-start" style={{ cursor: 'default', marginTop: 12 }}>
-                              <div className="d-flex flex-row justify-content-center align-items-center gap-2">
-                                <div className="app-report-icon app-icon-navy  ">
+                            <div
+                              className="app-card"
+                              style={{
+                                padding: '14px 16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: 12,
+                                flexWrap: 'wrap',
+                              }}
+                            >
+                              {/* Left — icon + label */}
+                              <div className="d-flex align-items-center gap-3">
+                                <div className="app-report-icon app-icon-navy">
                                   <FileText size={18} />
                                 </div>
                                 <div>
-                                  <p className="app-report-name">Prescription / Report</p>
-                                  <p className="app-report-meta">Visit #{visit.visitNumber}</p>
+                                  <p className="app-report-name" style={{ marginBottom: 2 }}>
+                                    Prescription / Report
+                                  </p>
+                                  <p className="app-report-meta">
+                                    Visit #{visit.visitNumber}
+                                  </p>
                                 </div>
-
-
                               </div>
-                              <div className='mt-3 d-flex justify-content-end align-items-end align-self-end gap-2'>
 
-                                {/* View */}
+                              {/* Right — action buttons */}
+                              <div className="d-flex gap-2">
                                 <button
                                   className="app-btn-navy"
                                   style={{ padding: '7px 14px', fontSize: 12 }}
@@ -309,10 +383,9 @@ const VisitHistory = () => {
                                     if (url) setPreviewData({ visible: true, url, type: 'pdf' });
                                   }}
                                 >
-                                  <FileText size={14} /> View
+                                  <FileText size={13} /> View
                                 </button>
 
-                                {/* Download */}
                                 <button
                                   className="app-btn-orange"
                                   style={{ padding: '7px 14px', fontSize: 12 }}
@@ -344,7 +417,7 @@ const VisitHistory = () => {
                                     }
                                   }}
                                 >
-                                  <Download size={14} /> Download
+                                  <Download size={13} /> Download
                                 </button>
                               </div>
                             </div>

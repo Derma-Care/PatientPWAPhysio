@@ -121,6 +121,13 @@ export const physiotherapyService = {
   },
 };
 
+export const paymentService = {
+  getPayment: async (bookingId) => {
+    const response = await api.get(`/api/physiotherapy-doctor/payment/${bookingId}`);
+    return response.data;
+  },
+};
+
 export const localPhysiotherapyService = {
   getByClinicBranchExercise: async (clinicId, branchId, therapistRecordId, patientId, exerciseId) => {
     console.log(`[localPhysiotherapyService] Fetching record for: clinic=${clinicId}, branch=${branchId}, therapistRecord=${therapistRecordId}, patient=${patientId}, exercise=${exerciseId}`);

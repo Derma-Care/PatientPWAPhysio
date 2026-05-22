@@ -486,7 +486,7 @@ const SessionTracking = () => {
         <div className="app-hero-inner">
           <button
             className="app-back-btn"
-            onClick={() => navigate(`/bookings/${id}/history`)}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft size={14} /> Back to History
           </button>

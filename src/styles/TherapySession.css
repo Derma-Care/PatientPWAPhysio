@@ -1,0 +1,386 @@
+/* ═══════════════════════════════════════════════════════════════
+   THERAPY SESSIONS — add to your VisitDetails.css
+   Uses your existing theme tokens from theme.css
+   All class names are prefixed vd- so nothing conflicts.
+═══════════════════════════════════════════════════════════════ */
+
+/* ── SESSION ROOT ────────────────────────────────────────────── */
+.vd-sessions-root {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.vd-session-block {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* ── PROGRAM HEADER ──────────────────────────────────────────── */
+.vd-prog-header {
+    background: var(--c-navy);
+    border-radius: var(--r-xl);
+    overflow: hidden;
+    box-shadow: var(--s-navy);
+}
+
+.vd-prog-header-inner {
+    position: relative;
+    padding: 18px 20px;
+    z-index: 1;
+}
+
+.vd-prog-glow {
+    position: absolute;
+    top: -24px;
+    right: -24px;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(249, 115, 22, 0.28) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.vd-prog-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    position: relative;
+    z-index: 1;
+}
+
+.vd-prog-name {
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+    letter-spacing: -0.2px;
+}
+
+.vd-prog-cost-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+}
+
+.vd-prog-cost-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.vd-prog-cost-val {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--c-orange);
+    letter-spacing: -0.3px;
+}
+
+/* ── THERAPY BLOCK ───────────────────────────────────────────── */
+.vd-therapy-block {
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    border: 1px solid var(--c-border);
+    box-shadow: var(--s-sm);
+}
+
+.vd-therapy-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 16px;
+    border-bottom: 2px solid transparent;
+}
+
+.vd-therapy-header--navy {
+    background: var(--c-surface);
+    border-bottom-color: var(--c-navy);
+}
+
+.vd-therapy-header--orange {
+    background: var(--c-surface);
+    border-bottom-color: var(--c-orange);
+}
+
+.vd-therapy-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vd-therapy-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--r-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.vd-therapy-icon--navy {
+    background: var(--c-navy-xlight);
+    color: var(--c-navy);
+}
+
+.vd-therapy-icon--orange {
+    background: var(--c-orange-light);
+    color: var(--c-orange-dark);
+}
+
+.vd-therapy-name {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--c-text);
+    line-height: 1.2;
+}
+
+.vd-therapy-count {
+    font-size: 11px;
+    color: var(--c-text-2);
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+.vd-therapy-price-pill {
+    font-size: 12px;
+    font-weight: 800;
+    border-radius: var(--r-pill);
+    padding: 4px 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.vd-therapy-price-pill--navy {
+    background: var(--c-navy-xlight);
+    color: var(--c-navy-mid);
+    border: 1px solid var(--c-navy-light);
+}
+
+.vd-therapy-price-pill--orange {
+    background: var(--c-orange-light);
+    color: var(--c-orange-dark);
+    border: 1px solid var(--c-orange-mid);
+}
+
+/* ── EXERCISES WRAP ──────────────────────────────────────────── */
+.vd-exercises-wrap {
+    background: var(--c-surface-2);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ── EXERCISE CARD ───────────────────────────────────────────── */
+.vd-ex-card {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+}
+
+/* Card header */
+.vd-ex-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--c-surface-3);
+    border-bottom: 1px solid var(--c-border);
+    gap: 8px;
+}
+
+.vd-ex-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.vd-ex-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--r-xs);
+    background: var(--c-navy-xlight);
+    color: var(--c-navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.vd-ex-name {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--c-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vd-ex-id {
+    font-size: 10px;
+    color: var(--c-text-3);
+    font-weight: 600;
+    font-family: monospace;
+    margin-top: 1px;
+}
+
+.vd-ex-total-price {
+    background: var(--c-navy);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    border-radius: var(--r-pill);
+    padding: 3px 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Info chips */
+.vd-ex-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 12px 4px;
+}
+
+.vd-ex-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--c-navy-xlight);
+    border: 1px solid var(--c-navy-light);
+    border-radius: var(--r-xs);
+    padding: 4px 8px;
+}
+
+.vd-ex-chip-icon {
+    color: var(--c-navy);
+    display: flex;
+    align-items: center;
+}
+
+.vd-ex-chip-label {
+    font-size: 10px;
+    color: var(--c-text-2);
+    font-weight: 600;
+}
+
+.vd-ex-chip-val {
+    font-size: 11px;
+    color: var(--c-text);
+    font-weight: 700;
+}
+
+/* Detail grid */
+.vd-ex-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--c-border);
+    margin: 8px 12px 0;
+    border-radius: var(--r-xs);
+    overflow: hidden;
+}
+
+.vd-ex-cell {
+    background: var(--c-surface-2);
+    padding: 8px 10px;
+}
+
+.vd-ex-cell--full {
+    grid-column: span 2;
+}
+
+.vd-ex-cell-label {
+    font-size: 10px;
+    color: var(--c-text-3);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 2px;
+}
+
+.vd-ex-cell-val {
+    font-size: 12px;
+    color: var(--c-text);
+    font-weight: 700;
+}
+
+/* Notes */
+.vd-ex-notes {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 8px 12px;
+    padding: 8px 10px;
+    background: var(--c-orange-light);
+    border: 1px solid var(--c-orange-mid);
+    border-radius: var(--r-xs);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--c-orange-dark);
+}
+
+.vd-ex-notes svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--c-orange);
+}
+
+/* Pricing footer */
+.vd-ex-pricing {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--c-border);
+    margin: 8px 12px 12px;
+    border-radius: var(--r-xs);
+    overflow: hidden;
+}
+
+.vd-ex-price-cell {
+    background: var(--c-surface-2);
+    padding: 7px 8px;
+    text-align: center;
+}
+
+.vd-ex-price-cell--total {
+    background: var(--c-navy-xlight);
+}
+
+.vd-ex-price-label {
+    font-size: 9px;
+    color: var(--c-text-3);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 2px;
+}
+
+.vd-ex-price-val {
+    font-size: 12px;
+    color: var(--c-text);
+    font-weight: 800;
+}
+
+.vd-ex-price-cell--total .vd-ex-price-val {
+    color: var(--c-navy);
+}
+
+/* Video link */
+.vd-ex-video {
+    padding: 0 12px 12px;
+}

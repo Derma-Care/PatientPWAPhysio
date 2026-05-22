@@ -340,7 +340,7 @@ const BookingCard = ({ booking, onClick }) => {
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: '10px', color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Branch</div>
             <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--c-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {booking.branchname || "Home Visit"}
+              {booking.branchName || "Home Visit"}
             </div>
           </div>
         </div>

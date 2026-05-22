@@ -6,12 +6,14 @@ import {
   CreditCard, Clipboard, FileSearch, Download, Home,
   Star, Shield, AlertCircle, CheckCircle, TrendingUp,
   Building2,
+  BadgeIndianRupee,
 } from 'lucide-react';
 import { customerService, clinicService, physiotherapyService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Swal from 'sweetalert2';
 import '../styles/theme.css'; // ← shared theme
 import { CButton, CModal, CModalBody, CModalHeader, CModalTitle } from '@coreui/react';
+import DoctorModal from './DoctorModal';
 
 /* ── status helper ── */
 const statusClass = (s = '') => {
@@ -343,7 +345,7 @@ const BookingDetails = () => {
                       <table className="app-visit-table">
                         <thead>
                           <tr>
-                            <th>#</th><th>Visit</th><th>Date & Time</th><th>Diagnosis</th>
+                            <th>#</th><th>Visit</th><th>Date & Time</th>
                             <th style={{ textAlign: 'right' }}>Actions</th>
                           </tr>
                         </thead>
@@ -356,11 +358,11 @@ const BookingDetails = () => {
                                 <div style={{ fontWeight: 600 }}>{visit.visitDate}</div>
                                 <div style={{ fontSize: 11, color: 'var(--c-text-3)' }}>{visit.visitTime}</div>
                               </td>
-                              <td>
+                              {/* <td>
                                 <span className="app-diag-badge">
                                   {visit.physiotherapyDoctorData?.diagnosis?.physioDiagnosis || 'N/A'}
                                 </span>
-                              </td>
+                              </td> */}
                               <td>
                                 <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
                                   {visit.visitNumber?.toLowerCase() === 'visit 1' && (
@@ -388,7 +390,7 @@ const BookingDetails = () => {
                     <div className="d-flex d-md-none flex-column">
                       {visitHistory.slice(0, 3).map((visit, idx) => (
                         <div key={idx} className="app-visit-mobile">
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => navHistory({ state: { singleVisit: true, visit } })}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate(`/bookings/${booking.bookingId}/visit-details`, { state: { singleVisit: true, visit } })}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                               <div className="app-visit-num">{idx + 1}</div>
                               <div style={{ minWidth: 0 }}>
@@ -398,14 +400,14 @@ const BookingDetails = () => {
                             </div>
                             <ChevronRight size={16} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
                           </div>
-                          {visit.physiotherapyDoctorData?.diagnosis?.physioDiagnosis && (
+                          {/* {visit.physiotherapyDoctorData?.diagnosis?.physioDiagnosis && (
                             <div style={{ borderTop: '1px solid var(--c-border)', marginTop: 10, paddingTop: 10 }}>
                               <div style={{ fontSize: 10, color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.3px', marginBottom: 3 }}>Diagnosis</div>
                               <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {visit.physiotherapyDoctorData.diagnosis.physioDiagnosis}
                               </div>
                             </div>
-                          )}
+                          )} */}
                           {visit.visitNumber?.toLowerCase() === 'visit 1' && (
                             <div style={{ display: 'flex', gap: 8, borderTop: '1px solid var(--c-border)', marginTop: 10, paddingTop: 10 }}>
                               <button className="app-btn-sessions" style={{ flex: 1, justifyContent: 'center' }} onClick={() => navigate(`/bookings/${booking.bookingId}/sessions?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&therapistId=${visit.physiotherapyDoctorData?.treatmentPlan?.therapistId || ''}`)}>
@@ -424,6 +426,24 @@ const BookingDetails = () => {
               </div>
             </div>
           </div>{/* end left */}
+
+          {/* <button
+            className="btn btn-success w-100 mt-3"
+            onClick={() =>
+              navigate(`/payment/${booking.bookingId}`)
+            }
+          >
+            View Payment Details
+          </button> */}
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button className="app-btn-payment" onClick={() =>
+              navigate(`/payment/${booking.bookingId}`)
+            }>
+              < BadgeIndianRupee size={12} /> View Payment Details
+            </button>
+
+          </div>
+
 
           {/* SIDEBAR */}
           <div className="app-sidebar-col">
@@ -466,116 +486,18 @@ const BookingDetails = () => {
 
 
       {/* Doctor Details Modal */}
-      <CModal
-        visible={showDoctorModal}
-        onClose={() => setShowDoctorModal(false)}
-        alignment="center"
-        size="lg"
-      >
-        <CModalHeader closeButton>
-          <CModalTitle>
-            Doctor Full Details
-          </CModalTitle>
-        </CModalHeader>
+      {
+        showDoctorModal && <DoctorModal
 
-        <CModalBody>
-          <div className="text-center mb-4">
-            <img
-              src={doctorAvatar}
-              alt={doctor.doctorName}
-              style={{
-                width: 100,
-                height: 100,
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '3px solid #eee'
-              }}
-            />
+          visible={showDoctorModal}
+          onClose={() => setShowDoctorModal(false)}
+          alignment="center"
+          size="lg"
+          doctor={doctor}
+          doctorAvatar={doctorAvatar}
+        />
+      }
 
-            <h5 className="mt-3 mb-1">
-              {doctor.doctorName}
-            </h5>
-
-            <p className="text-muted mb-0">
-              {doctor.specialization}
-            </p>
-          </div>
-
-          <div className="row g-3">
-
-            <div className="col-6">
-              <strong>Doctor ID</strong>
-              <p>{doctor.doctorId}</p>
-            </div>
-
-            <div className="col-6">
-              <strong>License</strong>
-              <p>{doctor.doctorLicence}</p>
-            </div>
-
-            <div className="col-6">
-              <strong>Experience</strong>
-              <p>{doctor.experience} Years</p>
-            </div>
-
-            <div className="col-6">
-              <strong>Gender</strong>
-              <p>{doctor.gender}</p>
-            </div>
-
-            <div className="col-6">
-              <strong>Mobile</strong>
-              <p>{doctor.doctorMobileNumber}</p>
-            </div>
-
-            <div className="col-6">
-              <strong>Email</strong>
-              <p>{doctor.doctorEmail}</p>
-            </div>
-
-            <div className="col-6">
-              <strong>Hospital</strong>
-              <p>{doctor.hospitalName}</p>
-            </div>
-
-            <div className="col-6">
-              <strong>Branch</strong>
-              <p>{doctor.branchName || doctor.branchId}</p>
-            </div>
-
-            <div className="col-6">
-              <strong>Available Days</strong>
-              <p>{doctor.availableDays}</p>
-            </div>
-
-            <div className="col-6">
-              <strong>Available Time</strong>
-              <p>{doctor.availableTimes}</p>
-            </div>
-
-            <div className="col-12">
-              <strong>Address</strong>
-              <p>{doctor.address}</p>
-            </div>
-
-            <div className="col-12">
-              <strong>About Doctor</strong>
-              <p>{doctor.aboutDoctor}</p>
-            </div>
-
-            <div className="col-12">
-              <strong>Qualification</strong>
-              <p>{doctor.qualification}</p>
-            </div>
-
-            <div className="col-12">
-              <strong>Area Of Expertise</strong>
-              <p>{doctor.areaOfExpertise}</p>
-            </div>
-
-          </div>
-        </CModalBody>
-      </CModal>
 
 
     </div>
