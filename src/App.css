@@ -55,6 +55,12 @@
   }
 }
 
+
+.search-input::placeholder {
+  color: white !important;
+  opacity: 1;
+}
+
 #center {
   display: flex;
   flex-direction: column;

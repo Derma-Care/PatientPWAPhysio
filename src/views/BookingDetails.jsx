@@ -1,43 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  CRow,
-  CCol,
-  CCard,
-  CCardBody,
-  CBadge,
-  CSpinner,
-  CButton,
-  CAvatar,
-  CTable,
-  CTableHead,
-  CTableRow,
-  CTableHeaderCell,
-  CTableBody,
-  CTableDataCell,
-} from '@coreui/react';
-import {
-  ArrowLeft,
-  Calendar,
-  Clock,
-  MapPin,
-  Phone,
-  User,
-  FileText,
-  Activity,
-  ChevronRight,
-  Stethoscope,
-  Info,
-  CreditCard,
-  Clipboard,
-  FileSearch,
-  Download,
-  Home
+  ArrowLeft, Calendar, Clock, MapPin, Phone, User,
+  FileText, Activity, ChevronRight, Stethoscope,
+  CreditCard, Clipboard, FileSearch, Download, Home,
+  Star, Shield, AlertCircle, CheckCircle, TrendingUp,
+  Building2,
 } from 'lucide-react';
 import { customerService, clinicService, physiotherapyService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Swal from 'sweetalert2';
+import '../styles/theme.css'; // ← shared theme
+import { CButton, CModal, CModalBody, CModalHeader, CModalTitle } from '@coreui/react';
 
+/* ── status helper ── */
+const statusClass = (s = '') => {
+  const map = { confirmed: 'confirmed', pending: 'pending', cancelled: 'cancelled', completed: 'completed', 'in-progress': 'in-progress' };
+  return `app-status-${map[s.toLowerCase()] || 'default'}`;
+};
+
+/* ── InfoItem ── */
+const InfoItem = ({ icon: Icon, label, value, sub, iconColor }) => (
+  <div className="app-info-item">
+    <div style={{ marginTop: 1, flexShrink: 0 }}>
+      <Icon size={15} color={iconColor || 'var(--c-text-3)'} />
+    </div>
+    <div style={{ minWidth: 0 }}>
+      <p className="app-info-label">{label}</p>
+      <p className="app-info-value">{value || '—'}</p>
+      {sub && <p className="app-info-sub">{sub}</p>}
+    </div>
+  </div>
+);
+
+/* ══════════════════════════════════════════════════════════════ */
 const BookingDetails = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -47,529 +43,541 @@ const BookingDetails = () => {
   const [visitHistory, setVisitHistory] = useState([]);
   const [visitDoctorId, setVisitDoctorId] = useState('');
   const [loading, setLoading] = useState(true);
-
+  const [showDoctorModal, setShowDoctorModal] = useState(false);
   useEffect(() => {
-    const fetchDetails = async () => {
+    (async () => {
       try {
         if (user?.customerId && id) {
           const bookingRes = await customerService.getBookingById(id);
-          const currentBooking = bookingRes.data || bookingRes;
-
-          if (currentBooking) {
-            setBooking(currentBooking);
-
-            // Fetch Doctor Info
-            if (currentBooking.doctorId) {
-              const doctorRes = await clinicService.getDoctor(currentBooking.doctorId);
-              setDoctor(doctorRes.data);
+          const cur = bookingRes.data || bookingRes;
+          if (cur) {
+            setBooking(cur);
+            if (cur.doctorId) {
+              const dr = await clinicService.getDoctor(cur.doctorId);
+              setDoctor(dr.data);
             }
-
-            // Fetch Visit History
-            const historyRes = await physiotherapyService.getVisitHistory({
-              doctorId: currentBooking.doctorId || '',
-              patientId: currentBooking.patientId,
-              bookingId: currentBooking.bookingId,
-              clinicId: currentBooking.clinicId || '',
-              branchId: currentBooking.branchId || ''
+            const histRes = await physiotherapyService.getVisitHistory({
+              doctorId: cur.doctorId || '', patientId: cur.patientId,
+              bookingId: cur.bookingId, clinicId: cur.clinicId || '', branchId: cur.branchId || '',
             });
-            const resData = historyRes.data;
-            const historyArray = resData ? (Array.isArray(resData) ? resData : [resData]) : [];
-            setVisitHistory(historyArray);
-            // Extract doctorId from visit history response (not available on booking object)
-            const extractedDoctorId = historyArray[0]?.physiotherapyDoctorData?.treatmentPlan?.doctorId || '';
-            setVisitDoctorId(extractedDoctorId);
+            const arr = histRes.data ? (Array.isArray(histRes.data) ? histRes.data : [histRes.data]) : [];
+            setVisitHistory(arr);
+            setVisitDoctorId(arr[0]?.physiotherapyDoctorData?.treatmentPlan?.doctorId || '');
           }
         }
-      } catch (error) {
-        console.error('Error fetching booking details:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDetails();
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
+    })();
   }, [id, user]);
 
-  if (loading) {
-    return (
-      <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
-        <img src="/favicon.png" className="logo-spinner-grow mb-3" alt="Loading..." />
-        <h5 className="text-secondary opacity-75 fw-semibold">Fetching details...</h5>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="app-loading">
+      <div className="app-loading-ring" />
+      <p className="app-loading-text">Fetching details…</p>
+    </div>
+  );
 
-  if (!booking) {
-    return (
-      <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
-        <p className="text-secondary opacity-75 mb-2 small" style={{ marginBottom: '0.75rem' }}>Booking not found</p>
-        <CButton
-          color="primary"
-          size="sm"
-          className="rounded-pill px-3 py-1 fw-bold text-white shadow-sm"
-          style={{ backgroundColor: 'var(--primary-color)', border: 'none' }}
-          onClick={() => navigate('/bookings')}
-        >
-          Back to Bookings
-        </CButton>
+  if (!booking) return (
+    <div className="app-loading">
+      <AlertCircle size={40} color="var(--c-text-3)" style={{ marginBottom: 8 }} />
+      <p style={{ color: 'var(--c-text-3)', margin: '0 0 16px', fontSize: 14 }}>Booking not found</p>
+      <button className="app-btn-outline-navy" onClick={() => navigate('/bookings')}>
+        <ArrowLeft size={14} /> Back to Bookings
+      </button>
+    </div>
+  );
 
-      </div>
-    );
-  }
+  const allReports = (booking?.reports || []).flatMap(r => Array.isArray(r?.reportsList) ? r.reportsList : []);
+
+  const handleDownload = async (report) => {
+    const fileData = report.reportFile?.[0];
+    if (fileData) {
+      try {
+        let url, isBlobUrl = false;
+        if (fileData.startsWith('http://') || fileData.startsWith('https://')) {
+          url = fileData;
+        } else {
+          const b64 = (fileData.includes('base64,') ? fileData.split('base64,')[1] : fileData).replace(/\s/g, '');
+          const blob = await (await fetch(`data:application/pdf;base64,${b64}`)).blob();
+          url = URL.createObjectURL(blob); isBlobUrl = true;
+        }
+        const a = document.createElement('a');
+        a.href = url; a.download = `${report.reportName || 'Report'}.pdf`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        if (isBlobUrl) URL.revokeObjectURL(url);
+      } catch {
+        Swal.fire({ icon: 'error', title: 'Download Failed', text: 'Error processing file.' });
+      }
+    } else if (report.reportUrl) {
+      window.open(report.reportUrl, '_blank');
+    } else {
+      Swal.fire({ icon: 'info', title: 'Report Unavailable', text: 'This report is being processed.', timer: 3000 });
+    }
+  };
+
+  const navHistory = (extra = {}) => navigate(
+    `/bookings/${booking.bookingId}/history?patientId=${booking.patientId}&doctorId=${visitDoctorId}&clinicId=${booking.clinicId || ''}&branchId=${booking.branchId || ''}`,
+    extra,
+  );
+
+  const doctorAvatar = doctor
+    ? (doctor.doctorPicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.doctorName)}&background=1B4F8A&color=fff&bold=true&size=200`)
+    : '';
 
   return (
-    <div className="fade-in">
-      <div className="mb-4">
-        <CButton color="link" className="p-0 text-decoration-none text-secondary mb-3 d-flex align-items-center gap-2" onClick={() => navigate('/bookings')}>
-          <ArrowLeft size={18} /> Back to Bookings
-        </CButton>
-        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2  ">
-          <h2 className="fw-bold text-dark m-0">Booking Details</h2>
-          <CBadge
-            style={{
-              backgroundColor: 'var(--primary-color)',
-              fontSize: window.innerWidth < 768 ? '11px' : '16px',
-              padding: window.innerWidth < 768 ? '4px 10px' : '8px 16px',
-            }}
-            shape="pill"
-            className="text-capitalize text-white shadow-sm"
-          >
-            {booking.status}
-          </CBadge>
+    <div className="app-page">
+
+      {/* HERO */}
+      <div className="app-hero">
+        <div className="app-hero-inner">
+          <button className="app-back-btn" onClick={() => navigate('/bookings')}>
+            <ArrowLeft size={14} /> Back to Bookings
+          </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <h1 className="app-hero-title">Booking Details</h1>
+              <p className="app-hero-sub">Ref ID: {booking.bookingId}</p>
+            </div>
+            <div className={`app-status-pill ${statusClass(booking.status)}`}>
+              <span className="app-status-dot" />
+              {booking.status}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Doctor Info Card - Show on top in mobile */}
-      {doctor && (
-        <div className="d-block d-lg-none mb-4">
-          <CCard className="premium-card doctor-mobile-card border-0">
-            <CCardBody className="p-4">
-              <div className="d-flex align-items-center gap-3 mb-3">
-                <CAvatar
-                  src={doctor.doctorPicture || "https://ui-avatars.com/api/?name=" + doctor.doctorName}
-                  className="shadow-sm border border-3 border-white"
-                  style={{ width: '64px', height: '64px', borderRadius: '16px' }}
+      {/* BODY */}
+      <div className="app-body" style={{ marginTop: 0 }}>
+
+        {/* Mobile doctor card */}
+        {doctor && (
+          <div className="app-doc-float app-mobile-only">
+            <img
+              src={doctorAvatar}
+              alt={doctor.doctorName}
+              className="app-doc-float-avatar"
+            />
+
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p className="app-doc-float-name">
+                {doctor.doctorName}
+              </p>
+
+              <p className="app-doc-float-spec">
+                {doctor.specialization}
+              </p>
+
+              {/* Branch */}
+              <p className="app-doc-float-meta">
+                <Building2
+                  size={10}
+                  style={{ marginRight: 3, verticalAlign: 'middle' }}
                 />
-                <div style={{ minWidth: 0 }}>
-                  <h6 className="fw-bold text-dark mb-0 text-truncate">{doctor.doctorName}</h6>
-                  <div className="text-primary small fw-bold">{doctor.specialization}</div>
-                  <div className="small text-secondary mt-1">Exp: {doctor.experience} Yrs</div>
+                {doctor.branchName || doctor.hospitalName}
+              </p>
+
+              <p className="app-doc-float-meta">
+                <Shield
+                  size={10}
+                  style={{ marginRight: 3, verticalAlign: 'middle' }}
+                />
+                {doctor.doctorLicence} · {doctor.experience} Yrs Exp
+              </p>
+
+              <p className="app-doc-float-meta">
+                <Calendar
+                  size={10}
+                  style={{ marginRight: 3, verticalAlign: 'middle' }}
+                />
+                {doctor.availableDays} · {doctor.availableTimes}
+              </p>
+            </div>
+
+            {/* Buttons */}
+            <div className="d-flex justify-content-end gap-2 align-items-end align-content-end mt-3 w-100">
+              <div>
+                <a
+                  href={`tel:${doctor.doctorMobileNumber}`}
+                  className="app-doc-float-call"
+                >
+                  <Phone size={14} /> Call
+                </a>
+              </div>
+              <div>
+                <CButton
+                  className="app-doc-float-call"
+                  // style={{ backgroundColor: "var(--c-orange)", fontSize: "14px", fontWeight: "700", color: "#fff" }}
+                  onClick={() => setShowDoctorModal(true)}
+                >
+                  View
+                </CButton>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="app-two-col">
+
+          {/* LEFT */}
+          <div>
+
+            {/* Case Information */}
+            <div className="app-card">
+              <div className="app-card-header">
+                <div className="app-card-header-left">
+                  <div className="app-icon-box app-icon-navy"><FileText size={20} /></div>
+                  <div>
+                    <p className="app-card-title">Case Information</p>
+                    <p className="app-card-sub">Appointment & patient details</p>
+                  </div>
                 </div>
               </div>
-
-              <div className="d-flex flex-column gap-2 mb-3">
-                <div className="d-flex align-items-center gap-3 p-2 bg-light rounded-3">
-                  <Stethoscope size={16} className="text-secondary" style={{ flexShrink: 0 }} />
-                  <div className="small"><span className="text-secondary">Licence: </span><span className=" text-dark">{doctor.doctorLicence}</span></div>
-                </div>
-                <div className="d-flex align-items-center gap-3 p-2 bg-light rounded-3">
-                  <MapPin size={16} className="text-secondary" style={{ flexShrink: 0 }} />
-                  <div className="small text-truncate"><span className="text-secondary">Available: </span><p className=" text-dark">{doctor.availableDays} • {doctor.availableTimes}</p></div>
-                </div>
-              </div>
-
-              <a
-                href={`tel:${doctor.doctorMobileNumber}`}
-                className="btn btn-premium w-100 py-3 rounded-4 d-flex align-items-center justify-content-center gap-2 text-decoration-none"
-              >
-                <Phone size={18} /> Call Doctor
-              </a>
-            </CCardBody>
-          </CCard>
-        </div>
-      )}
-
-      <CRow>
-        <CCol lg={8}>
-          {/* Booking Info Card */}
-          <CCard className="premium-card border-0 mb-4">
-            <CCardBody className="p-4">
-              <div className="d-flex align-items-center gap-3 mb-4">
-                <div className="bg-primary bg-opacity-10 p-3 rounded-4 booking-section-icon">
-                  <FileText size={24} className="text-white" />
-                </div>
-                <div>
-                  <h5 className="m-0 fw-bold">Case Information</h5>
-                  <p className="small text-secondary m-0">Reference ID: {booking.bookingId}</p>
-                </div>
-              </div>
-
-              {/* Mobile-optimized info layout */}
-              <div className="booking-detail-grid">
-                <div className="booking-detail-section">
-                  <div className="booking-detail-row">
-                    <Calendar size={16} className="text-secondary" style={{ flexShrink: 0 }} />
-                    <div style={{ minWidth: 0 }}>
-                      <div className="small text-secondary">Date</div>
-                      <div className="fw-bold text-dark">{booking.serviceDate}</div>
-                    </div>
-                  </div>
-                  <div className="booking-detail-row">
-                    <Clock size={16} className="text-secondary" style={{ flexShrink: 0 }} />
-                    <div style={{ minWidth: 0 }}>
-                      <div className="small text-secondary">Time Slot</div>
-                      <div className="fw-bold text-dark">{booking.servicetime}</div>
-                    </div>
-                  </div>
-                  <div className="booking-detail-row">
-                    <Activity size={16} className="text-secondary" style={{ flexShrink: 0 }} />
-                    <div style={{ minWidth: 0 }}>
-                      <div className="small text-secondary">Problem</div>
-                      <div className="fw-bold text-dark text-truncate">{booking.problem || 'Not specified'}</div>
-                    </div>
-                  </div>
+              <div className="app-card-body">
+                <div className="app-info-grid">
+                  <InfoItem icon={Calendar} label="Service Date" value={booking.serviceDate} iconColor="var(--c-navy)" />
+                  <InfoItem icon={Clock} label="Time Slot" value={booking.servicetime} iconColor="var(--c-info)" />
+                  <InfoItem icon={MapPin} label="Clinic Branch" value={booking.branchname} iconColor="var(--c-warning)" />
+                  <InfoItem icon={Activity} label="Chief Complaint" value={booking.problem || 'Not specified'} iconColor="var(--c-danger)" />
+                  <InfoItem icon={User} label="Patient" value={booking.name}
+                    sub={`${booking.age} Yrs · ${booking.gender}`} iconColor="var(--c-success)" />
+                  <InfoItem icon={Phone} label="Contact" value={booking.patientMobileNumber} iconColor="var(--c-purple)" />
                 </div>
 
-                <div className="booking-detail-section">
-                  <div className="booking-detail-row">
-                    <MapPin size={16} className="text-secondary" style={{ flexShrink: 0 }} />
-                    <div style={{ minWidth: 0 }}>
-                      <div className="small text-secondary">Clinic Branch</div>
-                      <div className="fw-bold text-dark">{booking.branchname}</div>
+                <div className="app-payment-box">
+                  <p className="app-payment-title"><CreditCard size={13} /> Payment Summary</p>
+                  {booking.consultationFee && (
+                    <div className="app-payment-row">
+                      <span>Consultation Fee</span>
+                      <span style={{ fontWeight: 600 }}>₹{booking.consultationFee}</span>
                     </div>
-                  </div>
-                  <div className="booking-detail-row">
-                    <User size={16} className="text-secondary" style={{ flexShrink: 0 }} />
-                    <div style={{ minWidth: 0 }}>
-                      <div className="small text-secondary">Patient Details</div>
-                      <div className="fw-bold text-dark">{booking.name}</div>
-                      <div className="small text-secondary">{booking.age} Yrs • {booking.gender}</div>
-                    </div>
-                  </div>
-                  <div className="booking-detail-row">
-                    <Phone size={16} className="text-secondary" style={{ flexShrink: 0 }} />
-                    <div style={{ minWidth: 0 }}>
-                      <div className="small text-secondary">Contact</div>
-                      <div className="fw-bold text-dark">{booking.patientMobileNumber}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="booking-detail-section booking-payment-section">
-                  <h6 className="fw-bold small text-secondary mb-2">Payment Summary</h6>
-                  <div className="d-flex justify-content-between small mb-1">
-                    <span>Consultation Fee:</span>
-                    <span className="fw-bold">₹{booking.consultationFee || '0'}</span>
-                  </div>
+                  )}
                   {booking.totalBill && (
-                    <div className="d-flex justify-content-between small mb-1">
-                      <span>Total Bill:</span>
-                      <span className="fw-bold">₹{booking.totalBill}</span>
+                    <div className="app-payment-row total">
+                      <span>Total Bill</span><span>₹{booking.totalBill}</span>
                     </div>
                   )}
                   {booking.paidAmount && (
-                    <div className="d-flex justify-content-between small mb-1 text-success">
-                      <span>Paid:</span>
-                      <span className="fw-bold">₹{booking.paidAmount}</span>
+                    <div className="app-payment-row success">
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><CheckCircle size={12} /> Paid</span>
+                      <span>₹{booking.paidAmount}</span>
                     </div>
                   )}
                   {booking.balance && (
-                    <div className="d-flex justify-content-between small mb-1 text-danger">
-                      <span>Balance:</span>
-                      <span className="fw-bold">₹{booking.balance}</span>
+                    <div className="app-payment-row danger">
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><AlertCircle size={12} /> Balance Due</span>
+                      <span>₹{booking.balance}</span>
                     </div>
                   )}
                 </div>
               </div>
-            </CCardBody>
-          </CCard>
+            </div>
 
-          {/* Reports & Prescriptions Card */}
-          <CCard className="premium-card border-0 mb-4">
-            <CCardBody className="p-4">
-              <div className="d-flex align-items-center gap-3 mb-4">
-                <div className="bg-warning bg-opacity-10 p-3 rounded-4 booking-section-icon">
-                  <Clipboard size={24} className="text-warning" />
-                </div>
-                <div>
-                  <h5 className="m-0 fw-bold">Reports & Prescriptions</h5>
-                  <p className="small text-secondary m-0">Medical documents and clinical records</p>
+            {/* Reports */}
+            <div className="app-card">
+              <div className="app-card-header">
+                <div className="app-card-header-left">
+                  <div className="app-icon-box app-icon-amber"><Clipboard size={20} /></div>
+                  <div>
+                    <p className="app-card-title">Reports & Prescriptions</p>
+                    <p className="app-card-sub">Medical documents & clinical records</p>
+                  </div>
                 </div>
               </div>
-
-              <CRow className="g-3">
-                {(() => {
-                  const reportsArray = Array.isArray(booking?.reports) ? booking.reports : [];
-                  const allReports = reportsArray.flatMap(r => Array.isArray(r?.reportsList) ? r.reportsList : []);
-
-                  if (allReports.length === 0) {
-                    return (
-                      <CCol xs={12}>
-                        <div className="text-center py-4 text-secondary opacity-50 bg-light rounded-4 border-dashed border">
-                          <p className="m-0">No medical reports available yet.</p>
-                        </div>
-                      </CCol>
-                    );
-                  }
-
-                  return allReports.map((report, rIdx) => (
-                    <CCol sm={6} key={rIdx} className="report-col">
-                      <div
-                        className="p-3 border rounded-4 d-flex justify-content-between align-items-center cursor-pointer hover-bg-light h-100 transition-all shadow-sm-hover"
-                        onClick={async () => {
-                          const fileData = report.reportFile?.[0];
-                          if (fileData) {
-                            try {
-                              let url;
-                              let isBlobUrl = false;
-                              if (fileData.startsWith('http://') || fileData.startsWith('https://')) {
-                                url = fileData;
-                              } else {
-                                const base64String = fileData.includes('base64,') ? fileData.split('base64,')[1] : fileData;
-                                const cleanBase64 = base64String.replace(/\s/g, '');
-                                const res = await fetch(`data:application/pdf;base64,${cleanBase64}`);
-                                const blob = await res.blob();
-                                url = URL.createObjectURL(blob);
-                                isBlobUrl = true;
-                              }
-
-                              const link = document.createElement('a');
-                              link.href = url;
-                              link.download = `${report.reportName || 'Report'}.pdf`;
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                              if (isBlobUrl) {
-                                URL.revokeObjectURL(url);
-                              }
-                            } catch (e) {
-                              console.error('Error downloading report:', e);
-                              Swal.fire({
-                                icon: 'error',
-                                title: 'Download Failed',
-                                text: 'There was an error processing the report file.',
-                              });
-                            }
-                          } else if (report.reportUrl) {
-                            window.open(report.reportUrl, '_blank');
-                          } else {
-                            Swal.fire({
-                              icon: 'info',
-                              title: 'Report Unavailable',
-                              text: 'This medical report is currently being processed or is not available for download.',
-                              timer: 3000
-                            });
-                          }
-                        }}
-                      >
-                        <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
-                          <div className={`bg-${report.reportStatus === 'Normal' ? 'info' : 'danger'} bg-opacity-10 p-2 rounded-3 text-${report.reportStatus === 'Normal' ? 'info' : 'danger'}`} style={{ flexShrink: 0 }}>
-                            <FileSearch size={22} />
-                          </div>
-                          <div style={{ minWidth: 0 }}>
-                            <div className="fw-bold text-dark small text-truncate">{report.reportName}</div>
-                            <div className="small text-secondary text-truncate">{report.reportType} • {report.reportDate}</div>
-                          </div>
-                        </div>
-                        <CButton color="link" className="p-0 text-primary hover-scale" style={{ flexShrink: 0 }}>
-                          <Download size={20} />
-                        </CButton>
-                      </div>
-                    </CCol>
-                  ));
-                })()}
-              </CRow>
-            </CCardBody>
-          </CCard>
-
-          {/* Visit History Summary */}
-          <CCard className="premium-card border-0 mb-4">
-            <CCardBody className="p-4">
-              <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 visit-history-header">
-                <div className="d-flex align-items-center gap-3">
-                  <div className="bg-info bg-opacity-10 p-3 rounded-4 booking-section-icon">
-                    <Activity size={24} className="text-info" />
+              <div className="app-card-body">
+                {allReports.length === 0 ? (
+                  <div className="app-report-empty">
+                    <FileSearch size={36} style={{ opacity: .28, display: 'block', margin: '0 auto 8px' }} />
+                    <p style={{ margin: 0, fontSize: 13 }}>No medical reports available yet</p>
                   </div>
+                ) : (
+                  <div className="app-report-grid">
+                    {allReports.map((report, i) => {
+                      const isNormal = report.reportStatus === 'Normal';
+                      return (
+                        <div key={i} className={`app-report-card ${isNormal ? 'normal' : 'abnormal'}`} onClick={() => handleDownload(report)}>
+                          <div className="app-report-icon" style={{
+                            background: isNormal ? 'var(--c-navy-xlight)' : 'var(--c-danger-light)',
+                            color: isNormal ? 'var(--c-navy)' : 'var(--c-danger)',
+                          }}>
+                            <FileSearch size={18} />
+                          </div>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <p className="app-report-name">{report.reportName}</p>
+                            <p className="app-report-meta">{report.reportType} · {report.reportDate}</p>
+                          </div>
+                          <span className="app-report-dl"><Download size={16} /></span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Visit History */}
+            <div className="app-card">
+              <div className="app-card-header">
+                <div className="app-card-header-left">
+                  <div className="app-icon-box app-icon-sky"><TrendingUp size={20} /></div>
                   <div>
-                    <h5 className="m-0 fw-bold">Visit History</h5>
-                    <p className="small text-secondary m-0">{visitHistory.length} Recorded Visits</p>
+                    <p className="app-card-title">Visit History</p>
+                    <p className="app-card-sub">{visitHistory.length} recorded visit{visitHistory.length !== 1 ? 's' : ''}</p>
                   </div>
                 </div>
                 {visitHistory.length > 0 && (
-                  <CButton
-                    color="primary"
-                    variant="outline"
-                    className="rounded-4 fw-bold"
-                    size="sm"
-                    onClick={() => navigate(`/bookings/${booking.bookingId}/history?patientId=${booking.patientId}&doctorId=${visitDoctorId}&clinicId=${booking.clinicId || ''}&branchId=${booking.branchId || ''}`)}
-                  >
-                    View Full History <ChevronRight size={16} />
-                  </CButton>
+                  <button className="app-btn-outline-navy" onClick={() => navHistory()}>
+                    Full History <ChevronRight size={14} />
+                  </button>
                 )}
               </div>
-
-              {visitHistory.length > 0 ? (
-                <>
-                  {/* Desktop Table */}
-                  <div className="d-none d-md-block table-responsive">
-                    <CTable align="middle" hover borderless className="mb-0">
-                      <CTableHead className="text-secondary small text-uppercase">
-                        <CTableRow>
-                          <CTableHeaderCell className="border-bottom-0 ps-0">Visit</CTableHeaderCell>
-                          <CTableHeaderCell className="border-bottom-0">Date</CTableHeaderCell>
-                          <CTableHeaderCell className="border-bottom-0">Diagnosis</CTableHeaderCell>
-                          <CTableHeaderCell className="border-bottom-0 text-end pe-0">Action</CTableHeaderCell>
-                        </CTableRow>
-                      </CTableHead>
-                      <CTableBody>
-                        {visitHistory.slice(0, 3).map((visit, idx) => (
-                          <CTableRow key={idx}>
-                            <CTableDataCell className="ps-0">
-                              <div className="fw-bold text-dark">{visit.visitNumber}</div>
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <div className="small text-secondary">{visit.visitDate}</div>
-                              <div className="small fw-semibold">{visit.visitTime}</div>
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <div className="small text-dark fw-semibold">
-                                {visit.physiotherapyDoctorData?.diagnosis?.physioDiagnosis || 'N/A'}
-                              </div>
-                            </CTableDataCell>
-                            <CTableDataCell className="text-end pe-0">
-                              <div className="d-flex gap-2 justify-content-end align-items-center">
-                                {visit.visitNumber?.toLowerCase() === 'visit 1' && (
-                                  <>
-                                    <CButton
-                                      size="sm"
-                                      className="btn-premium py-1 px-2 d-flex align-items-center gap-1"
-                                      style={{ fontSize: '0.75rem', background: '#0ea5e9', border: 'none' }}
-                                      onClick={() => navigate(`/bookings/${booking.bookingId}/sessions?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&therapistId=${visit.physiotherapyDoctorData?.treatmentPlan?.therapistId || ''}`)}
-                                    >
-                                      <Activity size={12} /> Sessions
-                                    </CButton>
-                                    <CButton
-                                      size="sm"
-                                      className="btn-premium py-1 px-2 d-flex align-items-center gap-1"
-                                      style={{ fontSize: '0.75rem', background: 'var(--primary-gradient)', border: 'none' }}
-                                      onClick={() => navigate(`/bookings/${booking.bookingId}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&doctorId=${visitDoctorId}`, { state: { visit } })}
-                                    >
-                                      <Home size={12} /> Exercises
-                                    </CButton>
-                                  </>
-                                )}
-                                <CButton color="link" className="p-0 text-primary" onClick={() => navigate(`/bookings/${booking.bookingId}/history?patientId=${booking.patientId}&doctorId=${visitDoctorId}&clinicId=${booking.clinicId || ''}&branchId=${booking.branchId || ''}`, { state: { singleVisit: true, visit } })}>
-                                  <ChevronRight size={18} />
-                                </CButton>
-                              </div>
-                            </CTableDataCell>
-                          </CTableRow>
-                        ))}
-                      </CTableBody>
-                    </CTable>
+              <div className="app-card-body">
+                {visitHistory.length === 0 ? (
+                  <div className="app-empty">
+                    <Activity size={36} />
+                    <p style={{ margin: 0, fontSize: 13 }}>No visit history available</p>
                   </div>
+                ) : (
+                  <>
+                    {/* Desktop */}
+                    <div className="d-none d-md-block" style={{ overflowX: 'auto' }}>
+                      <table className="app-visit-table">
+                        <thead>
+                          <tr>
+                            <th>#</th><th>Visit</th><th>Date & Time</th><th>Diagnosis</th>
+                            <th style={{ textAlign: 'right' }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {visitHistory.slice(0, 3).map((visit, idx) => (
+                            <tr key={idx}>
+                              <td><div className="app-visit-num">{idx + 1}</div></td>
+                              <td style={{ fontWeight: 700 }}>{visit.visitNumber}</td>
+                              <td>
+                                <div style={{ fontWeight: 600 }}>{visit.visitDate}</div>
+                                <div style={{ fontSize: 11, color: 'var(--c-text-3)' }}>{visit.visitTime}</div>
+                              </td>
+                              <td>
+                                <span className="app-diag-badge">
+                                  {visit.physiotherapyDoctorData?.diagnosis?.physioDiagnosis || 'N/A'}
+                                </span>
+                              </td>
+                              <td>
+                                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+                                  {visit.visitNumber?.toLowerCase() === 'visit 1' && (
+                                    <>
+                                      <button className="app-btn-sessions" onClick={() => navigate(`/bookings/${booking.bookingId}/sessions?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&therapistId=${visit.physiotherapyDoctorData?.treatmentPlan?.therapistId || ''}`)}>
+                                        <Activity size={12} /> Sessions
+                                      </button>
+                                      <button className="app-btn-exercises" onClick={() => navigate(`/bookings/${booking.bookingId}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&doctorId=${visitDoctorId}`, { state: { visit } })}>
+                                        <Home size={12} /> Exercises
+                                      </button>
+                                    </>
+                                  )}
+                                  <button className="app-btn-ghost" onClick={() => navHistory({ state: { singleVisit: true, visit } })}>
+                                    <ChevronRight size={18} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
 
-                  <div className="d-flex d-md-none flex-column gap-2">
-                    {visitHistory.slice(0, 3).map((visit, idx) => (
-                      <div key={idx} className="visit-mobile-card">
-                        <div className="d-flex justify-content-between align-items-start" onClick={() => navigate(`/bookings/${booking.bookingId}/history?patientId=${booking.patientId}&doctorId=${visitDoctorId}&clinicId=${booking.clinicId || ''}&branchId=${booking.branchId || ''}`, { state: { singleVisit: true, visit } })}>
-                          <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
-                            <div className="visit-mobile-number">{idx + 1}</div>
-                            <div style={{ minWidth: 0 }}>
-                              <div className="fw-bold text-dark small">{visit.visitNumber}</div>
-                              <div className="text-secondary" style={{ fontSize: '0.75rem' }}>{visit.visitDate} • {visit.visitTime}</div>
+                    {/* Mobile */}
+                    <div className="d-flex d-md-none flex-column">
+                      {visitHistory.slice(0, 3).map((visit, idx) => (
+                        <div key={idx} className="app-visit-mobile">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => navHistory({ state: { singleVisit: true, visit } })}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                              <div className="app-visit-num">{idx + 1}</div>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontWeight: 700, fontSize: 13 }}>{visit.visitNumber}</div>
+                                <div style={{ fontSize: 11, color: 'var(--c-text-3)' }}>{visit.visitDate} · {visit.visitTime}</div>
+                              </div>
                             </div>
+                            <ChevronRight size={16} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
                           </div>
-                          <ChevronRight size={16} className="text-secondary" style={{ flexShrink: 0 }} />
+                          {visit.physiotherapyDoctorData?.diagnosis?.physioDiagnosis && (
+                            <div style={{ borderTop: '1px solid var(--c-border)', marginTop: 10, paddingTop: 10 }}>
+                              <div style={{ fontSize: 10, color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.3px', marginBottom: 3 }}>Diagnosis</div>
+                              <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {visit.physiotherapyDoctorData.diagnosis.physioDiagnosis}
+                              </div>
+                            </div>
+                          )}
+                          {visit.visitNumber?.toLowerCase() === 'visit 1' && (
+                            <div style={{ display: 'flex', gap: 8, borderTop: '1px solid var(--c-border)', marginTop: 10, paddingTop: 10 }}>
+                              <button className="app-btn-sessions" style={{ flex: 1, justifyContent: 'center' }} onClick={() => navigate(`/bookings/${booking.bookingId}/sessions?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&therapistId=${visit.physiotherapyDoctorData?.treatmentPlan?.therapistId || ''}`)}>
+                                <Activity size={12} /> Sessions
+                              </button>
+                              <button className="app-btn-exercises" style={{ flex: 1, justifyContent: 'center' }} onClick={() => navigate(`/bookings/${booking.bookingId}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&doctorId=${visitDoctorId}`, { state: { visit } })}>
+                                <Home size={12} /> Exercises
+                              </button>
+                            </div>
+                          )}
                         </div>
-                        {visit.physiotherapyDoctorData?.diagnosis?.physioDiagnosis && (
-                          <div className="mt-2 pt-2 border-top">
-                            <div className="small text-secondary">Diagnosis</div>
-                            <div className="small fw-semibold text-dark text-truncate">
-                              {visit.physiotherapyDoctorData.diagnosis.physioDiagnosis}
-                            </div>
-                          </div>
-                        )}
-                        {visit.visitNumber?.toLowerCase() === 'visit 1' && (
-                          <div className="d-flex gap-2 mt-2 pt-2 border-top">
-                            <CButton
-                              size="sm"
-                              className="btn-premium flex-grow-1 py-1 d-flex align-items-center justify-content-center gap-1"
-                              style={{ fontSize: '0.75rem', background: '#0ea5e9', border: 'none' }}
-                              onClick={() => navigate(`/bookings/${booking.bookingId}/sessions?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&therapistId=${visit.physiotherapyDoctorData?.treatmentPlan?.therapistId || ''}`)}
-                            >
-                              <Activity size={12} /> Sessions
-                            </CButton>
-                            <CButton
-                              size="sm"
-                              className="btn-premium flex-grow-1 py-1 d-flex align-items-center justify-content-center gap-1"
-                              style={{ fontSize: '0.75rem', background: 'var(--primary-gradient)', border: 'none' }}
-                              onClick={() => navigate(`/bookings/${booking.bookingId}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&doctorId=${visitDoctorId}`, { state: { visit } })}
-                            >
-                              <Home size={12} /> Exercises
-                            </CButton>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-4 text-secondary opacity-50">
-                  <p>No visit history available for this booking.</p>
-                </div>
-              )}
-            </CCardBody>
-          </CCard>
-        </CCol>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>{/* end left */}
 
-        {/* Doctor Info - Desktop Sidebar */}
-        <CCol lg={4} className="d-none d-lg-block">
-          {doctor && (
-            <CCard className="premium-card border-0 mb-4 sticky-top" style={{ top: '100px' }}>
-              <CCardBody className="p-4">
-                <div className="text-center mb-4">
-                  <CAvatar src={doctor.doctorPicture || "https://ui-avatars.com/api/?name=" + doctor.doctorName} size="xl" className="mb-3 shadow-sm border border-4 border-white" style={{ width: '100px', height: '100px' }} />
-                  <h5 className="fw-bold text-dark mb-1">{doctor.doctorName}</h5>
-                  <p className="text-primary small fw-bold mb-3">{doctor.specialization}</p>
-                  <div className="d-flex justify-content-center gap-2 mb-4">
-                    <CBadge color="light" className="text-dark py-2 px-3 border">
-                      Exp: {doctor.experience} Yrs
-                    </CBadge>
+          {/* SIDEBAR */}
+          <div className="app-sidebar-col">
+            {doctor && (
+              <div className="app-doc-sidebar">
+                <div className="app-doc-sidebar-banner">
+                  <img src={doctorAvatar} alt={doctor.doctorName} className="app-doc-sidebar-avatar" />
+                  <p className="app-doc-sidebar-name">{doctor.doctorName}</p>
+                  <p className="app-doc-sidebar-spec">{doctor.specialization}</p>
+                  <div className="app-doc-exp-badge"><Star size={11} /> {doctor.experience} Years Experience</div>
+                </div>
+                <div className="app-doc-sidebar-body">
+                  <div className="app-doc-detail-row">
+                    <div className="app-doc-detail-icon"><Shield size={15} color="var(--c-navy)" /></div>
+                    <div><p className="app-doc-detail-label">Licence</p><p className="app-doc-detail-value">{doctor.doctorLicence}</p></div>
+                  </div>
+                  <div className="app-doc-detail-row">
+                    <div className="app-doc-detail-icon"><Phone size={15} color="var(--c-success)" /></div>
+                    <div><p className="app-doc-detail-label">Contact</p><p className="app-doc-detail-value">{doctor.doctorMobileNumber}</p></div>
+                  </div>
+                  <div className="app-doc-detail-row">
+                    <div className="app-doc-detail-icon"><Calendar size={15} color="var(--c-warning)" /></div>
+                    <div><p className="app-doc-detail-label">Available Days</p><p className="app-doc-detail-value">{doctor.availableDays}</p></div>
+                  </div>
+                  <div className="app-doc-detail-row">
+                    <div className="app-doc-detail-icon"><Clock size={15} color="var(--c-purple)" /></div>
+                    <div><p className="app-doc-detail-label">Available Times</p><p className="app-doc-detail-value">{doctor.availableTimes}</p></div>
                   </div>
                 </div>
-
-                <div className="d-flex flex-column gap-3 mb-4">
-                  <div className="d-flex align-items-center gap-3">
-                    <div className="bg-light p-2 rounded-3">
-                      <Stethoscope size={18} className="text-secondary" />
-                    </div>
-                    <div>
-                      <div className="small text-secondary">Licence</div>
-                      <div className="small fw-bold text-dark">{doctor.doctorLicence}</div>
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center gap-3">
-                    <div className="bg-light p-2 rounded-3">
-                      <Phone size={18} className="text-secondary" />
-                    </div>
-                    <div>
-                      <div className="small text-secondary">Contact</div>
-                      <div className="small fw-bold text-dark">{doctor.doctorMobileNumber}</div>
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center gap-3">
-                    <div className="bg-light p-2 rounded-3">
-                      <MapPin size={18} className="text-secondary" />
-                    </div>
-                    <div>
-                      <div className="small text-secondary">Availability</div>
-                      <div className="small fw-bold text-dark">{doctor.availableDays} • {doctor.availableTimes}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <a
-                  href={`tel:${doctor.doctorMobileNumber}`}
-                  className="btn btn-premium w-100 py-3 rounded-4 d-flex align-items-center justify-content-center gap-2 text-decoration-none"
-                >
+                <a href={`tel:${doctor.doctorMobileNumber}`} className="app-doc-call-btn">
                   <Phone size={18} /> Contact Doctor
                 </a>
-              </CCardBody>
-            </CCard>
-          )}
-        </CCol>
-      </CRow>
+              </div>
+            )}
+          </div>
+
+        </div>{/* end two-col */}
+      </div>
+
+
+
+      {/* Doctor Details Modal */}
+      <CModal
+        visible={showDoctorModal}
+        onClose={() => setShowDoctorModal(false)}
+        alignment="center"
+        size="lg"
+      >
+        <CModalHeader closeButton>
+          <CModalTitle>
+            Doctor Full Details
+          </CModalTitle>
+        </CModalHeader>
+
+        <CModalBody>
+          <div className="text-center mb-4">
+            <img
+              src={doctorAvatar}
+              alt={doctor.doctorName}
+              style={{
+                width: 100,
+                height: 100,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '3px solid #eee'
+              }}
+            />
+
+            <h5 className="mt-3 mb-1">
+              {doctor.doctorName}
+            </h5>
+
+            <p className="text-muted mb-0">
+              {doctor.specialization}
+            </p>
+          </div>
+
+          <div className="row g-3">
+
+            <div className="col-6">
+              <strong>Doctor ID</strong>
+              <p>{doctor.doctorId}</p>
+            </div>
+
+            <div className="col-6">
+              <strong>License</strong>
+              <p>{doctor.doctorLicence}</p>
+            </div>
+
+            <div className="col-6">
+              <strong>Experience</strong>
+              <p>{doctor.experience} Years</p>
+            </div>
+
+            <div className="col-6">
+              <strong>Gender</strong>
+              <p>{doctor.gender}</p>
+            </div>
+
+            <div className="col-6">
+              <strong>Mobile</strong>
+              <p>{doctor.doctorMobileNumber}</p>
+            </div>
+
+            <div className="col-6">
+              <strong>Email</strong>
+              <p>{doctor.doctorEmail}</p>
+            </div>
+
+            <div className="col-6">
+              <strong>Hospital</strong>
+              <p>{doctor.hospitalName}</p>
+            </div>
+
+            <div className="col-6">
+              <strong>Branch</strong>
+              <p>{doctor.branchName || doctor.branchId}</p>
+            </div>
+
+            <div className="col-6">
+              <strong>Available Days</strong>
+              <p>{doctor.availableDays}</p>
+            </div>
+
+            <div className="col-6">
+              <strong>Available Time</strong>
+              <p>{doctor.availableTimes}</p>
+            </div>
+
+            <div className="col-12">
+              <strong>Address</strong>
+              <p>{doctor.address}</p>
+            </div>
+
+            <div className="col-12">
+              <strong>About Doctor</strong>
+              <p>{doctor.aboutDoctor}</p>
+            </div>
+
+            <div className="col-12">
+              <strong>Qualification</strong>
+              <p>{doctor.qualification}</p>
+            </div>
+
+            <div className="col-12">
+              <strong>Area Of Expertise</strong>
+              <p>{doctor.areaOfExpertise}</p>
+            </div>
+
+          </div>
+        </CModalBody>
+      </CModal>
+
+
     </div>
   );
 };

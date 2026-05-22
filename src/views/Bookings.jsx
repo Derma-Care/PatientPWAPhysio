@@ -1,18 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  CRow,
-  CCol,
-  CCard,
-  CCardBody,
-  CBadge,
-  CSpinner,
-  CFormInput,
-  CInputGroup,
-  CInputGroupText,
-  CNav,
-  CNavItem,
-  CNavLink,
-} from '@coreui/react';
+import { CRow, CCol } from '@coreui/react';
 import {
   Search,
   Filter,
@@ -20,11 +7,22 @@ import {
   Calendar,
   ChevronRight,
   Stethoscope,
-  Clock
+  Activity,
+  Clock,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { customerService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+
+/* ── Status helpers ──────────────────────────────────────────── */
+const getStatusClass = (status) => {
+  switch (status?.toLowerCase()) {
+    case 'in-progress': return 'app-status-in-progress';
+    case 'confirmed': return 'app-status-confirmed';
+    case 'completed': return 'app-status-completed';
+    default: return 'app-status-default';
+  }
+};
 
 const Bookings = () => {
   const { user } = useAuth();
@@ -32,7 +30,7 @@ const Bookings = () => {
   const [bookings, setBookings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('ongoing'); // ongoing or completed
+  const [activeTab, setActiveTab] = useState('ongoing');
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -47,185 +45,297 @@ const Bookings = () => {
         setLoading(false);
       }
     };
-
     fetchBookings();
   }, [user]);
 
-  const filteredBookings = bookings.filter(booking => {
-    const matchesSearch =
-      booking.doctorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.bookingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.branchname.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredBookings = bookings.filter((booking) => {
+    const doctorName = booking?.doctorName || '';
+    const bookingId = booking?.bookingId || '';
+    const branchname = booking?.branchname || '';
 
-    const isCompleted = booking.status?.toLowerCase() === 'completed';
-    const matchesTab = activeTab === 'completed' ? isCompleted : !isCompleted;
+    const search = searchTerm.toLowerCase();
+
+    const matchesSearch =
+      doctorName.toLowerCase().includes(search) ||
+      bookingId.toLowerCase().includes(search) ||
+      branchname.toLowerCase().includes(search);
+
+    const isCompleted =
+      booking?.status?.toLowerCase() === 'completed';
+
+    const matchesTab =
+      activeTab === 'completed'
+        ? isCompleted
+        : !isCompleted;
 
     return matchesSearch && matchesTab;
   });
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '70vh' }}>
+      <div className="app-loading">
         <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
       </div>
     );
   }
 
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'in-progress': return { bg: '#dcfce7', text: '#16a34a' };
-      case 'confirmed': return { bg: '#dbeafe', text: '#2563eb' };
-      case 'completed': return { bg: '#f3e8ff', text: '#7c3aed' };
-      default: return { bg: '#f1f5f9', text: '#64748b' };
-    }
-  };
+  const ongoingCount = bookings.filter(b => b.status?.toLowerCase() !== 'completed').length;
+  const completedCount = bookings.filter(b => b.status?.toLowerCase() === 'completed').length;
 
   return (
-    <div className="fade-in">
-      <div className="mb-4">
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 bookings-page-header">
-          <div>
-            <h2 className="fw-bold text-dark m-0">My Bookings</h2>
-            <p className="text-secondary m-0">Track your appointments and treatment history</p>
-          </div>
-          <div className="d-flex gap-2 w-100 w-md-auto">
-            <CInputGroup className="bookings-search-group shadow-sm rounded-4 overflow-hidden w-100" style={{ maxWidth: '400px' }}>
-              <CInputGroupText className="bg-white border-end-0 pe-0">
-                <Search size={18} className="text-secondary" />
-              </CInputGroupText>
-              <CFormInput
-                placeholder="Search bookings..."
-                className="border-start-0 py-2"
+    <div className="app-page">
+
+      {/* ── Hero ─────────────────────────────────────────────── */}
+      <div className="app-hero">
+        <div className="app-hero-inner">
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <div style={{
+                  width: '34px', height: '34px', borderRadius: '10px',
+                  background: 'rgba(249,115,22,0.25)', border: '1px solid rgba(249,115,22,0.4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Activity size={17} color="#fdba74" />
+                </div>
+                <h2 className="app-hero-title" style={{ margin: 0 }}>My Bookings</h2>
+              </div>
+              <p className="app-hero-sub">Track your appointments and treatment history</p>
+            </div>
+
+            {/* Search */}
+            <div style={{ position: 'relative', minWidth: '260px', maxWidth: '320px', width: '100%' }}>
+              <Search size={15} style={{
+                position: 'absolute', left: '12px', top: '50%',
+                transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.5)', pointerEvents: 'none', zIndex: 2,
+              }} />
+              <input
+                type="text"
+                placeholder="Search doctor, branch, ID…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+                style={{
+                  width: '100%',
+                  padding: '9px 14px 9px 36px',
+                  background: 'rgba(255,255,255,0.12)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: 'var(--r-pill)',
+                  fontSize: '13px',
+                  color: '#fff',
+                  outline: 'none',
+                  backdropFilter: 'blur(8px)',
+                  transition: 'background 0.2s, border-color 0.2s',
+                }}
+                onFocus={e => {
+                  e.target.style.background = 'rgba(255,255,255,0.2)';
+                  e.target.style.borderColor = 'rgba(255,255,255,0.4)';
+                }}
+                onBlur={e => {
+                  e.target.style.background = 'rgba(255,255,255,0.12)';
+                  e.target.style.borderColor = 'rgba(255,255,255,0.2)';
+                }}
               />
-            </CInputGroup>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Body ─────────────────────────────────────────────── */}
+      <div className="app-body" style={{ marginTop: '-32px' }}>
+
+        {/* Tab Bar */}
+        <div style={{
+          display: 'inline-flex',
+          background: 'var(--c-surface)',
+          border: '1px solid var(--c-border)',
+          borderRadius: 'var(--r-lg)',
+          padding: '4px',
+          gap: '4px',
+          marginBottom: '20px',
+          boxShadow: 'var(--s-md)',
+          position: 'sticky',
+          top: '16px',
+          zIndex: 99,
+        }}>
+          {[
+            { key: 'ongoing', label: 'Ongoing', count: ongoingCount },
+            { key: 'completed', label: 'Completed', count: completedCount },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                padding: '8px 22px',
+                borderRadius: '10px',
+                fontFamily: 'var(--font-body)',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer',
+                border: 'none',
+                transition: 'all 0.2s',
+                background: activeTab === tab.key ? 'var(--g-navy-soft)' : 'transparent',
+                color: activeTab === tab.key ? '#fff' : 'var(--c-text-3)',
+                boxShadow: activeTab === tab.key ? 'var(--s-navy)' : 'none',
+                display: 'flex', alignItems: 'center', gap: '8px',
+              }}
+            >
+              {tab.label}
+              <span style={{
+                background: activeTab === tab.key ? 'rgba(255,255,255,0.22)' : 'var(--c-surface-3)',
+                color: activeTab === tab.key ? '#fff' : 'var(--c-text-3)',
+                borderRadius: 'var(--r-pill)',
+                padding: '1px 8px',
+                fontSize: '11px',
+                fontWeight: 800,
+              }}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Cards */}
+        <CRow className="g-3">
+          {filteredBookings.length > 0 ? (
+            filteredBookings.map((booking, idx) => (
+              <CCol lg={6} key={idx}>
+                <BookingCard booking={booking} onClick={() => navigate(`/bookings/${booking.bookingId}`)} />
+              </CCol>
+            ))
+          ) : (
+            <CCol xs={12}>
+              <div className="app-empty" style={{ padding: '60px 16px' }}>
+                <Filter size={52} />
+                <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '16px', color: 'var(--c-text)', margin: '0 0 6px' }}>
+                  No bookings found
+                </p>
+                <p style={{ fontSize: '13px', margin: 0 }}>Try a different doctor name, branch, or booking ID</p>
+              </div>
+            </CCol>
+          )}
+        </CRow>
+
+      </div>
+    </div>
+  );
+};
+
+/* ── Compact Booking Card ────────────────────────────────────── */
+const BookingCard = ({ booking, onClick }) => {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      className="app-booking-item"
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        transform: hovered ? 'translateY(-2px)' : 'none',
+        boxShadow: hovered ? 'var(--s-lg)' : 'var(--s-sm)',
+        borderColor: hovered ? 'var(--c-navy-light)' : 'var(--c-border)',
+        transition: 'all 0.2s',
+      }}
+    >
+      {/* ── Row 1: Doctor + Status ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+          <div className="app-icon-box app-icon-navy" style={{ width: '38px', height: '38px', borderRadius: '10px', flexShrink: 0 }}>
+            <Stethoscope size={18} />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              fontSize: '14px',
+              color: 'var(--c-text)',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
+              {booking.doctorName}
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--c-text-3)', fontWeight: 600, marginTop: '1px' }}>
+              #{booking.bookingId}
+            </div>
           </div>
         </div>
 
-        <CNav variant="pills" className="premium-nav rounded-4 p-1 bg-white shadow-sm d-inline-flex w-100 w-sm-auto mb-2">
-          <CNavItem className="flex-grow-1 flex-sm-grow-0 text-center">
-            <CNavLink
-              active={activeTab === 'ongoing'}
-              className={`rounded-3 px-4 py-2 fw-bold cursor-pointer w-100 ${activeTab === 'ongoing'
-                ? 'text-white'
-                : 'text-secondary'
-                }`}
-              onClick={() => setActiveTab('ongoing')}
-              style={
-                activeTab === 'ongoing'
-                  ? {
-                    backgroundColor: 'var(--primary-color)',
-                    color: '#fff',
-                  }
-                  : {}
-              }
-            >
-              Ongoing
-            </CNavLink>
-          </CNavItem>
-
-          <CNavItem className="flex-grow-1 flex-sm-grow-0 text-center">
-            <CNavLink
-              active={activeTab === 'completed'}
-              className={`rounded-3 px-4 py-2 fw-bold cursor-pointer w-100 ${activeTab === 'completed'
-                ? 'text-white'
-                : 'text-secondary'
-              }`}
-              onClick={() => setActiveTab('completed')}
-              style={
-                activeTab === 'completed'
-                  ? {
-                    backgroundColor: 'var(--primary-color)',
-                    color: '#fff',
-                  }
-                  : {}
-              }
-            >
-              Completed
-            </CNavLink>
-          </CNavItem>
-        </CNav>
+        <span
+          className={`app-booking-chip ${getStatusClass(booking.status)}`}
+          style={{ flexShrink: 0, fontSize: '11px' }}
+        >
+          {booking.status}
+        </span>
       </div>
 
-      <CRow>
-        {filteredBookings.length > 0 ? (
-          filteredBookings.map((booking, idx) => {
-            const statusStyle = getStatusColor(booking.status);
-            return (
-              <CCol lg={6} key={idx} className="mb-4">
-                <CCard
-                  className="premium-card border-0 cursor-pointer h-100 bookings-list-card"
-                  onClick={() => navigate(`/bookings/${booking.bookingId}`)}
-                >
-                  <CCardBody className="p-4 d-flex flex-column h-100">
-                    <div className="d-flex justify-content-between align-items-start mb-3 gap-2">
-                      <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
-                        <div className="bg-primary bg-opacity-10 p-3 rounded-4 d-none d-sm-flex align-items-center justify-content-center" style={{ flexShrink: 0, width: '56px', height: '56px' }}>
-                          <Stethoscope size={24} className="text-primary" />
-                        </div>
-                        <div style={{ minWidth: 0 }}>
-                          <div className="fw-bold fs-5 text-dark text-truncate">{booking.doctorName}</div>
-                          <div className="small text-secondary fw-semibold text-truncate">ID: {booking.bookingId}</div>
-                        </div>
-                      </div>
-                      <span 
-                        className="booking-status-chip shadow-sm"
-                        style={{ background: statusStyle.bg, color: statusStyle.text, flexShrink: 0 }}
-                      >
-                        {booking.status}
-                      </span>
-                    </div>
-
-                    <div className="bg-light p-3 rounded-4 mb-3 flex-grow-1">
-                      <CRow className="g-3">
-                        <CCol xs={12} sm={6} className="bookings-list-border-right">
-                          <div className="d-flex align-items-center gap-2 text-secondary small mb-1">
-                            <Calendar size={14} style={{ flexShrink: 0 }} /> Date & Time
-                          </div>
-                          <div className="fw-bold text-dark small">
-                            {booking.serviceDate} • {booking.servicetime}
-                          </div>
-                        </CCol>
-                        <CCol xs={12} sm={6} className="bookings-list-ps-left">
-                          <div className="d-flex align-items-center gap-2 text-secondary small mb-1">
-                            <MapPin size={14} style={{ flexShrink: 0 }} /> Branch
-                          </div>
-                          <div className="fw-bold text-dark small text-truncate">
-                            {booking.branchname}
-                          </div>
-                        </CCol>
-                      </CRow>
-                    </div>
-
-                    <div className="d-flex justify-content-between align-items-center mt-auto pt-2">
-                      <div className="d-flex align-items-center gap-2">
-                        <div className="avatar-group d-flex">
-                          <div className="bg-secondary bg-opacity-10 rounded-circle small d-flex align-items-center justify-content-center fw-bold text-secondary" style={{ width: '32px', height: '32px' }}>
-                            {booking.visitCount || '1'}
-                          </div>
-                        </div>
-                        <span className="small text-secondary">Total Visits</span>
-                      </div>
-                      <div className="text-primary fw-bold d-flex align-items-center gap-1 small">
-                        View Details <ChevronRight size={16} />
-                      </div>
-                    </div>
-                  </CCardBody>
-                </CCard>
-              </CCol>
-            );
-          })
-        ) : (
-          <CCol className="text-center py-5">
-            <div className="text-secondary opacity-50 mb-3">
-              <Filter size={64} />
+      {/* ── Row 2: Meta info ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '12px',
+        background: 'var(--c-surface-2)',
+        border: '1px solid var(--c-border-light)',
+        borderRadius: 'var(--r-sm)',
+        padding: '9px 12px',
+        marginBottom: '10px',
+      }}>
+        {/* Date */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1 }}>
+          <Calendar size={13} color="var(--c-navy)" style={{ flexShrink: 0 }} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '10px', color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Date</div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--c-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {booking.serviceDate}
             </div>
-            <h4>No bookings found</h4>
-            <p>Try searching for a different doctor or booking ID</p>
-          </CCol>
-        )}
-      </CRow>
+          </div>
+        </div>
+
+        <div style={{ width: '1px', height: '26px', background: 'var(--c-border)', flexShrink: 0 }} />
+
+        {/* Time */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          <Clock size={13} color="var(--c-orange)" style={{ flexShrink: 0 }} />
+          <div>
+            <div style={{ fontSize: '10px', color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Time</div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--c-text)' }}>{booking.servicetime}</div>
+          </div>
+        </div>
+
+        <div style={{ width: '1px', height: '26px', background: 'var(--c-border)', flexShrink: 0 }} />
+
+        {/* Branch */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1 }}>
+          <MapPin size={13} color="var(--c-navy)" style={{ flexShrink: 0 }} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '10px', color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Branch</div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--c-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {booking.branchname}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Row 3: Visits + CTA ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+          <div style={{
+            width: '26px', height: '26px', borderRadius: '8px',
+            background: 'var(--g-navy-soft)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'var(--font-display)',
+            fontSize: '12px', fontWeight: 800, color: '#fff',
+          }}>
+            {booking.visitCount || '1'}
+          </div>
+          <span style={{ fontSize: '12px', color: 'var(--c-text-3)', fontWeight: 600 }}>Total Visits</span>
+        </div>
+
+        <button className="app-link-btn" style={{ fontSize: '12px' }}>
+          View Details
+          <ChevronRight
+            size={14}
+            style={{ transition: 'transform 0.2s', transform: hovered ? 'translateX(3px)' : 'translateX(0)' }}
+          />
+        </button>
+      </div>
     </div>
   );
 };

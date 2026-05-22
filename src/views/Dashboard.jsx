@@ -1,29 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { CRow, CCol } from '@coreui/react';
 import {
-  CRow,
-  CCol,
-  CCard,
-  CCardBody,
-  CCardHeader,
-  CButton,
-  CSpinner,
-  CBadge,
-} from '@coreui/react';
-import { 
-  Calendar, 
-  Clock, 
-  Activity, 
-  User as UserIcon, 
-  ArrowRight,
-  ChevronRight,
-  TrendingUp,
-  FileText,
-  MapPin,
-  Stethoscope
+  Calendar, Clock, Activity, ArrowRight,
+  ChevronRight, TrendingUp, FileText, MapPin
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { customerService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import '../styles/theme.css'; // ← shared theme
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -44,165 +28,176 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
-
     fetchDashboardData();
   }, [user]);
 
+  /* ── helpers (logic unchanged) ── */
   const parseServiceDate = (dateStr) => {
     if (!dateStr) return { month: 'N/A', day: '--' };
-    
     let date = new Date(dateStr);
     if (!isNaN(date.getTime())) {
       return {
         month: date.toLocaleString('en-US', { month: 'short' }),
-        day: date.getDate()
+        day: date.getDate(),
       };
     }
-
     const parts = dateStr.split('-');
     if (parts.length === 3) {
-      const day = parts[0];
-      const month = parts[1].substring(0, 3);
-      return { month: month.toUpperCase(), day };
+      return { month: parts[1].substring(0, 3).toUpperCase(), day: parts[0] };
     }
-    
     return { month: 'DATE', day: '??' };
   };
 
-  const stats = [
-    { title: 'Total Bookings', value: bookings.length, icon: Calendar, color: 'var(--accent-orange)' },
-    { title: 'Ongoing Sessions', value: bookings.filter(b => b.status === 'in-progress').length, icon: Activity, color: '#2dd4bf' },
-    { title: 'Upcoming Visits', value: bookings.filter(b => b.status === 'confirmed').length, icon: Clock, color: '#3b82f6' },
-    { title: 'Total Reports', value: 0, icon: FileText, color: '#f43f5e' },
-  ];
-
-  const getStatusColor = (status) => {
+  const getStatusStyle = (status) => {
     switch (status?.toLowerCase()) {
-      case 'in-progress': return { bg: '#dcfce7', text: '#16a34a' };
-      case 'confirmed': return { bg: '#dbeafe', text: '#2563eb' };
-      case 'completed': return { bg: '#f3e8ff', text: '#7c3aed' };
-      default: return { bg: '#f1f5f9', text: '#64748b' };
+      case 'in-progress': return { bg: 'var(--c-info-light)', text: 'var(--c-info)' };
+      case 'confirmed': return { bg: 'var(--c-navy-xlight)', text: 'var(--c-navy)' };
+      case 'completed': return { bg: 'var(--c-purple-light)', text: 'var(--c-purple)' };
+      case 'pending': return { bg: 'var(--c-orange-light)', text: 'var(--c-orange)' };
+      default: return { bg: 'var(--c-surface-3)', text: 'var(--c-text-3)' };
     }
   };
 
+  const stats = [
+    { label: 'Total Bookings', value: bookings.length, icon: Calendar, color: 'var(--c-navy)', iconBg: 'var(--c-navy-xlight)', accent: 'navy' },
+    { label: 'Active Sessions', value: bookings.filter(b => b.status === 'in-progress').length, icon: Activity, color: 'var(--c-orange)', iconBg: 'var(--c-orange-light)', accent: 'orange' },
+    { label: 'Upcoming Visits', value: bookings.filter(b => b.status === 'confirmed').length, icon: Clock, color: 'var(--c-info)', iconBg: 'var(--c-info-light)', accent: 'sky' },
+    { label: 'Total Reports', value: 0, icon: FileText, color: 'var(--c-danger)', iconBg: 'var(--c-danger-light)', accent: 'rose' },
+  ];
+
+  /* ── loading ── */
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '70vh' }}>
-        <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
+      <div className="app-loading">
+        <div className="app-loading-ring" />
+        <p className="app-loading-text">Loading dashboard…</p>
       </div>
     );
   }
 
+  /* ── render ── */
   return (
-    <div className="fade-in">
-      <div className="mb-4">
-        <h2 className="fw-bold text-dark">Dashboard</h2>
-        <p className="text-secondary">Overview of your healthcare journey</p>
+    <div className="app-page p-3">
+
+      {/* Page heading */}
+      <div style={{ marginBottom: 24 }}>
+        <h2 className="app-page-heading">Dashboard</h2>
+        <p className="app-page-sub">Overview of your healthcare journey</p>
       </div>
 
-      {/* Stats Grid - 2x2 on mobile */}
+      {/* ── STATS GRID ── */}
       <div className="dashboard-stats-grid mb-4">
         {stats.map((stat, idx) => (
           <div key={idx} className="dashboard-stat-card">
-            <div 
+            <div
               className="stat-icon-circle"
               style={{ background: `${stat.color}15`, color: stat.color }}
             >
               <stat.icon size={22} />
             </div>
             <div>
-              <div className="stat-title">{stat.title}</div>
+              <div className="stat-title">{stat.label}</div>
               <div className="stat-number">{stat.value}</div>
             </div>
           </div>
         ))}
       </div>
 
+      {/* ── MAIN ROW ── */}
       <CRow>
+        {/* Recent Bookings */}
         <CCol md={8} className="mb-4">
-          <CCard className="premium-card h-100 border-0">
-            <CCardHeader className="bg-transparent border-0 p-4 pb-2 d-flex justify-content-between align-items-center">
-              <h5 className="m-0 fw-bold">Recent Bookings</h5>
-              <CButton color="link" className="text-decoration-none p-0 text-primary fw-600" onClick={() => navigate('/bookings')}>
-                View All <ArrowRight size={16} />
-              </CButton>
-            </CCardHeader>
-            <CCardBody className="px-4 pb-4 pt-2">
+          <div className="app-card" style={{ height: '100%' }}>
+            <div className="app-card-header">
+              <div className="app-card-header-left">
+                <div className="app-icon-box app-icon-navy">
+                  <Calendar size={20} />
+                </div>
+                <div>
+                  <p className="app-card-title">Recent Bookings</p>
+                  <p className="app-card-sub">{bookings.length} total appointments</p>
+                </div>
+              </div>
+              <button className="app-link-btn" onClick={() => navigate('/bookings')}>
+                View All <ArrowRight size={15} />
+              </button>
+            </div>
+
+            <div className="app-card-body">
               {bookings.length > 0 ? (
-                <div className="d-flex flex-column gap-3">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {bookings.slice(0, 3).map((booking, idx) => {
-                    const statusStyle = getStatusColor(booking.status);
+                    const { month, day } = parseServiceDate(booking.serviceDate);
+                    const statusStyle = getStatusStyle(booking.status);
                     return (
-                      <div 
-                        key={idx} 
-                        className="dashboard-booking-card"
+                      <div
+                        key={idx}
+                        className="app-booking-item"
                         onClick={() => navigate(`/bookings/${booking.bookingId}`)}
                       >
-                        {/* Top Row: Doctor & Status */}
-                        <div className="d-flex justify-content-between align-items-start mb-2">
-                          <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
-                            {(() => {
-                              const { month, day } = parseServiceDate(booking.serviceDate);
-                              return (
-                                <div className="booking-date-pill">
-                                  <div className="booking-date-month">{month}</div>
-                                  <div className="booking-date-day">{day}</div>
-                                </div>
-                              );
-                            })()}
+                        {/* Top row */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+                            <div className="app-date-badge">
+                              <span className="app-date-month">{month}</span>
+                              <span className="app-date-day">{day}</span>
+                            </div>
                             <div style={{ minWidth: 0 }}>
-                              <div className="fw-bold text-dark text-truncate">{booking.doctorName}</div>
-                              <div className="small text-secondary text-truncate">
-                                <MapPin size={12} className="me-1" style={{ flexShrink: 0 }} />
+                              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {booking.doctorName}
+                              </div>
+                              <div style={{ fontSize: 12, color: 'var(--c-text-2)', display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <MapPin size={11} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
                                 {booking.branchname}
                               </div>
                             </div>
                           </div>
-                          <span 
-                            className="booking-status-chip"
+                          <span
+                            className="app-booking-chip"
                             style={{ background: statusStyle.bg, color: statusStyle.text }}
                           >
                             {booking.status}
                           </span>
                         </div>
 
-                        {/* Bottom Row: Time & Arrow */}
-                        <div className="d-flex justify-content-between align-items-center mt-auto">
-                          <div className="d-flex align-items-center gap-2 text-secondary small">
+                        {/* Bottom row */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--c-text-3)' }}>
                             <Clock size={13} />
                             <span>{booking.servicetime}</span>
                           </div>
-                          <ChevronRight size={18} className="text-secondary" />
+                          <ChevronRight size={17} color="var(--c-text-3)" />
                         </div>
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <div className="text-center py-5 text-secondary">
-                  <Calendar size={48} className="mb-3 opacity-25" />
-                  <p>No recent bookings found.</p>
+                <div className="app-empty">
+                  <Calendar size={48} />
+                  <p style={{ margin: 0, fontSize: 14 }}>No recent bookings found</p>
                 </div>
               )}
-            </CCardBody>
-          </CCard>
+            </div>
+          </div>
         </CCol>
 
+        {/* Health Score */}
         <CCol md={4} className="mb-4">
-          <CCard className="premium-card health-score-card h-100 border-0 text-white" style={{ background: 'var(--orange-gradient)' }}>
-            <CCardBody className="p-4 d-flex flex-column justify-content-between">
-              <div>
-                <div className="bg-white bg-opacity-25 rounded-circle d-inline-flex p-3 mb-4">
-                  <TrendingUp size={32} />
-                </div>
-                <h3 className="fw-bold mb-3">Your Health Score</h3>
-                <p className="opacity-90 mb-4">You've completed 85% of your recommended sessions this week. Keep it up!</p>
+          <div className="app-health-card">
+            <div className="app-health-card-body">
+              <div className="app-health-icon-wrap">
+                <TrendingUp size={28} color="#fff" />
               </div>
-              <CButton color="light" className="fw-bold border-0 py-3 rounded-4 w-100 text-dark">
-                View Recommendations
-              </CButton>
-            </CCardBody>
-          </CCard>
+              <h3 className="app-health-title">Your Health Score</h3>
+              <p className="app-health-desc">
+                You've completed <strong style={{ color: '#fdba74' }}>85%</strong> of your recommended sessions this week. Keep it up!
+              </p>
+              <button className="app-health-cta">
+                View Recommendations <ArrowRight size={15} />
+              </button>
+            </div>
+          </div>
         </CCol>
       </CRow>
     </div>

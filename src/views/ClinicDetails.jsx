@@ -1,27 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
-  CRow,
-  CCol,
-  CCard,
-  CCardBody,
-  CSpinner,
-  CButton,
-  CImage,
-  CBadge,
-  CAvatar,
-} from '@coreui/react';
-import {
-  MapPin,
-  Phone,
-  Mail,
-  Globe,
-  Clock,
-  ShieldCheck,
-  ExternalLink,
-  Award,
-  Navigation,
-  PlayCircle,
-  ChevronRight
+  MapPin, Phone, Mail, Globe, Clock,
+  ShieldCheck, ExternalLink, Award,
+  Navigation, PlayCircle, ChevronRight,
+
 } from 'lucide-react';
 import CIcon from '@coreui/icons-react';
 import { cibFacebook, cibTwitter, cibInstagram } from '@coreui/icons';
@@ -46,223 +28,319 @@ const ClinicDetails = () => {
         setLoading(false);
       }
     };
-
     fetchClinic();
   }, [user]);
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '70vh' }}>
-        <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
+      <div className="app-loading">
+        <div className="app-loading-ring" />
+        <p className="app-loading-text">Loading clinic details…</p>
       </div>
     );
   }
 
+  const logoSrc = (() => {
+    const logo = clinic?.hospitalLogo || clinic?.clinicLogo;
+    if (!logo) return `https://ui-avatars.com/api/?name=${encodeURIComponent(clinic?.name ?? 'Clinic')}&background=1B4F8A&color=fff`;
+    if (logo.startsWith('http') || logo.startsWith('data:')) return logo;
+    return `data:image/png;base64,${logo}`;
+  })();
+
   return (
-    <div className="fade-in pb-5">
-      <div className="mb-4">
-        <h2 className="fw-bold text-dark mb-1">Clinic Details</h2>
-        <p className="text-secondary small">Comprehensive information about our medical facilities and services</p>
+    <div className="app-page">
+
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <div className="app-hero">
+        <div className="app-hero-inner">
+          <h1 className="app-hero-title">Clinic Details</h1>
+          <p className="app-hero-sub">Comprehensive information about our medical facilities and services</p>
+        </div>
       </div>
 
-      <CRow>
-        <CCol lg={8} className="mb-4">
-          <CCard className="premium-card border-0 overflow-hidden mb-4 shadow-sm" style={{ background: '#fff' }}>
-            <div className="position-relative" style={{ height: '220px', background: 'var(--primary-gradient)' }}>
-              <div className="position-absolute w-100 h-100" style={{ background: 'url(https://www.transparenttextures.com/patterns/carbon-fibre.png)', opacity: '0.05' }}></div>
-              <div className="position-absolute bottom-0 start-0 p-4 w-100 d-flex justify-content-between align-items-end">
-                <div className="d-flex align-items-center gap-4">
-                  <div className="bg-white p-2 rounded-4 shadow-lg" style={{ width: '110px', height: '110px' }}>
-                    <CImage
-                      src={(() => {
-                        const logo = clinic?.hospitalLogo || clinic?.clinicLogo;
-                        if (!logo) return "https://ui-avatars.com/api/?name=Kinetix&background=fff&color=1B4F8A";
-                        if (logo.startsWith('http') || logo.startsWith('data:')) return logo;
-                        return `data:image/png;base64,${logo}`;
-                      })()}
-                      className="w-100 h-100 object-fit-contain"
-                    />
-                  </div>
-                  <div className="text-white">
-                    <h1 className="fw-bold m-0 text-white" style={{ letterSpacing: '-0.5px' }}>{clinic?.name}</h1>
-                    <div className="d-flex align-items-center gap-2 small opacity-90 mt-1">
-                      <MapPin size={16} className="text-orange" /> {clinic?.address}
+      <div className="app-body" style={{ marginTop: -36 }}>
+
+        {/* ── Clinic identity banner ──────────────────────────────────────── */}
+        <div className="app-card" style={{ marginBottom: 24 }}>
+
+          {/* Gradient banner strip */}
+          <div style={{
+            background: 'var(--g-navy)',
+            borderRadius: 'var(--r-xl) var(--r-xl) 0 0',
+            padding: '28px 28px 64px',
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'radial-gradient(circle at 80% 30%, rgba(249,115,22,.22) 0%, transparent 55%)',
+            }} />
+            {/* subscription badge top-right */}
+            <div style={{ position: 'absolute', top: 20, right: 24, zIndex: 1 }}>
+              <span className="app-status-pill app-status-confirmed">
+                <span className="app-status-dot" />
+                {clinic?.subscription || 'Verified'} Clinic
+              </span>
+            </div>
+          </div>
+
+          {/* Logo + name overlap */}
+          <div style={{
+            padding: '0 28px 28px',
+            marginTop: -52,
+            position: 'relative', zIndex: 1,
+            display: 'flex', alignItems: 'flex-end', gap: 20, flexWrap: 'wrap',
+          }}>
+            <div style={{
+              width: 96, height: 96, flexShrink: 0,
+              background: 'var(--c-surface)',
+              borderRadius: 'var(--r-md)',
+              border: '4px solid var(--c-surface)',
+              boxShadow: 'var(--s-lg)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden',
+            }}>
+              <img src={logoSrc} alt={clinic?.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
+            <div style={{ paddingBottom: 4 }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, margin: '0 0 4px', color: 'var(--c-text)' }}>
+                {clinic?.name}
+              </h2>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--c-text-2)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <MapPin size={13} style={{ color: 'var(--c-orange)', flexShrink: 0 }} />
+                {clinic?.address}
+              </p>
+            </div>
+          </div>
+
+          {/* Two-col info grid */}
+          <div style={{ padding: '0 28px 28px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}
+            className="clinic-two-col">
+
+            {/* Contact */}
+            <div>
+              <p style={{
+                fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800, letterSpacing: '.8px',
+                textTransform: 'uppercase', color: 'var(--c-navy)', marginBottom: 14,
+                paddingBottom: 8, borderBottom: '2px solid var(--c-navy-light)'
+              }}>
+                Contact Details
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {[
+                  { icon: Phone, label: 'Phone Support', value: clinic?.contactNumber, color: 'app-icon-navy' },
+                  { icon: Mail, label: 'Email Address', value: clinic?.emailAddress, color: 'app-icon-sky' },
+                  {
+                    icon: Globe, label: 'Official Website',
+                    value: clinic?.website?.replace('https://', ''),
+                    href: clinic?.website, color: 'app-icon-green'
+                  },
+                ].map(({ icon: Icon, label, value, href, color }) => (
+                  <div key={label} className="app-info-item">
+                    <div className={`app-icon-box ${color}`} style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0 }}>
+                      <Icon size={16} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <p className="app-info-label" style={{ marginBottom: 2 }}>{label}</p>
+                      {href
+                        ? <a href={href} target="_blank" rel="noreferrer" className="app-link-btn" style={{ fontSize: 13 }}>{value}</a>
+                        : <p className="app-info-value" style={{ fontSize: 13 }}>{value || '—'}</p>}
                     </div>
                   </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Facility */}
+            <div>
+              <p style={{
+                fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800, letterSpacing: '.8px',
+                textTransform: 'uppercase', color: 'var(--c-navy)', marginBottom: 14,
+                paddingBottom: 8, borderBottom: '2px solid var(--c-navy-light)'
+              }}>
+                Facility Information
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div className="app-info-item">
+                  <div className="app-icon-box app-icon-amber" style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0 }}>
+                    <Clock size={16} />
+                  </div>
+                  <div>
+                    <p className="app-info-label" style={{ marginBottom: 2 }}>Operational Hours</p>
+                    <p className="app-info-value" style={{ fontSize: 13 }}>{clinic?.openingTime} – {clinic?.closingTime}</p>
+                  </div>
                 </div>
-                <div className="pb-1 d-none d-md-block">
-                  <CBadge color="light" className="text-primary py-2 px-3 fw-bold rounded-pill shadow-sm">
-                    {clinic?.subscription || 'Verified'} Clinic
-                  </CBadge>
+                <div className="app-info-item">
+                  <div className="app-icon-box app-icon-green" style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0 }}>
+                    <ShieldCheck size={16} />
+                  </div>
+                  <div>
+                    <p className="app-info-label" style={{ marginBottom: 2 }}>Registration Number</p>
+                    <p className="app-info-value" style={{ fontSize: 13 }}>{clinic?.licenseNumber || '—'}</p>
+                  </div>
+                </div>
+                <div className="app-info-item">
+                  <div className="app-icon-box app-icon-orange" style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0 }}>
+                    <Award size={16} />
+                  </div>
+                  <div>
+                    <p className="app-info-label" style={{ marginBottom: 2 }}>NABH Score</p>
+                    <p className="app-info-value" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {clinic?.nabhScore} / 10
+                      <span className="app-booking-chip" style={{ background: 'var(--c-success-light)', color: 'var(--c-success)', fontSize: 10 }}>
+                        ✓ Verified
+                      </span>
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-            <CCardBody className="p-4 pt-5">
-              <CRow className="g-5">
-                <CCol md={6}>
-                  <div className="mb-4">
-                    <h6 className="fw-bold text-primary text-uppercase small" style={{ letterSpacing: '1px' }}>Contact Details</h6>
-                    <hr className="mt-2 mb-0 opacity-10" style={{ width: '40px', height: '3px', background: 'var(--primary-color)' }} />
-                  </div>
-                  <div className="d-flex flex-column gap-4">
-                    <div className="d-flex align-items-center gap-3">
-                      <div className="bg-light p-2 rounded-3 text-primary"><Phone size={18} /></div>
-                      <div>
-                        <div className="small text-secondary">Phone Support</div>
-                        <div className="fw-bold text-dark">{clinic?.contactNumber}</div>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center gap-3">
-                      <div className="bg-light p-2 rounded-3 text-primary"><Mail size={18} /></div>
-                      <div>
-                        <div className="small text-secondary">Email Address</div>
-                        <div className="fw-bold text-dark">{clinic?.emailAddress}</div>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center gap-3">
-                      <div className="bg-light p-2 rounded-3 text-primary"><Globe size={18} /></div>
-                      <div>
-                        <div className="small text-secondary">Official Website</div>
-                        <a href={clinic?.website} target="_blank" rel="noreferrer" className="fw-bold text-primary text-decoration-none hover-underline">
-                          {clinic?.website?.replace('https://', '')}
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </CCol>
-                <CCol md={6}>
-                  <div className="mb-4">
-                    <h6 className="fw-bold text-primary text-uppercase small" style={{ letterSpacing: '1px' }}>Facility Information</h6>
-                    <hr className="mt-2 mb-0 opacity-10" style={{ width: '40px', height: '3px', background: 'var(--primary-color)' }} />
-                  </div>
-                  <div className="d-flex flex-column gap-4">
-                    <div className="d-flex align-items-center gap-3">
-                      <div className="bg-light p-2 rounded-3 text-primary"><Clock size={18} /></div>
-                      <div>
-                        <div className="small text-secondary">Operational Hours</div>
-                        <div className="fw-bold text-dark">{clinic?.openingTime} - {clinic?.closingTime}</div>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center gap-3">
-                      <div className="bg-light p-2 rounded-3 text-primary"><ShieldCheck size={18} /></div>
-                      <div>
-                        <div className="small text-secondary">Registration Number</div>
-                        <div className="fw-bold text-dark">{clinic?.licenseNumber}</div>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center gap-3">
-                      <div className="bg-light p-2 rounded-3 text-primary"><Award size={18} /></div>
-                      <div>
-                        <div className="small text-secondary">NABH Score</div>
-                        <div className="fw-bold text-dark d-flex align-items-center gap-2">
-                          {clinic?.nabhScore} / 10 <CBadge color="success" className="bg-opacity-10 text-success small">Verified</CBadge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CCol>
-              </CRow>
-            </CCardBody>
-          </CCard>
+          </div>
+        </div>
 
-          <h5 className="fw-bold text-dark mb-4 mt-5 d-flex align-items-center gap-2">
-            <span className="bg-primary rounded-pill" style={{ width: '4px', height: '20px' }}></span>
-            Active Branch Locations
-          </h5>
-          <CRow>
-            {clinic?.branches?.map((branch, idx) => (
-              <CCol md={6} key={idx} className="mb-4">
-                <CCard className="premium-card border-0 h-100 shadow-sm">
-                  <CCardBody className="p-4 d-flex flex-column">
-                    <div className="d-flex justify-content-between align-items-start mb-3">
-                      <div className="bg-light p-3 rounded-4">
-                        <MapPin size={24} className="text-primary" />
-                      </div>
-                      <CButton 
-                        color="warning" 
-                        variant="ghost" 
-                        size="sm" 
-                        className="rounded-pill fw-bold text-orange d-flex align-items-center gap-1 px-3"
-                        onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(branch.address)}`, '_blank')}
-                      >
-                        Navigate <Navigation size={14} />
-                      </CButton>
-                    </div>
-                    <h5 className="fw-bold text-dark mb-2">{branch.branchName}</h5>
-                    <p className="small text-secondary mb-4 flex-grow-1">{branch.address}</p>
-                    <div className="d-flex flex-column gap-2 border-top pt-3">
-                      <div className="d-flex align-items-center gap-2 small text-secondary">
-                        <Phone size={14} /> <span>{branch.contactNumber}</span>
-                      </div>
-                    </div>
-                  </CCardBody>
-                </CCard>
-              </CCol>
-            ))}
-          </CRow>
-        </CCol>
+        {/* ── Main body: branches + sidebar ──────────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 24 }} className="clinic-layout">
 
-        <CCol lg={4}>
-          <CCard className="premium-card border-0 mb-4 p-4 shadow-sm" style={{ background: '#fff' }}>
-            <h6 className="fw-bold text-primary text-uppercase small mb-4" style={{ letterSpacing: '1px' }}>Social Presence</h6>
-            <div className="d-flex flex-column gap-3">
-              <a href="#" className="text-decoration-none d-flex align-items-center justify-content-between p-3 rounded-4 border premium-social-link">
-                <div className="d-flex align-items-center gap-3">
-                  <div className="bg-light p-2 rounded-3 text-danger"><CIcon icon={cibInstagram} size="lg" /></div>
-                  <div>
-                    <div className="fw-bold text-dark small">Instagram</div>
-                    <div className="small text-secondary">@kinetixwellness</div>
-                  </div>
-                </div>
-                <ChevronRight size={16} className="text-secondary" />
-              </a>
-              <a href="#" className="text-decoration-none d-flex align-items-center justify-content-between p-3 rounded-4 border premium-social-link">
-                <div className="d-flex align-items-center gap-3">
-                  <div className="bg-light p-2 rounded-3 text-info"><CIcon icon={cibTwitter} size="lg" /></div>
-                  <div>
-                    <div className="fw-bold text-dark small">Twitter</div>
-                    <div className="small text-secondary">@kinetixcare</div>
-                  </div>
-                </div>
-                <ChevronRight size={16} className="text-secondary" />
-              </a>
-              <a href="#" className="text-decoration-none d-flex align-items-center justify-content-between p-3 rounded-4 border premium-social-link">
-                <div className="d-flex align-items-center gap-3">
-                  <div className="bg-light p-2 rounded-3 text-primary"><CIcon icon={cibFacebook} size="lg" /></div>
-                  <div>
-                    <div className="fw-bold text-dark small">Facebook</div>
-                    <div className="small text-secondary">Kinetix Wellness</div>
-                  </div>
-                </div>
-                <ChevronRight size={16} className="text-secondary" />
-              </a>
+          {/* Left: branches */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <span style={{ width: 4, height: 20, background: 'var(--g-navy-soft)', borderRadius: 4, display: 'inline-block' }} />
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 800, margin: 0 }}>
+                Active Branch Locations
+              </h3>
             </div>
-          </CCard>
 
-          <CCard className="premium-card border-0 mb-4 p-4 shadow-sm overflow-hidden">
-            <h6 className="fw-bold text-primary text-uppercase small mb-4" style={{ letterSpacing: '1px' }}>Virtual Experience</h6>
-            <div className="position-relative rounded-4 overflow-hidden mb-3" style={{ height: '180px' }}>
-              <CImage src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" className="w-100 h-100 object-fit-cover" />
-              <div className="position-absolute w-100 h-100 top-0 start-0 d-flex align-items-center justify-content-center bg-dark bg-opacity-20">
-                <CButton 
-                  color="white" 
-                  className="rounded-circle p-3 shadow-lg pulse-animation"
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+              {clinic?.branches?.map((branch, idx) => (
+                <div key={idx} className="app-booking-item" style={{ cursor: 'default' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                    <div className="app-icon-box app-icon-navy" style={{ width: 44, height: 44, borderRadius: 12 }}>
+                      <MapPin size={20} />
+                    </div>
+                    <button
+                      className="app-btn-outline-navy"
+                      style={{ fontSize: 11, padding: '5px 12px' }}
+                      onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(branch.address)}`, '_blank')}
+                    >
+                      <Navigation size={12} /> Navigate
+                    </button>
+                  </div>
+                  <h4 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, margin: '0 0 6px' }}>
+                    {branch.branchName}
+                  </h4>
+                  <p style={{ fontSize: 12, color: 'var(--c-text-2)', margin: '0 0 14px', lineHeight: 1.5 }}>
+                    {branch.address}
+                  </p>
+                  <div style={{
+                    borderTop: '1px solid var(--c-border)', paddingTop: 12,
+                    display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--c-text-2)'
+                  }}>
+                    <Phone size={12} style={{ color: 'var(--c-navy)', flexShrink: 0 }} />
+                    {branch.contactNumber}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right sidebar */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+            {/* Social presence */}
+            <div className="app-card">
+              <div className="app-card-header">
+                <p style={{
+                  fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800, letterSpacing: '.8px',
+                  textTransform: 'uppercase', color: 'var(--c-navy)', margin: 0
+                }}>
+                  Social Presence
+                </p>
+              </div>
+              <div className="app-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                  { icon: cibInstagram, label: 'Instagram', handle: '@kinetixwellness', iconColor: '#e1306c', bg: '#fce4ec' },
+                  { icon: cibTwitter, label: 'Twitter', handle: '@kinetixcare', iconColor: '#1da1f2', bg: '#e0f2fe' },
+                  { icon: cibFacebook, label: 'Facebook', handle: 'Kinetix Wellness', iconColor: '#1877f2', bg: '#e8f0fe' },
+                ].map(({ icon, label, handle, iconColor, bg }) => (
+                  <a key={label} href="#" className="app-info-item"
+                    style={{ textDecoration: 'none', cursor: 'pointer', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{
+                        width: 38, height: 38, borderRadius: 10, background: bg,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                      }}>
+                        <CIcon icon={icon} style={{ color: iconColor, width: 18, height: 18 }} />
+                      </div>
+                      <div>
+                        <p className="app-info-value" style={{ fontSize: 13, marginBottom: 1 }}>{label}</p>
+                        <p className="app-info-label" style={{ textTransform: 'none', letterSpacing: 0, margin: 0 }}>{handle}</p>
+                      </div>
+                    </div>
+                    <ChevronRight size={15} style={{ color: 'var(--c-text-3)', flexShrink: 0 }} />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Virtual tour */}
+            <div className="app-card" style={{ overflow: 'hidden' }}>
+              <div className="app-card-header">
+                <p style={{
+                  fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800, letterSpacing: '.8px',
+                  textTransform: 'uppercase', color: 'var(--c-navy)', margin: 0
+                }}>
+                  Virtual Experience
+                </p>
+              </div>
+              <div className="app-card-body" style={{ paddingTop: 0 }}>
+                <div style={{
+                  position: 'relative', borderRadius: 'var(--r-md)', overflow: 'hidden',
+                  height: 180, marginBottom: 14
+                }}>
+                  <img
+                    src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+                    alt="Clinic tour"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <div style={{
+                    position: 'absolute', inset: 0, background: 'rgba(13,40,71,.45)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    <button
+                      className="app-btn-ghost"
+                      style={{
+                        background: 'rgba(255,255,255,.15)', border: '2px solid rgba(255,255,255,.4)',
+                        borderRadius: '50%', width: 56, height: 56, display: 'flex',
+                        alignItems: 'center', justifyContent: 'center'
+                      }}
+                      onClick={() => clinic?.walkthrough && window.open(clinic.walkthrough, '_blank')}
+                    >
+                      <PlayCircle size={30} style={{ color: '#fff' }} />
+                    </button>
+                  </div>
+                </div>
+                <button
+                  className="app-btn-navy"
+                  style={{ width: '100%', justifyContent: 'center', padding: '12px 0', borderRadius: 'var(--r-md)' }}
                   onClick={() => clinic?.walkthrough && window.open(clinic.walkthrough, '_blank')}
                 >
-                  <PlayCircle size={32} className="text-primary" />
-                </CButton>
+                  Start 360° Tour <ExternalLink size={14} />
+                </button>
               </div>
             </div>
-            <CButton 
-              color="primary" 
-              className="w-100 rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm btn-premium" 
-              onClick={() => clinic?.walkthrough && window.open(clinic.walkthrough, '_blank')}
-            >
-              Start 360° Tour <ExternalLink size={16} />
-            </CButton>
-          </CCard>
-        </CCol>
-      </CRow>
+
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @media (min-width: 992px) {
+          .clinic-layout { grid-template-columns: 1fr 320px !important; }
+          .clinic-two-col { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 640px) {
+          .clinic-two-col { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   );
 };

@@ -17,7 +17,7 @@ import Profile from './views/Profile';
 import ClinicDetails from './views/ClinicDetails';
 import HomeExercises from './views/HomeExercises';
 import Settings from './views/Settings';
-
+import './styles/theme.css'
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
 

@@ -1,46 +1,33 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
-  CContainer,
-  CHeader,
-  CHeaderBrand,
-  CHeaderNav,
-  CNavItem,
-  CNavLink,
-  CSidebar,
-  CSidebarBrand,
-  CSidebarNav,
-  CHeaderToggler,
-  CCollapse,
-  CDropdown,
-  CDropdownToggle,
-  CDropdownMenu,
-  CDropdownItem,
-  CDropdownDivider,
-  CAvatar,
-  CDropdownHeader,
+  CContainer, CHeader, CHeaderBrand, CHeaderNav, CNavItem, CNavLink,
+  CSidebar, CSidebarBrand, CSidebarNav, CHeaderToggler,
+  CDropdown, CDropdownToggle, CDropdownMenu, CDropdownItem,
+  CDropdownDivider, CAvatar, CDropdownHeader, CImage,
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import {
-  cilHome,
-  cilCalendarCheck,
-  cilUser,
-  cilHospital,
-  cilMenu,
-  cilAccountLogout,
-  cilHistory,
-} from '@coreui/icons';
+import { cilHome, cilCalendarCheck, cilUser, cilHospital, cilMenu, cilHistory } from '@coreui/icons';
 import { useAuth } from '../context/AuthContext';
 import { clinicService } from '../services/api';
-import { LogOut, User, Settings, Bell, Activity } from 'lucide-react';
-import { CImage } from '@coreui/react';
+import { LogOut, User, Settings, Bell, Activity, ChevronRight } from 'lucide-react';
+
+/* ── nav items config ─────────────────────────────────────────────────────── */
+const NAV = [
+  { to: '/dashboard', icon: cilHome, label: 'Dashboard' },
+  { to: '/bookings', icon: cilCalendarCheck, label: 'My Bookings' },
+  { to: '/profile', icon: cilUser, label: 'Profile' },
+  { to: '/clinic', icon: cilHospital, label: 'Clinic Details' },
+];
 
 const DefaultLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [visible, setVisible] = React.useState(true);
   const [clinic, setClinic] = React.useState(null);
-  const [userProfilePic, setUserProfilePic] = React.useState(localStorage.getItem('profilePicture'));
+  const [userProfilePic, setUserProfilePic] = React.useState(
+    () => localStorage.getItem('profilePicture')
+  );
 
   React.useEffect(() => {
     const fetchClinic = async () => {
@@ -54,197 +41,269 @@ const DefaultLayout = () => {
       }
     };
     fetchClinic();
-    
-    // Watch for profile picture updates (this is a simple way without complex state management)
-    const handleStorageChange = () => {
-      setUserProfilePic(localStorage.getItem('profilePicture'));
-    };
-    window.addEventListener('storage', handleStorageChange);
-    // Also check periodically or on mount (since storage event only fires from other tabs)
-    const interval = setInterval(handleStorageChange, 2000);
 
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
+    const handleStorageChange = () => setUserProfilePic(localStorage.getItem('profilePicture'));
+    window.addEventListener('storage', handleStorageChange);
+    const interval = setInterval(handleStorageChange, 2000);
+    return () => { window.removeEventListener('storage', handleStorageChange); clearInterval(interval); };
   }, [user]);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
+  const handleLogout = () => { logout(); navigate('/login'); };
   const handleLinkClick = () => {
     if (window.innerWidth < 768) {
       setVisible(false);
     }
   };
 
+  const logoSrc = (() => {
+    const logo = clinic?.hospitalLogo || clinic?.clinicLogo;
+    if (!logo) return null;
+    if (logo.startsWith('http') || logo.startsWith('data:')) return logo;
+    return `data:image/png;base64,${logo}`;
+  })();
+
+  const avatarSrc = userProfilePic ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.customerName ?? 'P')}&background=1B4F8A&color=fff`;
+
   return (
-    <div className="min-vh-100 d-flex flex-column">
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--c-surface-2)' }}>
+
+      {/* ── Sidebar ────────────────────────────────────────────────────────── */}
       <CSidebar
-        className="border-end glass-morphism shadow-sm"
         position="fixed"
         unfoldable={false}
         visible={visible}
-        onVisibleChange={(val) => setVisible(val)}
-        narrow={false}
-        backdrop={undefined}
+        onVisibleChange={setVisible}
+        style={{
+          width: 256,
+          background: 'var(--c-surface)',
+          borderRight: '1px solid var(--c-border)',
+          boxShadow: 'var(--s-md)',
+          zIndex: 1030,
+        }}
       >
-        <CSidebarBrand className="d-flex align-items-center p-4 bg-white border-0 text-decoration-none border-bottom border-light">
-          <div className="d-flex align-items-center gap-3  ">
-            {/* <div className="bg-primary bg-opacity-10 p-2 rounded-3 d-flex align-items-center justify-content-center shadow-sm" style={{ width: '40px', height: '40px' }}>
-              <Activity size={22} className="text-primary" />
+        {/* Brand */}
+        <CSidebarBrand style={{
+          padding: '20px 20px 16px',
+          borderBottom: '1px solid var(--c-border)',
+          background: 'var(--c-surface)',
+          textDecoration: 'none',
+          display: 'block',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* Accent icon */}
+            {/* <div style={{
+              width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+              background: 'var(--g-navy)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: 'var(--s-navy)',
+            }}>
+              <Activity size={20} color="#fff" />
             </div> */}
-            <div className="d-flex flex-column py-1 text-decoration-none">
-              <span
-                className="fw-bolder text-dark m-0 text-decoration-none"
-                style={{
-                  fontSize: '2.0rem',
-                  lineHeight: '1.1',
-                  letterSpacing: '-0.5px',
-                }}
-              >
+            <div>
+              <div style={{
+                fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 17,
+                color: 'var(--c-text)', lineHeight: 1.15, letterSpacing: '-.3px',
+              }}>
                 {clinic?.name?.split(' ')[0] || 'Kinetix'}
-                <div className="text-primary" style={{ fontSize: '1rem' }}>{clinic?.name?.split(' ').slice(1).join(' ') || 'Wellness'}</div>
-              </span>
-              <span className="small text-secondary fw-bold text-uppercase mt-1" style={{ fontSize: '0.6rem', letterSpacing: '1.5px', opacity: 0.7 }}>
+                <span style={{ color: 'var(--c-navy)', fontWeight: 700 }}>
+                  {' '}{clinic?.name?.split(' ').slice(1).join(' ') || 'Wellness'}
+                </span>
+              </div>
+              <div style={{
+                fontSize: 9, fontWeight: 800, letterSpacing: '1.8px',
+                textTransform: 'uppercase', color: 'var(--c-text-3)', marginTop: 2,
+              }}>
                 Patient Portal
-              </span>
+              </div>
             </div>
           </div>
         </CSidebarBrand>
-        <CSidebarNav className="p-3 gap-2">
-          <CNavItem>
-            <NavLink to="/dashboard" className="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded-3 transition-all hover-bg-light" onClick={handleLinkClick}>
-              <CIcon icon={cilHome} className="nav-icon text-primary opacity-75" />
-              <span className="fw-semibold">Dashboard</span>
-            </NavLink>
-          </CNavItem>
-          <CNavItem>
-            <NavLink to="/bookings" className="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded-3 transition-all hover-bg-light" onClick={handleLinkClick}>
-              <CIcon icon={cilCalendarCheck} className="nav-icon text-primary opacity-75" />
-              <span className="fw-semibold">My Bookings</span>
-            </NavLink>
-          </CNavItem>
-          <CNavItem>
-            <NavLink to="/profile" className="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded-3 transition-all hover-bg-light" onClick={handleLinkClick}>
-              <CIcon icon={cilUser} className="nav-icon text-primary opacity-75" />
-              <span className="fw-semibold">Profile</span>
-            </NavLink>
-          </CNavItem>
-          <CNavItem>
-            <NavLink to="/clinic" className="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded-3 transition-all hover-bg-light" onClick={handleLinkClick}>
-              <CIcon icon={cilHospital} className="nav-icon text-primary opacity-75" />
-              <span className="fw-semibold">Clinic Details</span>
-            </NavLink>
-          </CNavItem>
+
+        {/* Nav links */}
+        <CSidebarNav style={{ padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {NAV.map(({ to, icon, label }) => (
+            <CNavItem key={to}>
+              <NavLink
+                to={to}
+                onClick={handleLinkClick}
+                style={({ isActive }) => ({
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '10px 14px', borderRadius: 'var(--r-sm)',
+                  textDecoration: 'none', fontWeight: 600, fontSize: 14,
+                  transition: 'all .18s',
+                  background: isActive ? 'var(--c-navy-xlight)' : 'transparent',
+                  color: isActive ? 'var(--c-navy)' : 'var(--c-text-2)',
+                  borderLeft: isActive ? '3px solid var(--c-navy)' : '3px solid transparent',
+                })}
+              >
+                <CIcon
+                  icon={icon}
+                  style={{ width: 18, height: 18, flexShrink: 0, opacity: .85 }}
+                />
+                <span style={{ flex: 1 }}>{label}</span>
+              </NavLink>
+            </CNavItem>
+          ))}
+
+          {/* Logout at bottom */}
+          <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid var(--c-border)' }}>
+            <button
+              onClick={handleLogout}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                padding: '10px 14px', borderRadius: 'var(--r-sm)',
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14,
+                color: 'var(--c-danger)', transition: 'background .18s',
+              }}
+              onMouseOver={e => e.currentTarget.style.background = 'var(--c-danger-light)'}
+              onMouseOut={e => e.currentTarget.style.background = 'none'}
+            >
+              <LogOut size={17} />
+              Logout
+            </button>
+          </div>
         </CSidebarNav>
       </CSidebar>
 
-      <div
-        className="wrapper d-flex flex-column min-vh-100"
-        style={{
-          paddingLeft: (visible && window.innerWidth >= 992) ? '256px' : '0',
-          transition: 'padding 0.3s ease-in-out',
-        }}
-      >
-        <CHeader className="mb-4 glass-morphism sticky-top border-bottom-0 shadow-sm" style={{ height: '70px' }}>
-          <CContainer fluid className="px-4 d-flex align-items-center justify-content-between">
-            <div className="d-flex align-items-center gap-3">
-              <CHeaderToggler
-                className="ps-1"
-                onClick={() => setVisible(!visible)}
-              >
-                <CIcon icon={cilMenu} size="lg" />
+      {/* ── Main wrapper ───────────────────────────────────────────────────── */}
+      <div style={{
+        paddingLeft: (visible && window.innerWidth >= 992) ? 256 : 0,
+        transition: 'padding .3s ease-in-out',
+        display: 'flex', flexDirection: 'column', minHeight: '100vh',
+      }}>
+
+        {/* ── Topbar ──────────────────────────────────────────────────────── */}
+        <CHeader style={{
+          height: 68, position: 'sticky', top: 0, zIndex: 1020,
+          background: 'var(--c-surface)',
+          borderBottom: '1px solid var(--c-border)',
+          boxShadow: 'var(--s-sm)',
+          marginBottom: 0,
+        }}>
+          <CContainer fluid style={{ padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+
+            {/* Left: toggle + greeting */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <CHeaderToggler onClick={() => setVisible(!visible)} style={{ color: 'var(--c-text-2)', cursor: 'pointer' }}>
+                <CIcon icon={cilMenu} style={{ width: 22, height: 22 }} />
               </CHeaderToggler>
-              <h4 className="m-0 fw-bold d-none d-md-block text-secondary">
-                Welcome, <span className="text-dark">{user?.customerName || 'Patient'}</span>
-              </h4>
+              <div className="stat-name">
+                <p style={{ margin: 0, fontSize: 14, color: 'var(--c-text-2)', fontWeight: 500 }}>
+                  Welcome back,{' '}
+                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--c-text)' }}>
+                    {user?.customerName || 'Patient'}
+                  </span>
+                </p>
+              </div>
             </div>
 
-            <CHeaderNav className="ms-auto d-flex align-items-center gap-3">
+            {/* Right: bell + avatar dropdown */}
+            <CHeaderNav style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+
+              {/* Bell */}
               <CNavItem>
-                <CNavLink href="#" className="p-0">
-                  <Bell size={20} className="text-secondary opacity-75" />
+                <CNavLink href="#" style={{ padding: 0 }}>
+                  <div style={{
+                    width: 38, height: 38, borderRadius: 'var(--r-sm)',
+                    background: 'var(--c-surface-2)', border: '1px solid var(--c-border)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                  }}>
+                    <Bell size={17} color="var(--c-text-2)" />
+                  </div>
                 </CNavLink>
               </CNavItem>
 
+              {/* Avatar + dropdown */}
               <CDropdown variant="nav-item">
-                <CDropdownToggle className="py-0 pe-0 d-flex align-items-center no-caret" caret={false}>
+                <CDropdownToggle className="py-0 pe-0" caret={false} style={{ background: 'none', border: 'none' }}>
                   {userProfilePic ? (
-                    <CAvatar 
-                      src={userProfilePic} 
-                      className="shadow-sm cursor-pointer" 
-                      style={{ width: '45px', height: '45px', borderRadius: '12px', objectFit: 'cover' }} 
-                    />
-                  ) : (clinic?.hospitalLogo || clinic?.clinicLogo) ? (
-                    <div
-                      className="shadow-sm transition-all hover-scale cursor-pointer"
+                    <img
+                      src={userProfilePic}
+                      alt="avatar"
                       style={{
-                        width: '45px',
-                        height: '45px',
-                        background: 'white',
-                        borderRadius: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        overflow: 'hidden',
-                        padding: '6px',
-                        border: '1px solid #eef2f6'
+                        width: 40, height: 40, borderRadius: 12, objectFit: 'cover',
+                        border: '2px solid var(--c-navy-light)', cursor: 'pointer'
                       }}
-                    >
-                      <CImage
-                        src={(() => {
-                          const logo = clinic.hospitalLogo || clinic.clinicLogo;
-                          if (!logo) return null;
-                          if (logo.startsWith('http') || logo.startsWith('data:')) return logo;
-                          return `data:image/png;base64,${logo}`;
-                        })()}
-                        className="w-100 h-100 object-fit-contain"
-                      />
+                    />
+                  ) : logoSrc ? (
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 12, background: 'var(--c-surface)',
+                      border: '2px solid var(--c-navy-light)', padding: 5,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                    }}>
+                      <CImage src={logoSrc} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </div>
                   ) : (
-                    <CAvatar color="primary" textColor="white" className="fw-bold cursor-pointer" style={{ width: '45px', height: '45px', borderRadius: '12px' }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 12, cursor: 'pointer',
+                      background: 'var(--g-navy)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontFamily: 'var(--font-display)', fontWeight: 800, color: '#fff', fontSize: 16,
+                    }}>
                       {user?.customerName?.charAt(0) || 'P'}
-                    </CAvatar>
+                    </div>
                   )}
                 </CDropdownToggle>
-                <CDropdownMenu className="pt-0 shadow-lg border-0 mt-3" placement="bottom-end" style={{ borderRadius: '16px', minWidth: '220px' }}>
-                  <CDropdownHeader className="bg-light fw-bold py-3 text-dark rounded-top-4" style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <div className="d-flex align-items-center gap-3">
-                      <CAvatar 
-                        src={userProfilePic || `https://ui-avatars.com/api/?name=${user?.customerName}&background=1B4F8A&color=fff`} 
-                        size="md" 
-                        className="fw-bold shadow-sm"
-                        style={{ objectFit: 'cover' }}
-                      >
-                        {!userProfilePic && (user?.customerName?.charAt(0) || 'P')}
-                      </CAvatar>
-                      <div className="d-flex flex-column">
-                        <span className="small text-secondary fw-semibold">Logged in as</span>
-                        <span className="text-dark fw-bold text-truncate" style={{ maxWidth: '120px' }}>{user?.customerName}</span>
+
+                <CDropdownMenu style={{
+                  borderRadius: 'var(--r-lg)', border: '1px solid var(--c-border)',
+                  boxShadow: 'var(--s-xl)', minWidth: 230, padding: 0,
+                  overflow: 'hidden', marginTop: 10,
+                }}>
+                  {/* User info header */}
+                  <CDropdownHeader style={{
+                    background: 'var(--g-navy)', padding: '16px 18px',
+                    borderBottom: 'none',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <img
+                        src={avatarSrc}
+                        alt="avatar"
+                        style={{
+                          width: 42, height: 42, borderRadius: 10, objectFit: 'cover',
+                          border: '2px solid rgba(255,255,255,.3)'
+                        }}
+                      />
+                      <div>
+                        <p style={{
+                          margin: 0, fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.6)',
+                          textTransform: 'uppercase', letterSpacing: '.6px'
+                        }}>Logged in as</p>
+                        <p style={{
+                          margin: 0, fontFamily: 'var(--font-display)', fontWeight: 800,
+                          color: '#fff', fontSize: 14, maxWidth: 130,
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                        }}>
+                          {user?.customerName}
+                        </p>
                       </div>
                     </div>
                   </CDropdownHeader>
-                  <div className="p-2">
-                    <CDropdownItem
-                      className="rounded-3 py-2 d-flex align-items-center"
-                      onClick={() => navigate('/profile')}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <User size={18} className="me-2 text-primary" /> My Profile
-                    </CDropdownItem>
-                    <CDropdownItem className="rounded-3 py-2 d-flex align-items-center" onClick={() => navigate('/settings')}>
-                      <Settings size={18} className="me-2 text-primary" /> Settings
-                    </CDropdownItem>
-                    <CDropdownDivider className="my-2" style={{ borderColor: '#f1f5f9' }} />
-                    <CDropdownItem
-                      className="rounded-3 py-2 d-flex align-items-center text-danger fw-semibold"
-                      onClick={handleLogout}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <LogOut size={18} className="me-2" /> Logout
+
+                  <div style={{ padding: 8 }}>
+                    {[
+                      { icon: User, label: 'My Profile', action: () => navigate('/profile') },
+                      { icon: Settings, label: 'Settings', action: () => navigate('/settings') },
+                    ].map(({ icon: Icon, label, action }) => (
+                      <CDropdownItem key={label} onClick={action} style={{
+                        borderRadius: 'var(--r-sm)', display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '10px 12px', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                        color: 'var(--c-text)',
+                      }}>
+                        <Icon size={15} style={{ color: 'var(--c-navy)' }} /> {label}
+                      </CDropdownItem>
+                    ))}
+
+                    <CDropdownDivider style={{ margin: '6px 0', borderColor: 'var(--c-border)' }} />
+
+                    <CDropdownItem onClick={handleLogout} style={{
+                      borderRadius: 'var(--r-sm)', display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '10px 12px', cursor: 'pointer', fontSize: 13, fontWeight: 700,
+                      color: 'var(--c-danger)',
+                    }}>
+                      <LogOut size={15} /> Logout
                     </CDropdownItem>
                   </div>
                 </CDropdownMenu>
@@ -253,14 +312,18 @@ const DefaultLayout = () => {
           </CContainer>
         </CHeader>
 
-        <CContainer fluid className="px-4 pb-4 flex-grow-1">
+        {/* ── Page content ────────────────────────────────────────────────── */}
+        <div style={{ flex: 1 }}>
           <Outlet />
-        </CContainer>
+        </div>
 
-        <footer className="footer px-4 py-3 text-center text-secondary small">
-          <div>
-            &copy; {new Date().getFullYear()} Kinetix Wellness Care. All rights reserved.
-          </div>
+        {/* ── Footer ──────────────────────────────────────────────────────── */}
+        <footer style={{
+          padding: '14px 24px', textAlign: 'center', fontSize: 12,
+          color: 'var(--c-text-3)', borderTop: '1px solid var(--c-border)',
+          background: 'var(--c-surface)', fontWeight: 500,
+        }}>
+          © {new Date().getFullYear()} {clinic?.name || 'Kinetix Wellness Care'}. All rights reserved.
         </footer>
       </div>
     </div>

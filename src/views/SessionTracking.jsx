@@ -29,7 +29,9 @@ import {
 } from 'lucide-react';
 import { physiotherapyService } from '../services/api';
 
+/* ── Exercise Card ───────────────────────────────────────────── */
 const ExerciseCard = React.memo(({ item, onClick }) => {
+  const [hovered, setHovered] = useState(false);
   const sessions = item.sessions || [];
   const completedSessions = sessions.filter(s => String(s.status).toLowerCase() === 'completed').length;
   const totalSessions = sessions.length;
@@ -40,85 +42,108 @@ const ExerciseCard = React.memo(({ item, onClick }) => {
       className="h-100"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -5 }}
       transition={{ duration: 0.3 }}
     >
       <div
-        className="premium-card h-100 border-0 p-4 cursor-pointer d-flex flex-column shadow-sm"
+        className="app-booking-item h-100 d-flex flex-column"
         onClick={() => onClick(item)}
-        style={{ cursor: 'pointer' }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          cursor: 'pointer',
+          transform: hovered ? 'translateY(-3px)' : 'none',
+          boxShadow: hovered ? 'var(--s-lg)' : 'var(--s-sm)',
+          borderColor: hovered ? 'var(--c-navy-light)' : 'var(--c-border)',
+          transition: 'all 0.2s',
+          padding: '16px',
+        }}
       >
-        <div className="bg-primary p-3 rounded-4 text-white d-inline-flex align-self-start mb-3 shadow-sm">
-          <Activity size={24} />
+        {/* Icon + Title */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+          <div className="app-icon-box app-icon-navy" style={{ width: '42px', height: '42px', borderRadius: '12px', flexShrink: 0 }}>
+            <Activity size={20} />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              fontSize: '14px',
+              color: 'var(--c-text)',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }} title={item.exerciseName}>
+              {item.exerciseName}
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--c-text-3)', fontWeight: 600, marginTop: '2px' }}>
+              {completedSessions} / {totalSessions} Sessions
+            </div>
+          </div>
         </div>
 
-        <h5 className="fw-bold text-dark mb-2 text-truncate w-100" title={item.exerciseName}>
-          {item.exerciseName}
-        </h5>
-
-        <div className="mt-auto">
-          <div className="d-flex justify-content-between align-items-center mb-2">
-            <span className="small text-secondary fw-semibold">
-              {completedSessions} / {totalSessions} Sessions
-            </span>
-            <span className="small text-primary fw-bold">{Math.round(progress)}%</span>
+        {/* Progress Bar */}
+        <div style={{ marginBottom: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <span style={{ fontSize: '10px', color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Progress</span>
+            <span style={{ fontSize: '11px', color: 'var(--c-navy)', fontWeight: 800 }}>{Math.round(progress)}%</span>
           </div>
-          <div className="exercise-progress" style={{ marginTop: 0 }}>
+          <div style={{ height: '6px', background: 'var(--c-surface-3)', borderRadius: 'var(--r-pill)', overflow: 'hidden' }}>
             <motion.div
-              className="exercise-progress-bar"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 1, delay: 0.2 }}
+              style={{
+                height: '100%',
+                background: progress === 100 ? 'var(--c-success)' : 'var(--g-navy-soft)',
+                borderRadius: 'var(--r-pill)',
+              }}
             />
           </div>
+        </div>
 
-          <div className="mt-3 d-flex align-items-center text-primary small fw-bold">
-            View Sessions <ChevronRight size={14} className="ms-1 text-primary" />
-          </div>
+        {/* CTA */}
+        <div style={{ marginTop: 'auto' }}>
+          <button className="app-link-btn" style={{ fontSize: '12px' }}>
+            View Sessions
+            <ChevronRight
+              size={14}
+              style={{ transition: 'transform 0.2s', transform: hovered ? 'translateX(3px)' : 'translateX(0)' }}
+            />
+          </button>
         </div>
       </div>
     </motion.div>
   );
 });
 
+/* ── Media Preview Modal ─────────────────────────────────────── */
 const MediaPreviewModal = ({ visible, onClose, mediaUrl, type }) => {
   if (!mediaUrl) return null;
 
   return (
-    <CModal visible={visible} onClose={onClose} size="lg" alignment="center" className="premium-modal">
-      <CModalHeader className="border-0">
-        <CModalTitle className="fw-bold d-flex align-items-center gap-2">
-          {type === 'video' ? <Video size={20} /> : (type === 'audio' ? <Mic size={20} /> : <ImageIcon size={20} />)}
-          {type === 'video' ? 'Video Update' : (type === 'audio' ? 'Voice Record' : 'Media Preview')}
+    <CModal visible={visible} onClose={onClose} size="lg" alignment="center">
+      <CModalHeader style={{ border: 'none', padding: '18px 20px 10px', fontFamily: 'var(--font-display)' }}>
+        <CModalTitle style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 700, fontSize: '16px', color: 'var(--c-text)' }}>
+          <div className="app-icon-box app-icon-navy" style={{ width: '34px', height: '34px', borderRadius: '9px' }}>
+            {type === 'video' ? <Video size={16} /> : type === 'audio' ? <Mic size={16} /> : <ImageIcon size={16} />}
+          </div>
+          {type === 'video' ? 'Video Update' : type === 'audio' ? 'Voice Record' : 'Media Preview'}
         </CModalTitle>
-        {/* <CButton variant="ghost" onClick={onClose}><X size={24} /></CButton> */}
       </CModalHeader>
-      <CModalBody className="p-0 bg-black rounded-bottom-4 overflow-hidden d-flex justify-content-center align-items-center" style={{ minHeight: type === 'audio' ? '150px' : '300px' }}>
+      <CModalBody style={{ padding: 0, background: '#0f172a', borderRadius: '0 0 16px 16px', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: type === 'audio' ? '150px' : '300px' }}>
         {type === 'video' ? (
-          <video
-            src={mediaUrl}
-            controls
-            className="w-100 h-100"
-            style={{ maxHeight: '70vh' }}
-            autoPlay
-          />
+          <video src={mediaUrl} controls className="w-100 h-100" style={{ maxHeight: '70vh' }} autoPlay />
         ) : type === 'audio' ? (
-          <div className="w-100 p-4 bg-dark d-flex align-items-center justify-content-center">
+          <div style={{ width: '100%', padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <audio src={mediaUrl} controls className="w-100" autoPlay />
           </div>
         ) : (
-          <img
-            src={mediaUrl}
-            alt="Preview"
-            className="img-fluid"
-            style={{ maxHeight: '70vh', objectFit: 'contain' }}
-          />
+          <img src={mediaUrl} alt="Preview" className="img-fluid" style={{ maxHeight: '70vh', objectFit: 'contain' }} />
         )}
       </CModalBody>
     </CModal>
   );
 };
 
+/* ── Session Modal ───────────────────────────────────────────── */
 const SessionModal = ({ exercise, visible, onClose, clinicId, branchId, therapistRecordId }) => {
   const [previewData, setPreviewData] = useState({ visible: false, url: '', type: '' });
   const [loadingSessionId, setLoadingSessionId] = useState(null);
@@ -131,9 +156,7 @@ const SessionModal = ({ exercise, visible, onClose, clinicId, branchId, therapis
     try {
       const response = await physiotherapyService.getCompletedTherapyRecord(clinicId, branchId, therapistRecordId, sessionId);
       const data = response?.data?.therapistRecord || response?.data || response?.therapistRecord || response;
-      if (data) {
-        setFetchedRecords(prev => ({ ...prev, [sessionId]: data }));
-      }
+      if (data) setFetchedRecords(prev => ({ ...prev, [sessionId]: data }));
     } catch (error) {
       console.error("Error fetching completed therapy record", error);
     } finally {
@@ -141,9 +164,7 @@ const SessionModal = ({ exercise, visible, onClose, clinicId, branchId, therapis
     }
   };
 
-  const handleMediaClick = (url, type) => {
-    setPreviewData({ visible: true, url, type });
-  };
+  const handleMediaClick = (url, type) => setPreviewData({ visible: true, url, type });
 
   const getPainClass = (value) => {
     const pain = parseInt(value);
@@ -152,183 +173,201 @@ const SessionModal = ({ exercise, visible, onClose, clinicId, branchId, therapis
     return 'high';
   };
 
+  const getPainColor = (value) => {
+    const pain = parseInt(value);
+    if (pain <= 3) return { bg: 'var(--c-success-light)', text: 'var(--c-success)' };
+    if (pain <= 7) return { bg: 'var(--c-warning-light)', text: 'var(--c-warning)' };
+    return { bg: 'var(--c-danger-light)', text: 'var(--c-danger)' };
+  };
+
   return (
-    <CModal
-      visible={visible}
-      onClose={onClose}
-      size="lg"
-      backdrop="static"
-      className="premium-modal"
-      scrollable
-    >
-      <CModalHeader className="border-0 pb-0">
-        <CModalTitle className="fw-bold text-dark d-flex align-items-center gap-3">
-          <div className="bg-primary p-2 rounded-3 text-white shadow-sm">
+    <CModal visible={visible} onClose={onClose} size="lg" backdrop="static" scrollable>
+      {/* Header */}
+      <CModalHeader style={{ border: 'none', padding: '20px 24px 12px', background: 'var(--c-surface)' }}>
+        <CModalTitle style={{ display: 'flex', alignItems: 'center', gap: '12px', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '17px', color: 'var(--c-text)' }}>
+          <div className="app-icon-box app-icon-navy" style={{ width: '40px', height: '40px', borderRadius: '11px' }}>
             <Activity size={20} />
           </div>
           {exercise.exerciseName}
         </CModalTitle>
-        {/* <CButton variant="ghost" onClick={onClose} className="p-1"><X size={24} /></CButton> */}
       </CModalHeader>
-      <CModalBody className="p-4">
-        <p className="text-secondary small mb-4">Complete activity history for this exercise</p>
+
+      <CModalBody style={{ padding: '4px 24px 20px', background: 'var(--c-surface-2)' }}>
+        <p style={{ fontSize: '12px', color: 'var(--c-text-3)', marginBottom: '20px', fontWeight: 500 }}>
+          Complete activity history for this exercise
+        </p>
 
         <div className="session-timeline">
-          {exercise.sessions?.map((session, sIdx) => (
-            <div key={`${exercise.exerciseId}-${session.sessionNo}`} className="timeline-item">
-              <div className={`timeline-dot ${String(session.status).toLowerCase() === 'completed' ? 'bg-success' : 'bg-warning'}`} />
+          {exercise.sessions?.map((session, sIdx) => {
+            const isCompleted = String(session.status).toLowerCase() === 'completed';
+            const record = session.therapistRecord || fetchedRecords[session.sessionId];
+            const currentStatus = String(session.status).toLowerCase();
 
-              <div className="bg-light bg-opacity-50 rounded-4 p-4 border border-white mb-3">
-                <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4 gap-3">
-                  <div className="d-flex flex-wrap align-items-center gap-2">
-                    <span className="badge bg-white text-dark border px-2 py-1 fw-semibold">
-                      Session {session.sessionNo}
-                    </span>
-                    <span className="small text-secondary fw-semibold d-flex align-items-center gap-1">
-                      <Calendar size={14} /> {session.date}
+            return (
+              <div key={`${exercise.exerciseId}-${session.sessionNo}`} className="timeline-item">
+                <div className={`timeline-dot ${isCompleted ? 'bg-success' : 'bg-warning'}`} />
+
+                <div className="app-card" style={{ marginBottom: '12px' }}>
+                  {/* Session Header */}
+                  <div style={{
+                    display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between',
+                    alignItems: 'center', gap: '10px',
+                    padding: '14px 16px 12px',
+                    borderBottom: '1px solid var(--c-border-light)',
+                    background: 'var(--c-surface)',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <div style={{
+                        width: '28px', height: '28px', borderRadius: '8px',
+                        background: 'var(--g-navy-soft)', color: '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: 'var(--font-display)', fontSize: '12px', fontWeight: 800,
+                      }}>
+                        {session.sessionNo}
+                      </div>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--c-text)', fontFamily: 'var(--font-display)' }}>
+                        Session {session.sessionNo}
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--c-text-3)', fontWeight: 600 }}>
+                        <Calendar size={12} color="var(--c-navy)" /> {session.date}
+                      </span>
+                    </div>
+
+                    {/* Status pill */}
+                    <span className={`app-status-pill ${isCompleted ? 'app-status-confirmed' : 'app-status-pending'}`}
+                      style={{ fontSize: '10px', padding: '4px 12px' }}>
+                      <span className="app-status-dot" />
+                      {isCompleted ? 'Completed' : 'Pending'}
                     </span>
                   </div>
-                  <div className={`status-chip ${String(session.status).toLowerCase() === 'completed' ? 'status-completed' : 'status-pending'}`}>
-                    {String(session.status).toLowerCase() === 'completed' ? (
-                      <><CheckCircle2 size={12} className="me-1" /> Completed</>
-                    ) : (
-                      <><Clock size={12} className="me-1" /> Pending</>
-                    )}
-                  </div>
-                </div>
 
-                {(() => {
-                  const record = session.therapistRecord || fetchedRecords[session.sessionId];
-                  if (record) {
-                    return (
-                      <div className="therapist-record">
-                        {/* New Date and Status alignment header */}
-                        <div className="row g-3 mb-4 border-bottom pb-3">
-                          <div className="col-12 col-md-4 d-flex flex-column">
-                            <span className="text-secondary fw-semibold text-uppercase ls-1 mb-1" style={{ fontSize: '0.65rem' }}>Completed On</span>
-                            <span className="text-dark fw-semibold" style={{ fontSize: '0.9rem' }}>{record.completedDate || session.date} {record.completedTime ? `at ${record.completedTime}` : ''}</span>
-                          </div>
-                          <div className="col-6 col-md-4 d-flex flex-column">
-                            <span className="text-secondary fw-semibold text-uppercase ls-1 mb-1" style={{ fontSize: '0.65rem' }}>Duration</span>
-                            <span className="text-dark fw-semibold" style={{ fontSize: '0.9rem' }}>{record.duration || 'N/A'}</span>
-                          </div>
-                          <div className="col-6 col-md-4 d-flex flex-column">
-                            <span className="text-secondary fw-semibold text-uppercase ls-1 mb-1" style={{ fontSize: '0.65rem' }}>Result</span>
-                            <div>
-                              <span className="badge bg-success bg-opacity-10 text-success border px-3 py-1 mt-1">{record.result || 'Completed'}</span>
+                  {/* Session Body */}
+                  <div style={{ padding: '14px 16px' }}>
+                    {record ? (
+                      <div>
+                        {/* Meta row */}
+                        <div style={{
+                          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px',
+                          background: 'var(--c-surface-2)', borderRadius: 'var(--r-sm)',
+                          padding: '12px 14px', marginBottom: '14px',
+                          border: '1px solid var(--c-border-light)',
+                        }}>
+                          {[
+                            { label: 'Completed On', value: `${record.completedDate || session.date}${record.completedTime ? ` · ${record.completedTime}` : ''}` },
+                            { label: 'Duration', value: record.duration || 'N/A' },
+                            { label: 'Result', value: record.result || 'Completed', badge: true, success: true },
+                          ].map((m, i) => (
+                            <div key={i}>
+                              <div style={{ fontSize: '10px', color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '4px' }}>{m.label}</div>
+                              {m.badge
+                                ? <span style={{ background: 'var(--c-success-light)', color: 'var(--c-success)', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: 'var(--r-pill)', display: 'inline-block' }}>{m.value}</span>
+                                : <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--c-text)' }}>{m.value}</div>}
                             </div>
-                          </div>
+                          ))}
                         </div>
 
-                        <CRow className="g-4">
+                        <CRow className="g-3">
+                          {/* Pain & Performance */}
                           <CCol md={6}>
-                            <div>
-                              <label className="text-secondary fw-semibold text-uppercase ls-1 d-block mb-2" style={{ fontSize: '0.75rem' }}>Performance & Pain</label>
-                              <div className="pain-scale-container flex-column align-items-start gap-3">
-                                <div className="w-100 d-flex justify-content-between align-items-center">
-                                  <div>
-                                    <span className="small text-secondary fw-medium d-block mb-2">Pain Scale (Before → After)</span>
-                                    <div className="d-flex align-items-center gap-3">
-                                      <div
-                                        className={`pain-indicator ${getPainClass(record.painBefore)} text-dark d-flex align-items-center justify-content-center rounded-3 shadow-sm`}
-                                        style={{ width: '40px', height: '40px', fontSize: '1.1rem', fontWeight: '600' }}
-                                      >
-                                        {record.painBefore || '-'}
-                                      </div>
-                                      <ChevronRight size={18} className="text-secondary" />
-                                      <div
-                                        className={`pain-indicator ${getPainClass(record.painAfter)} text-dark d-flex align-items-center justify-content-center rounded-3 shadow-sm`}
-                                        style={{ width: '40px', height: '40px', fontSize: '1.1rem', fontWeight: '600' }}
-                                      >
-                                        {record.painAfter || '-'}
-                                      </div>
-                                    </div>
-                                  </div>
+                            <div style={{ background: 'var(--c-surface-2)', borderRadius: 'var(--r-sm)', border: '1px solid var(--c-border-light)', padding: '12px 14px', height: '100%' }}>
+                              <div style={{ fontSize: '10px', color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '12px' }}>
+                                Performance & Pain
+                              </div>
+
+                              <div style={{ marginBottom: '12px' }}>
+                                <div style={{ fontSize: '11px', color: 'var(--c-text-2)', fontWeight: 600, marginBottom: '8px' }}>Pain Scale (Before → After)</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  {[record.painBefore, record.painAfter].map((val, i) => {
+                                    const pc = getPainColor(val);
+                                    return (
+                                      <React.Fragment key={i}>
+                                        <div style={{
+                                          width: '38px', height: '38px', borderRadius: '10px',
+                                          background: pc.bg, color: pc.text,
+                                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                          fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 800,
+                                          border: `1.5px solid ${pc.text}33`,
+                                        }}>
+                                          {val || '-'}
+                                        </div>
+                                        {i === 0 && <ChevronRight size={14} color="var(--c-text-3)" />}
+                                      </React.Fragment>
+                                    );
+                                  })}
                                 </div>
-                                <div className="w-100 border-top pt-3 mt-1">
-                                  <span className="small text-secondary fw-medium d-block mb-1">Sets & Repetitions Done</span>
-                                  <div className="d-flex gap-4">
-                                    <div>
-                                      <span className="text-dark fw-bold" style={{ fontSize: '1.1rem' }}>{record.setsDone || 0}</span>
-                                      <span className="text-secondary small ms-1">Sets</span>
+                              </div>
+
+                              <div style={{ borderTop: '1px solid var(--c-border)', paddingTop: '10px' }}>
+                                <div style={{ fontSize: '11px', color: 'var(--c-text-2)', fontWeight: 600, marginBottom: '8px' }}>Sets & Repetitions</div>
+                                <div style={{ display: 'flex', gap: '20px' }}>
+                                  {[{ v: record.setsDone || 0, l: 'Sets' }, { v: record.repetationDone || 0, l: 'Reps' }].map((s, i) => (
+                                    <div key={i}>
+                                      <span style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 800, color: 'var(--c-navy)' }}>{s.v}</span>
+                                      <span style={{ fontSize: '11px', color: 'var(--c-text-3)', fontWeight: 600, marginLeft: '4px' }}>{s.l}</span>
                                     </div>
-                                    <div>
-                                      <span className="text-dark fw-bold" style={{ fontSize: '1.1rem' }}>{record.repetationDone || 0}</span>
-                                      <span className="text-secondary small ms-1">Reps</span>
-                                    </div>
-                                  </div>
+                                  ))}
                                 </div>
                               </div>
                             </div>
                           </CCol>
+
+                          {/* Notes */}
                           <CCol md={6}>
-                            <div className="mb-4">
-                              <label className="text-secondary fw-semibold text-uppercase ls-1 d-block mb-2" style={{ fontSize: '0.75rem' }}>Observations & Plan</label>
-                              <div className="bg-white p-3 rounded-3 border mb-3">
-                                <div className="d-flex flex-column gap-3">
-                                  <div>
-                                    <div className="d-flex align-items-center gap-2 mb-1">
-                                      <FileText size={14} className="text-primary" />
-                                      <span className="small fw-semibold text-dark">Therapist Notes</span>
+                            <div style={{ background: 'var(--c-surface-2)', borderRadius: 'var(--r-sm)', border: '1px solid var(--c-border-light)', padding: '12px 14px', marginBottom: '10px' }}>
+                              <div style={{ fontSize: '10px', color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '12px' }}>
+                                Observations & Plan
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {[
+                                  { icon: <FileText size={13} color="var(--c-navy)" />, label: 'Therapist Notes', val: record.therapistNotes || 'No notes provided', italic: true },
+                                  { icon: <Activity size={13} color="var(--c-info)" />, label: 'Patient Response', val: record.patientResponse || 'Standard Response' },
+                                  ...(record.nextPlan ? [{ icon: <Calendar size={13} color="var(--c-warning)" />, label: 'Next Plan', val: record.nextPlan }] : []),
+                                ].map((n, i) => (
+                                  <div key={i} style={i > 0 ? { borderTop: '1px solid var(--c-border-light)', paddingTop: '8px' } : {}}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                                      {n.icon}
+                                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--c-text)' }}>{n.label}</span>
                                     </div>
-                                    <span className="fw-medium text-secondary italic small d-block ms-4">"{record.therapistNotes || 'No notes provided'}"</span>
+                                    <p style={{ fontSize: '12px', color: 'var(--c-text-2)', margin: 0, paddingLeft: '19px', fontStyle: n.italic ? 'italic' : 'normal' }}>
+                                      {n.italic ? `"${n.val}"` : n.val}
+                                    </p>
                                   </div>
-
-                                  <div>
-                                    <div className="d-flex align-items-center gap-2 mb-1">
-                                      <Activity size={14} className="text-info" />
-                                      <span className="small fw-semibold text-dark">Patient Response</span>
-                                    </div>
-                                    <span className="fw-medium text-secondary small d-block ms-4">{record.patientResponse || 'Standard Response'}</span>
-                                  </div>
-
-                                  {record.nextPlan && (
-                                    <div className="border-top pt-2 mt-1">
-                                      <div className="d-flex align-items-center gap-2 mb-1">
-                                        <Calendar size={14} className="text-warning" />
-                                        <span className="small fw-semibold text-dark">Next Plan</span>
-                                      </div>
-                                      <span className="fw-medium text-secondary small d-block ms-4">{record.nextPlan}</span>
-                                    </div>
-                                  )}
-                                </div>
+                                ))}
                               </div>
                             </div>
 
-                            <div className="d-flex flex-wrap gap-3">
+                            {/* Media buttons */}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                               {(() => {
                                 const ensureBase64Prefix = (str, type) => {
                                   if (!str || str === "null") return null;
-                                  if (str.startsWith('http')) return str;
-                                  if (str.startsWith('data:')) return str;
-                                  const mimeType = type === 'video' ? 'video/mp4' : (type === 'audio' ? 'audio/webm' : 'image/jpeg');
+                                  if (str.startsWith('http') || str.startsWith('data:')) return str;
+                                  const mimeType = type === 'video' ? 'video/mp4' : type === 'audio' ? 'audio/webm' : 'image/jpeg';
                                   return `data:${mimeType};base64,${str}`;
                                 };
-
                                 const mediaItems = [
-                                  { key: 'beforeImage', label: 'Before Image', type: 'image', icon: ImageIcon, color: '#3b82f6' },
-                                  { key: 'afterImage', label: 'After Image', type: 'image', icon: ImageIcon, color: '#3b82f6' },
-                                  { key: 'beforeVideo', label: 'Before Video', type: 'video', icon: Video, color: '#06b6d4' },
-                                  { key: 'afterVideo', label: 'After Video', type: 'video', icon: Video, color: '#06b6d4' },
-                                  { key: 'voiceRecord', label: 'Voice Record', type: 'audio', icon: Mic, color: '#8b5cf6' }
+                                  { key: 'beforeImage', label: 'Before', type: 'image', icon: ImageIcon, colorClass: 'app-icon-navy' },
+                                  { key: 'afterImage', label: 'After', type: 'image', icon: ImageIcon, colorClass: 'app-icon-navy' },
+                                  { key: 'beforeVideo', label: 'Before', type: 'video', icon: Video, colorClass: 'app-icon-sky' },
+                                  { key: 'afterVideo', label: 'After', type: 'video', icon: Video, colorClass: 'app-icon-sky' },
+                                  { key: 'voiceRecord', label: 'Voice', type: 'audio', icon: Mic, colorClass: 'app-icon-purple' },
                                 ];
-
                                 return mediaItems.map(item => {
                                   const data = record[item.key];
                                   if (!data || data === "null") return null;
                                   const fullUrl = ensureBase64Prefix(data, item.type);
                                   return (
-                                    <CButton
+                                    <button
                                       key={item.key}
-                                      className="p-2 border rounded-3 d-flex align-items-center gap-2 small fw-bold text-decoration-none hover-scale transition-all bg-light"
                                       onClick={() => handleMediaClick(fullUrl, item.type)}
-                                      style={{ flex: '1 1 calc(50% - 0.5rem)', minWidth: '130px' }}
+                                      className="app-btn-outline-navy"
+                                      style={{ padding: '6px 10px', fontSize: '11px', gap: '6px', borderRadius: '8px' }}
                                     >
-                                      <div className="p-2 rounded-2 d-flex align-items-center justify-content-center" style={{ backgroundColor: item.color, width: '32px', height: '32px' }}>
-                                        <item.icon size={16} className="text-white" />
+                                      <div className={`app-icon-box ${item.colorClass}`} style={{ width: '22px', height: '22px', borderRadius: '6px' }}>
+                                        <item.icon size={12} />
                                       </div>
-                                      <span className="text-dark opacity-75">{item.label}</span>
-                                    </CButton>
+                                      {item.label} {item.type === 'audio' ? 'Record' : item.type === 'video' ? 'Video' : 'Image'}
+                                    </button>
                                   );
                                 });
                               })()}
@@ -336,44 +375,35 @@ const SessionModal = ({ exercise, visible, onClose, clinicId, branchId, therapis
                           </CCol>
                         </CRow>
                       </div>
-                    );
-                  }
-
-                  const currentStatus = String(session.status).toLowerCase();
-                  if (currentStatus === 'completed' || currentStatus === 'active') {
-                    return (
-                      <div className="text-center py-4 bg-white rounded-4 border border-dashed">
-                        <CButton
-                          color="primary"
-                          variant="outline"
+                    ) : (currentStatus === 'completed' || currentStatus === 'active') ? (
+                      <div style={{ textAlign: 'center', padding: '20px 16px', background: 'var(--c-surface-2)', borderRadius: 'var(--r-sm)', border: '1.5px dashed var(--c-border)' }}>
+                        <button
+                          className="app-btn-navy"
                           onClick={() => handleViewData(session.sessionId)}
                           disabled={loadingSessionId === session.sessionId}
-                          className="d-flex align-items-center justify-content-center gap-2 mx-auto"
+                          style={{ margin: '0 auto' }}
                         >
-                          {loadingSessionId === session.sessionId ? (
-                            <><CSpinner size="sm" /> Loading...</>
-                          ) : (
-                            <><Activity size={16} /> View Data</>
-                          )}
-                        </CButton>
+                          {loadingSessionId === session.sessionId
+                            ? <><CSpinner size="sm" /> Loading...</>
+                            : <><Activity size={14} /> View Data</>}
+                        </button>
                       </div>
-                    );
-                  }
-
-                  return (
-                    <div className="text-center py-4 bg-white rounded-4 border border-dashed">
-                      <AlertCircle size={24} className="text-secondary opacity-25 mb-2" />
-                      <p className="text-secondary small m-0 p-2">Activity log pending for this session</p>
-                    </div>
-                  );
-                })()}
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '20px 16px', background: 'var(--c-surface-2)', borderRadius: 'var(--r-sm)', border: '1.5px dashed var(--c-border)' }}>
+                        <AlertCircle size={22} color="var(--c-text-3)" style={{ opacity: 0.4, marginBottom: '8px' }} />
+                        <p style={{ fontSize: '12px', color: 'var(--c-text-3)', margin: 0 }}>Activity log pending for this session</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CModalBody>
-      <CModalFooter className="border-0">
-        <CButton color="secondary" variant="ghost" onClick={onClose}>Close</CButton>
+
+      <CModalFooter style={{ border: 'none', padding: '12px 24px 18px', background: 'var(--c-surface)' }}>
+        <button className="app-btn-outline-navy" onClick={onClose}>Close</button>
       </CModalFooter>
 
       <MediaPreviewModal
@@ -386,6 +416,7 @@ const SessionModal = ({ exercise, visible, onClose, clinicId, branchId, therapis
   );
 };
 
+/* ── Main Page ───────────────────────────────────────────────── */
 const SessionTracking = () => {
   const { id } = useParams();
   const location = useLocation();
@@ -410,36 +441,24 @@ const SessionTracking = () => {
 
   useEffect(() => {
     const abortController = new AbortController();
-
     const fetchSessions = async () => {
       try {
         if (patientId && therapistRecordId) {
           setLoading(true);
           const response = await physiotherapyService.getActivitySessions({
-            clinicId,
-            branchId,
-            patientId,
-            bookingId: id,
-            therapistId,
-            therapistRecordId
+            clinicId, branchId, patientId, bookingId: id, therapistId, therapistRecordId
           });
-
           if (!abortController.signal.aborted) {
             let data = Array.isArray(response?.data) ? response.data : [];
             setSessions(data);
           }
         }
       } catch (error) {
-        if (!abortController.signal.aborted) {
-          console.error('Error fetching sessions:', error);
-        }
+        if (!abortController.signal.aborted) console.error('Error fetching sessions:', error);
       } finally {
-        if (!abortController.signal.aborted) {
-          setLoading(false);
-        }
+        if (!abortController.signal.aborted) setLoading(false);
       }
     };
-
     fetchSessions();
     return () => abortController.abort();
   }, [id, patientId, therapistRecordId, clinicId, branchId]);
@@ -449,72 +468,71 @@ const SessionTracking = () => {
     setModalVisible(true);
   };
 
+  /* Loading */
   if (loading) {
     return (
-      <CContainer className="py-5">
-        <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          >
-            <Activity size={48} className="text-primary opacity-50 mb-3" />
-          </motion.div>
-          <h5 className="text-secondary opacity-75 fw-semibold">Synchronizing Activity Data...</h5>
-        </div>
-      </CContainer>
+      <div className="app-loading">
+        <div className="app-loading-ring" />
+        <span className="app-loading-text">Synchronizing Activity Data…</span>
+      </div>
     );
   }
 
   return (
-    <motion.div
-      className="p-3"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-    >
-      <div className="activity-header">
-        <CButton
-          variant="ghost"
-          className="p-0 text-decoration-none text-secondary mb-4 d-flex align-items-center gap-2 hover-primary"
-          onClick={() => navigate(`/bookings/${id}/history`)}
-        >
-          <ArrowLeft size={18} /> Back to History
-        </CButton>
-        <div className="d-flex align-items-end justify-content-between">
-          <div>
-            <h2 className="fw-bold text-dark m-0 display-6">Activity Sessions</h2>
-            <p className="text-secondary fw-medium mt-1">
-              <span className="badge bg-primary bg-opacity-10 text-white me-2 px-3">Tracking</span>
-              Click on an exercise card to view detailed session logs
-            </p>
+    <motion.div className="app-page" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+
+      {/* ── Hero ─────────────────────────────────────────────── */}
+      <div className="app-hero">
+        <div className="app-hero-inner">
+          <button
+            className="app-back-btn"
+            onClick={() => navigate(`/bookings/${id}/history`)}
+          >
+            <ArrowLeft size={14} /> Back to History
+          </button>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h2 className="app-hero-title">Activity Sessions</h2>
+              <p className="app-hero-sub">Click on an exercise card to view detailed session logs</p>
+            </div>
+            <span style={{
+              background: 'rgba(249,115,22,0.22)', border: '1px solid rgba(249,115,22,0.35)',
+              color: '#fdba74', borderRadius: 'var(--r-pill)', padding: '5px 14px',
+              fontSize: '11px', fontWeight: 700, letterSpacing: '0.4px',
+            }}>
+              {sessions.length} Exercise{sessions.length !== 1 ? 's' : ''}
+            </span>
           </div>
         </div>
       </div>
 
-      <CRow className="g-4">
-        {sessions.length > 0 ? (
-          sessions.map((item, index) => (
-            <CCol key={item.exerciseId} xs={12} sm={6} lg={4} xl={3}>
-              <ExerciseCard
-                item={item}
-                onClick={handleCardClick}
-              />
-            </CCol>
-          ))
-        ) : (
-          <CCol xs={12}>
-            <div className="text-center py-5">
+      {/* ── Body ─────────────────────────────────────────────── */}
+      <div className="app-body" style={{ marginTop: '-32px' }}>
+        <CRow className="g-3">
+          {sessions.length > 0 ? (
+            sessions.map((item) => (
+              <CCol key={item.exerciseId} xs={12} sm={6} lg={4} xl={3}>
+                <ExerciseCard item={item} onClick={handleCardClick} />
+              </CCol>
+            ))
+          ) : (
+            <CCol xs={12}>
               <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
+                className="app-empty"
+                style={{ padding: '72px 24px' }}
+                initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
               >
-                <Activity size={80} className="text-secondary opacity-10 mb-4" />
-                <h3 className="text-secondary">No Activity Sessions Found</h3>
-                <p className="text-muted">Your activity logs will appear here once sessions are scheduled.</p>
+                <Activity size={64} />
+                <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '17px', color: 'var(--c-text)', margin: '0 0 6px' }}>
+                  No Activity Sessions Found
+                </p>
+                <p style={{ fontSize: '13px', margin: 0 }}>Activity logs will appear here once sessions are scheduled.</p>
               </motion.div>
-            </div>
-          </CCol>
-        )}
-      </CRow>
+            </CCol>
+          )}
+        </CRow>
+      </div>
 
       <SessionModal
         exercise={selectedExercise}
@@ -529,5 +547,3 @@ const SessionTracking = () => {
 };
 
 export default SessionTracking;
-
-
