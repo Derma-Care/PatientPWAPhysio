@@ -145,54 +145,87 @@ const Bookings = () => {
       <div className="app-body" style={{ marginTop: '-32px' }}>
 
         {/* Tab Bar */}
-        <div style={{
-          display: 'inline-flex',
-          background: 'var(--c-surface)',
-          border: '1px solid var(--c-border)',
-          borderRadius: 'var(--r-lg)',
-          padding: '4px',
-          gap: '4px',
-          marginBottom: '20px',
-          boxShadow: 'var(--s-md)',
-          position: 'sticky',
-          top: '16px',
-          zIndex: 99,
-        }}>
-          {[
-            { key: 'ongoing', label: 'Ongoing', count: ongoingCount },
-            { key: 'completed', label: 'Completed', count: completedCount },
-          ].map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              style={{
-                padding: '8px 22px',
-                borderRadius: '10px',
-                fontFamily: 'var(--font-body)',
-                fontWeight: 700,
-                fontSize: '13px',
-                cursor: 'pointer',
-                border: 'none',
-                transition: 'all 0.2s',
-                background: activeTab === tab.key ? 'var(--g-navy-soft)' : 'transparent',
-                color: activeTab === tab.key ? '#fff' : 'var(--c-text-3)',
-                boxShadow: activeTab === tab.key ? 'var(--s-navy)' : 'none',
-                display: 'flex', alignItems: 'center', gap: '8px',
-              }}
-            >
-              {tab.label}
-              <span style={{
-                background: activeTab === tab.key ? 'rgba(255,255,255,0.22)' : 'var(--c-surface-3)',
-                color: activeTab === tab.key ? '#fff' : 'var(--c-text-3)',
-                borderRadius: 'var(--r-pill)',
-                padding: '1px 8px',
-                fontSize: '11px',
-                fontWeight: 800,
-              }}>
-                {tab.count}
-              </span>
-            </button>
-          ))}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginBottom: '20px',
+          }}
+        >
+          <div
+            style={{
+              display: 'inline-flex',
+              background: 'var(--c-surface)',
+              border: '1px solid var(--c-border)',
+              borderRadius: 'var(--r-lg)',
+              padding: '4px',
+              gap: '4px',
+              boxShadow: 'var(--s-md)',
+              position: 'sticky',
+              top: '16px',
+              zIndex: 99,
+              width: '100%',
+              maxWidth: '450px',
+            }}
+          >
+            {[
+              { key: 'ongoing', label: 'Ongoing', count: ongoingCount },
+              { key: 'completed', label: 'Completed', count: completedCount },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  flex: 1,
+                  padding: '8px 22px',
+                  borderRadius: '10px',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  border: 'none',
+                  transition: 'all 0.2s',
+                  background:
+                    activeTab === tab.key
+                      ? 'var(--g-navy-soft)'
+                      : 'transparent',
+                  color:
+                    activeTab === tab.key
+                      ? '#fff'
+                      : 'var(--c-primary)',
+                  boxShadow:
+                    activeTab === tab.key
+                      ? 'var(--s-navy)'
+                      : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                }}
+              >
+                {tab.label}
+
+                <span
+                  style={{
+                    background:
+                      activeTab === tab.key
+                        ? 'rgba(255,255,255,0.22)'
+                        : 'var(--c-surface-3)',
+                    color:
+                      activeTab === tab.key
+                        ? '#fff'
+                        : 'var(--c-primary)',
+                    borderRadius: 'var(--r-pill)',
+                    padding: '1px 8px',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                  }}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Cards */}
@@ -262,7 +295,7 @@ const BookingCard = ({ booking, onClick }) => {
 
         <span
           className={`app-booking-chip ${getStatusClass(booking.status)}`}
-          style={{ flexShrink: 0, fontSize: '11px' }}
+          style={{ flexShrink: 0, fontSize: '11px', color: 'var(--c-primary)' }}
         >
           {booking.status}
         </span>
@@ -281,23 +314,23 @@ const BookingCard = ({ booking, onClick }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1 }}>
           <Calendar size={13} color="var(--c-navy)" style={{ flexShrink: 0 }} />
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '10px', color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Date</div>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--c-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {booking.serviceDate}
+            <div style={{ fontSize: '10px', color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Date & Time</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--c-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {booking.serviceDate} {booking.servicetime}
             </div>
           </div>
         </div>
 
-        <div style={{ width: '1px', height: '26px', background: 'var(--c-border)', flexShrink: 0 }} />
+        {/* <div style={{ width: '1px', height: '26px', background: 'var(--c-border)', flexShrink: 0 }} /> */}
 
         {/* Time */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+        {/* <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
           <Clock size={13} color="var(--c-orange)" style={{ flexShrink: 0 }} />
           <div>
             <div style={{ fontSize: '10px', color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Time</div>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--c-text)' }}>{booking.servicetime}</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--c-text)' }}>{booking.servicetime}</div>
           </div>
-        </div>
+        </div> */}
 
         <div style={{ width: '1px', height: '26px', background: 'var(--c-border)', flexShrink: 0 }} />
 
@@ -306,8 +339,8 @@ const BookingCard = ({ booking, onClick }) => {
           <MapPin size={13} color="var(--c-navy)" style={{ flexShrink: 0 }} />
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: '10px', color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Branch</div>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--c-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {booking.branchname}
+            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--c-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {booking.branchname || "Home Visit"}
             </div>
           </div>
         </div>

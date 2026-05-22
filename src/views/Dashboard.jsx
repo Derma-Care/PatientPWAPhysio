@@ -148,9 +148,20 @@ const Dashboard = () => {
                               </div>
                               <div style={{ fontSize: 12, color: 'var(--c-text-2)', display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 <MapPin size={11} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
-                                {booking.branchname}
+                                {booking.branchName}
                               </div>
                             </div>
+                          </div>
+                          <ChevronRight size={17} color="var(--c-text-3)" />
+
+
+                        </div>
+
+                        {/* Bottom row */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--c-text-3)' }}>
+                            <Clock size={13} />
+                            <span>{booking.servicetime}</span>
                           </div>
                           <span
                             className="app-booking-chip"
@@ -160,14 +171,6 @@ const Dashboard = () => {
                           </span>
                         </div>
 
-                        {/* Bottom row */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--c-text-3)' }}>
-                            <Clock size={13} />
-                            <span>{booking.servicetime}</span>
-                          </div>
-                          <ChevronRight size={17} color="var(--c-text-3)" />
-                        </div>
                       </div>
                     );
                   })}

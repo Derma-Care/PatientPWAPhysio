@@ -1,18 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  CRow,
-  CCol,
-  CCard,
-  CCardBody,
-  CFormCheck,
-  CButton,
-} from '@coreui/react';
-import {
-  ShieldCheck,
-  Fingerprint,
-  ArrowLeft
-} from 'lucide-react';
+import { CFormCheck } from '@coreui/react';
+import { ShieldCheck, Fingerprint, ArrowLeft, Smartphone } from 'lucide-react';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -28,54 +17,81 @@ const Settings = () => {
   };
 
   return (
-    <div className="fade-in">
-      <div className="d-flex align-items-center gap-3 mb-4">
-        <CButton
-          color="light"
-          className="rounded-circle p-2 shadow-sm border-0 bg-white"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft size={20} className="text-dark" />
-        </CButton>
-        <div>
-          <h2 className="fw-bold text-dark m-0">Settings</h2>
-          <p className="text-secondary m-0">Manage your account security and preferences</p>
+    <div className="app-page">
+
+      {/* ── Hero ── */}
+      <div className="app-hero">
+        <div className="app-hero-inner">
+          <button className="app-back-btn" onClick={() => navigate(-1)}>
+            <ArrowLeft size={14} /> Back
+          </button>
+          <h2 className="app-hero-title">Settings</h2>
+          <p className="app-hero-sub">Manage your account security and preferences</p>
         </div>
       </div>
 
-      <CRow>
-        <CCol md={6}>
-          <CCard className="premium-card border-0 mb-4">
-            <CCardBody className="p-4">
-              <h5 className="mb-4 fw-bold d-flex align-items-center gap-2 text-primary">
-                <ShieldCheck size={20} /> Security & Access
-              </h5>
+      {/* ── Body ── */}
+      <div className="app-body" style={{ paddingTop: 24 }}>
 
-              <div className="d-flex align-items-center justify-content-between py-2">
-                <div className="d-flex align-items-center gap-3">
-                  <div className="bg-primary bg-opacity-10 p-2 rounded-3">
-                    <Fingerprint size={24} className="text-white" />
-                  </div>
-                  <div>
-                    <h6 className="fw-bold mb-0">Biometric Login</h6>
-                    <p className="text-secondary small mb-0">Use FaceID / TouchID for faster access</p>
-                  </div>
-                </div>
-                {isMobileOrTab ? (
-                  <CFormCheck
-                    switch
-                    id="biometricSwitch"
-                    checked={biometricEnabled}
-                    onChange={handleBiometricToggle}
-                  />
-                ) : (
-                  <span className="text-secondary x-small fw-bold bg-light px-2 py-1 rounded" style={{ fontSize: '0.65rem' }}>MOBILE ONLY</span>
-                )}
+        {/* Security & Access card */}
+        <div className="app-card" style={{ maxWidth: 600 }}>
+          <div className="app-card-header">
+            <div className="app-card-header-left">
+              <div className="app-icon-box app-icon-navy">
+                <ShieldCheck size={20} />
               </div>
-            </CCardBody>
-          </CCard>
-        </CCol>
-      </CRow>
+              <div>
+                <p className="app-card-title">Security &amp; Access</p>
+                <p className="app-card-sub">Authentication &amp; login preferences</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="app-card-body" style={{ padding: '4px 0 0' }}>
+
+            {/* Biometric row */}
+            <div
+              className="app-info-item"
+              style={{
+                borderRadius: 0,
+                border: 'none',
+                borderBottom: '1px solid var(--c-border-light)',
+                justifyContent: 'space-between',
+                padding: '16px 20px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div className="app-icon-box app-icon-navy">
+                  <Fingerprint size={22} />
+                </div>
+                <div>
+                  <p className="app-info-value">Biometric Login</p>
+                  <p className="app-info-sub">Use FaceID / TouchID for faster access</p>
+                </div>
+              </div>
+
+              {isMobileOrTab ? (
+                <CFormCheck
+                  switch
+                  id="biometricSwitch"
+                  checked={biometricEnabled}
+                  onChange={handleBiometricToggle}
+                  style={{ transform: 'scale(1.2)', cursor: 'pointer' }}
+                />
+              ) : (
+                <span
+                  className="app-status-pill app-status-default"
+                  style={{ background: 'var(--c-surface-3)', color: 'var(--c-text-3)', border: '1px solid var(--c-border)' }}
+                >
+                  <Smartphone size={10} /> Mobile only
+                </span>
+              )}
+            </div>
+
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 };

@@ -1,5 +1,6 @@
 @import '@coreui/coreui/dist/css/coreui.min.css';
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
 * {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
@@ -33,9 +34,7 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f8fafc;
@@ -62,12 +61,12 @@ body {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
 }
 
-.premium-card h1:not(.text-white), 
-.premium-card h2:not(.text-white), 
-.premium-card h3:not(.text-white), 
-.premium-card h4:not(.text-white), 
-.premium-card h5:not(.text-white), 
-.premium-card h6:not(.text-white), 
+.premium-card h1:not(.text-white),
+.premium-card h2:not(.text-white),
+.premium-card h3:not(.text-white),
+.premium-card h4:not(.text-white),
+.premium-card h5:not(.text-white),
+.premium-card h6:not(.text-white),
 .premium-card .text-dark {
   color: #1e293b !important;
 }
@@ -140,8 +139,15 @@ body {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .fade-in {
@@ -254,8 +260,15 @@ body {
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login-logo {
@@ -291,7 +304,7 @@ body {
   align-items: center;
 }
 
-.custom-input-wrapper i, 
+.custom-input-wrapper i,
 .custom-input-wrapper svg:not(.password-toggle-btn svg) {
   position: absolute;
   left: 15px;
@@ -318,7 +331,7 @@ body {
   box-shadow: 0 0 0 4px rgba(27, 79, 138, 0.1);
 }
 
-.custom-input:focus + svg {
+.custom-input:focus+svg {
   color: var(--primary-color);
 }
 
@@ -350,7 +363,8 @@ body {
   padding-top: 1.5rem;
   border-top: 1px solid #e2e8f0;
   text-align: center;
-  display: none; /* Hide by default, show on mobile/tab */
+  display: none;
+  /* Hide by default, show on mobile/tab */
 }
 
 @media (max-width: 1024px) {
@@ -415,7 +429,7 @@ body {
     justify-content: center;
     overflow: hidden;
   }
-  
+
   .login-logo {
     font-size: 1.8rem;
   }
@@ -492,9 +506,20 @@ body {
   font-size: 1.1rem;
 }
 
-.pain-indicator.low { background: #dcfce7; color: #166534; }
-.pain-indicator.medium { background: #fef9c3; color: #854d0e; }
-.pain-indicator.high { background: #fee2e2; color: #991b1b; }
+.pain-indicator.low {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.pain-indicator.medium {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.pain-indicator.high {
+  background: #fee2e2;
+  color: #991b1b;
+}
 
 .exercise-progress {
   height: 8px;
@@ -1048,7 +1073,7 @@ body {
     border-bottom: 1px solid #f1f5f9;
     padding-bottom: 12px;
   }
-  
+
   .bookings-list-ps-left {
     padding-left: calc(var(--cui-gutter-x) * .5);
     padding-top: 12px;
@@ -1061,7 +1086,7 @@ body {
   .premium-card:active {
     transform: scale(0.98);
   }
-  
+
   .bookings-list-card {
     padding-bottom: 0;
   }
@@ -1091,6 +1116,7 @@ body {
    GLOBAL MOBILE FIXES
    ========================================== */
 @media (max-width: 576px) {
+
   /* Reduce container horizontal padding on phones */
   .container-fluid.px-4 {
     padding-left: 12px !important;
@@ -1133,6 +1159,7 @@ body {
    DASHBOARD MOBILE FIXES
    ========================================== */
 @media (max-width: 576px) {
+
   /* Stats grid — strict 2-column on phone */
   .dashboard-stats-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1202,6 +1229,7 @@ body {
    BOOKING DETAILS MOBILE FIXES
    ========================================== */
 @media (max-width: 576px) {
+
   /* Page header row — title + badge wrap properly */
   .booking-header-row {
     flex-direction: column;
@@ -1213,7 +1241,8 @@ body {
     font-size: 1rem !important;
   }
 
-  .booking-header-row .c-badge, .booking-header-row .badge {
+  .booking-header-row .c-badge,
+  .booking-header-row .badge {
     font-size: 0.75rem !important;
   }
 

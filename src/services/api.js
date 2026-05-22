@@ -66,7 +66,7 @@ export const authService = {
 
 export const customerService = {
   getBookings: async (customerId, branchId) => {
-    const response = await api.get(`/api/customer/bookings/customerId/${customerId}/000101`); //TODO:remove branch Id here hardcoded here
+    const response = await api.get(`/api/customer/bookings/customerId/${customerId}`); //TODO:remove branch Id here hardcoded here
     return response.data;
   },
   getBookingById: async (bookingId) => {
