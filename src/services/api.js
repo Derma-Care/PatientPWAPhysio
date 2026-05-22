@@ -77,6 +77,10 @@ export const customerService = {
     const response = await api.get(`/clinic-admin/customers/id/${customerId}`);
     return response.data;
   },
+  updateProfile: async (customerId, data) => {
+    const response = await api.put(`/clinic-admin/customers/updatecustomer/${customerId}`, data);
+    return response.data;
+  },
   getReports: async (customerId) => {
     const response = await api.get(`/api/customer/getReports/${customerId}`);
     return response.data;

@@ -102,7 +102,7 @@ const DefaultLayout = () => {
             </div> */}
             <div>
               <div style={{
-                fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 17,
+                fontWeight: 800, fontSize: 17,
                 color: 'var(--c-text)', lineHeight: 1.15, letterSpacing: '-.3px',
               }}>
                 {clinic?.name?.split(' ')[0] || 'Kinetix'}
@@ -176,7 +176,7 @@ const DefaultLayout = () => {
 
         {/* ── Topbar ──────────────────────────────────────────────────────── */}
         <CHeader style={{
-          height: 68, position: 'sticky', top: 0, zIndex: 1020,
+          position: 'sticky', top: 0, zIndex: 1020,
           background: 'var(--c-surface)',
           borderBottom: '1px solid var(--c-border)',
           boxShadow: 'var(--s-sm)',
@@ -192,7 +192,7 @@ const DefaultLayout = () => {
               <div className="stat-name">
                 <p style={{ margin: 0, fontSize: 14, color: 'var(--c-text-2)', fontWeight: 500 }}>
                   Welcome back,{' '}
-                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--c-text)' }}>
+                  <span style={{ fontWeight: 800, color: 'var(--c-text)' }}>
                     {user?.customerName || 'Patient'}
                   </span>
                 </p>
@@ -240,7 +240,7 @@ const DefaultLayout = () => {
                       width: 40, height: 40, borderRadius: 12, cursor: 'pointer',
                       background: 'var(--g-navy)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontFamily: 'var(--font-display)', fontWeight: 800, color: '#fff', fontSize: 16,
+                      fontWeight: 800, color: '#fff', fontSize: 16,
                     }}>
                       {user?.customerName?.charAt(0) || 'P'}
                     </div>
@@ -272,7 +272,7 @@ const DefaultLayout = () => {
                           textTransform: 'uppercase', letterSpacing: '.6px'
                         }}>Logged in as</p>
                         <p style={{
-                          margin: 0, fontFamily: 'var(--font-display)', fontWeight: 800,
+                          margin: 0, fontWeight: 800,
                           color: '#fff', fontSize: 14, maxWidth: 130,
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
                         }}>

@@ -102,7 +102,7 @@ const ClinicDetails = () => {
               <img src={logoSrc} alt={clinic?.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div style={{ paddingBottom: 4 }}>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, margin: '0 0 4px', color: 'var(--c-text)' }}>
+              <h2 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 4px', color: 'var(--c-text)' }}>
                 {clinic?.name}
               </h2>
               <p style={{ margin: 0, fontSize: 13, color: 'var(--c-text-2)', display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -119,7 +119,7 @@ const ClinicDetails = () => {
             {/* Contact */}
             <div>
               <p style={{
-                fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800, letterSpacing: '.8px',
+                fontSize: 11, fontWeight: 800, letterSpacing: '.8px',
                 textTransform: 'uppercase', color: 'var(--c-navy)', marginBottom: 14,
                 paddingBottom: 8, borderBottom: '2px solid var(--c-navy-light)'
               }}>
@@ -153,7 +153,7 @@ const ClinicDetails = () => {
             {/* Facility */}
             <div>
               <p style={{
-                fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800, letterSpacing: '.8px',
+                fontSize: 11, fontWeight: 800, letterSpacing: '.8px',
                 textTransform: 'uppercase', color: 'var(--c-navy)', marginBottom: 14,
                 paddingBottom: 8, borderBottom: '2px solid var(--c-navy-light)'
               }}>
@@ -204,7 +204,7 @@ const ClinicDetails = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
               <span style={{ width: 4, height: 20, background: 'var(--g-navy-soft)', borderRadius: 4, display: 'inline-block' }} />
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 800, margin: 0 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>
                 Active Branch Locations
               </h3>
             </div>
@@ -224,7 +224,7 @@ const ClinicDetails = () => {
                       <Navigation size={12} /> Navigate
                     </button>
                   </div>
-                  <h4 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, margin: '0 0 6px' }}>
+                  <h4 style={{ fontSize: 14, fontWeight: 800, margin: '0 0 6px' }}>
                     {branch.branchName}
                   </h4>
                   <p style={{ fontSize: 12, color: 'var(--c-text-2)', margin: '0 0 14px', lineHeight: 1.5 }}>
@@ -249,7 +249,7 @@ const ClinicDetails = () => {
             <div className="app-card">
               <div className="app-card-header">
                 <p style={{
-                  fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800, letterSpacing: '.8px',
+                  fontSize: 11, fontWeight: 800, letterSpacing: '.8px',
                   textTransform: 'uppercase', color: 'var(--c-navy)', margin: 0
                 }}>
                   Social Presence
@@ -285,7 +285,7 @@ const ClinicDetails = () => {
             <div className="app-card" style={{ overflow: 'hidden' }}>
               <div className="app-card-header">
                 <p style={{
-                  fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800, letterSpacing: '.8px',
+                  fontSize: 11, fontWeight: 800, letterSpacing: '.8px',
                   textTransform: 'uppercase', color: 'var(--c-navy)', margin: 0
                 }}>
                   Virtual Experience

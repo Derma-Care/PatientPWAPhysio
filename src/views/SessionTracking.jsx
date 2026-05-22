@@ -65,7 +65,7 @@ const ExerciseCard = React.memo(({ item, onClick }) => {
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{
-              fontFamily: 'var(--font-display)',
+
               fontWeight: 700,
               fontSize: '14px',
               color: 'var(--c-text)',
@@ -184,7 +184,7 @@ const SessionModal = ({ exercise, visible, onClose, clinicId, branchId, therapis
     <CModal visible={visible} onClose={onClose} size="lg" backdrop="static" scrollable>
       {/* Header */}
       <CModalHeader style={{ border: 'none', padding: '20px 24px 12px', background: 'var(--c-surface)' }}>
-        <CModalTitle style={{ display: 'flex', alignItems: 'center', gap: '12px', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '17px', color: 'var(--c-text)' }}>
+        <CModalTitle style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 700, fontSize: '17px', color: 'var(--c-text)' }}>
           <div className="app-icon-box app-icon-navy" style={{ width: '40px', height: '40px', borderRadius: '11px' }}>
             <Activity size={20} />
           </div>
@@ -221,7 +221,7 @@ const SessionModal = ({ exercise, visible, onClose, clinicId, branchId, therapis
                         width: '28px', height: '28px', borderRadius: '8px',
                         background: 'var(--g-navy-soft)', color: '#fff',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontFamily: 'var(--font-display)', fontSize: '12px', fontWeight: 800,
+                        fontSize: '12px', fontWeight: 800,
                       }}>
                         {session.sessionNo}
                       </div>
@@ -285,7 +285,7 @@ const SessionModal = ({ exercise, visible, onClose, clinicId, branchId, therapis
                                           width: '38px', height: '38px', borderRadius: '10px',
                                           background: pc.bg, color: pc.text,
                                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                          fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 800,
+                                          fontSize: '15px', fontWeight: 800,
                                           border: `1.5px solid ${pc.text}33`,
                                         }}>
                                           {val || '-'}
@@ -302,7 +302,7 @@ const SessionModal = ({ exercise, visible, onClose, clinicId, branchId, therapis
                                 <div style={{ display: 'flex', gap: '20px' }}>
                                   {[{ v: record.setsDone || 0, l: 'Sets' }, { v: record.repetationDone || 0, l: 'Reps' }].map((s, i) => (
                                     <div key={i}>
-                                      <span style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 800, color: 'var(--c-navy)' }}>{s.v}</span>
+                                      <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--c-navy)' }}>{s.v}</span>
                                       <span style={{ fontSize: '11px', color: 'var(--c-text-3)', fontWeight: 600, marginLeft: '4px' }}>{s.l}</span>
                                     </div>
                                   ))}
@@ -524,7 +524,7 @@ const SessionTracking = () => {
                 animate={{ scale: 1, opacity: 1 }}
               >
                 <Activity size={64} />
-                <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '17px', color: 'var(--c-text)', margin: '0 0 6px' }}>
+                <p style={{ fontWeight: 700, fontSize: '17px', color: 'var(--c-text)', margin: '0 0 6px' }}>
                   No Activity Sessions Found
                 </p>
                 <p style={{ fontSize: '13px', margin: 0 }}>Activity logs will appear here once sessions are scheduled.</p>

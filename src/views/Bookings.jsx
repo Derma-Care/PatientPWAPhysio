@@ -240,7 +240,7 @@ const Bookings = () => {
             <CCol xs={12}>
               <div className="app-empty" style={{ padding: '60px 16px' }}>
                 <Filter size={52} />
-                <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '16px', color: 'var(--c-text)', margin: '0 0 6px' }}>
+                <p style={{ fontWeight: 700, fontSize: '16px', color: 'var(--c-text)', margin: '0 0 6px' }}>
                   No bookings found
                 </p>
                 <p style={{ fontSize: '13px', margin: 0 }}>Try a different doctor name, branch, or booking ID</p>
@@ -279,7 +279,7 @@ const BookingCard = ({ booking, onClick }) => {
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{
-              fontFamily: 'var(--font-display)',
+
               fontWeight: 700,
               fontSize: '14px',
               color: 'var(--c-text)',
@@ -353,7 +353,7 @@ const BookingCard = ({ booking, onClick }) => {
             width: '26px', height: '26px', borderRadius: '8px',
             background: 'var(--g-navy-soft)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'var(--font-display)',
+
             fontSize: '12px', fontWeight: 800, color: '#fff',
           }}>
             {booking.visitCount || '1'}

@@ -1320,12 +1320,35 @@ body,
 }
 
 .app-loading-ring {
-  width: 44px;
-  height: 44px;
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Outer spinning ring */
+.app-loading-ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
   border: 3px solid var(--c-border);
   border-top-color: var(--c-navy);
+  border-right-color: var(--c-navy);
+  animation: app-spin .85s cubic-bezier(.4,0,.2,1) infinite;
+}
+
+/* Logo image in the center */
+.app-loading-ring::after {
+  content: '';
+  position: absolute;
+  inset: 10px;
   border-radius: 50%;
-  animation: app-spin .75s linear infinite;
+  background: url('/kinetix-logo.png') center / contain no-repeat;
 }
 
 @media (max-width: 768px) {

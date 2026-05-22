@@ -50,6 +50,7 @@ const Profile = () => {
   const [profile, setProfile] = useState(null);
   const [draft, setDraft] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [previewImage, setPreviewImage] = useState(
     () => localStorage.getItem('profilePicture')
@@ -105,16 +106,30 @@ const Profile = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleSave = () => {
-    setProfile(draft);
-    setEditing(false);
-    Swal.fire({
-      icon: 'success',
-      title: 'Profile Updated',
-      text: 'Your profile has been successfully updated.',
-      timer: 2000,
-      showConfirmButton: false,
-    });
+  const handleSave = async () => {
+    if (!user?.customerId) return;
+    setSaving(true);
+    try {
+      await customerService.updateProfile(user.customerId, draft);
+      setProfile(draft);
+      setEditing(false);
+      Swal.fire({
+        icon: 'success',
+        title: 'Profile Updated',
+        text: 'Your profile has been successfully updated.',
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      console.error('Profile update failed:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Update Failed',
+        text: err?.response?.data?.message || 'Could not save changes. Please try again.',
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -197,7 +212,7 @@ const Profile = () => {
 
               {/* Name + ID */}
               <h2 style={{
-                fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800,
+                fontSize: 18, fontWeight: 800,
                 margin: '0 0 4px', color: 'var(--c-text)',
               }}>
                 {profile?.fullName}
@@ -262,8 +277,12 @@ const Profile = () => {
                   <button
                     className={editing ? 'app-btn-navy' : 'app-btn-outline-navy'}
                     onClick={editing ? handleSave : () => setEditing(true)}
+                    disabled={saving}
+                    style={saving ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
                   >
-                    {editing ? <><Save size={14} /> Save changes</> : <><Edit2 size={14} /> Edit</>}
+                    {saving
+                      ? <><span style={{ display: 'inline-block', width: 13, height: 13, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', marginRight: 6 }} /> Saving…</>
+                      : editing ? <><Save size={14} /> Save changes</> : <><Edit2 size={14} /></>}
                   </button>
                 </div>
               </div>

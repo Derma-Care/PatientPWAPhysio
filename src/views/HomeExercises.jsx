@@ -56,7 +56,7 @@ const MediaPreviewModal = ({ visible, onClose, mediaUrl, type }) => {
   return (
     <CModal visible={visible} onClose={onClose} size="lg" alignment="center" backdrop="static">
       <CModalHeader style={{ border: 'none', padding: '18px 22px 10px' }}>
-        <CModalTitle style={{ display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '16px', color: 'var(--c-text)' }}>
+        <CModalTitle style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 700, fontSize: '16px', color: 'var(--c-text)' }}>
           <div className="app-icon-box app-icon-navy" style={{ width: '34px', height: '34px', borderRadius: '9px' }}>
             {isYouTube || isVideoFile ? <Video size={16} /> : <ImageIcon size={16} />}
           </div>
@@ -117,7 +117,7 @@ const HomeExerciseCard = React.memo(({ item, index, record, onTrack, onPreview, 
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{
-              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '14px',
+              fontWeight: 700, fontSize: '14px',
               color: 'var(--c-text)', lineHeight: '1.3', marginBottom: '8px',
               display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
             }} title={item.exerciseName || item.programName}>
@@ -332,7 +332,7 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
     <CModal visible={visible} onClose={onClose} alignment="center" size="md" backdrop="static"  >
       {/* Header */}
       <CModalHeader className='premium-swal-popup' style={{ border: 'none', padding: '20px 22px 10px', background: 'var(--c-surface)' }}>
-        <CModalTitle style={{ display: 'flex', alignItems: 'center', gap: '12px', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '17px', color: 'var(--c-text)' }}>
+        <CModalTitle style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 700, fontSize: '17px', color: 'var(--c-text)' }}>
           <div className="app-icon-box app-icon-orange" style={{ width: '40px', height: '40px', borderRadius: '11px' }}>
             <Activity size={20} />
           </div>
@@ -355,7 +355,7 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
             <Dumbbell size={16} />
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '14px', color: 'var(--c-navy)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--c-navy)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {exercise.exerciseName || exercise.programName}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--c-text-3)', fontWeight: 600 }}>Record your performance for today</div>
@@ -437,7 +437,7 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
                   <div className={`app-icon-box ${section.color}`} style={{ width: '28px', height: '28px', borderRadius: '7px' }}>
                     <ImageIcon size={13} />
                   </div>
-                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '12px', color: section.titleColor }}>{section.title}</span>
+                  <span style={{ fontWeight: 700, fontSize: '12px', color: section.titleColor }}>{section.title}</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {section.keys.map(f => (
@@ -473,7 +473,7 @@ const ViewProgressModal = ({ record, visible, onClose, onPreview }) => {
   return (
     <CModal visible={visible} onClose={onClose} alignment="center" size="lg" backdrop="static">
       <CModalHeader style={{ border: 'none', padding: '20px 22px 10px', background: 'var(--c-surface)' }}>
-        <CModalTitle style={{ display: 'flex', alignItems: 'center', gap: '12px', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '17px', color: 'var(--c-text)' }}>
+        <CModalTitle style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 700, fontSize: '17px', color: 'var(--c-text)' }}>
           <div className="app-icon-box app-icon-navy" style={{ width: '40px', height: '40px', borderRadius: '11px' }}>
             <TrendingUp size={20} />
           </div>
@@ -490,7 +490,7 @@ const ViewProgressModal = ({ record, visible, onClose, onPreview }) => {
           marginBottom: '16px',
         }}>
           <div>
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '15px', color: 'var(--c-text)' }}>
+            <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--c-text)' }}>
               {record.name ? `${record.name}'s Routine` : 'Exercise Routine'}
             </div>
             <div style={{ fontSize: '12px', color: 'var(--c-text-3)', fontWeight: 500, marginTop: '2px' }}>Logged sessions and observations</div>
@@ -519,11 +519,11 @@ const ViewProgressModal = ({ record, visible, onClose, onPreview }) => {
                     width: '26px', height: '26px', borderRadius: '7px',
                     background: 'var(--g-navy-soft)', color: '#fff',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'var(--font-display)', fontSize: '11px', fontWeight: 800,
+                    fontSize: '11px', fontWeight: 800,
                   }}>
                     {session.sessioncount}
                   </div>
-                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '13px', color: 'var(--c-text)' }}>
+                  <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--c-text)' }}>
                     Session {session.sessioncount} of {session.session}
                   </span>
                 </div>
@@ -548,7 +548,7 @@ const ViewProgressModal = ({ record, visible, onClose, onPreview }) => {
                   ].map((s, i) => (
                     <div key={i} style={{ flex: '1 1 80px' }}>
                       <div style={{ fontSize: '10px', color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '3px' }}>{s.label}</div>
-                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 800, color: s.color }}>{s.val}</div>
+                      <div style={{ fontSize: '16px', fontWeight: 800, color: s.color }}>{s.val}</div>
                     </div>
                   ))}
                 </div>
@@ -810,7 +810,7 @@ const HomeExercises = () => {
             <CCol xs={12}>
               <motion.div className="app-empty" style={{ padding: '72px 24px' }} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
                 <Home size={64} />
-                <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '17px', color: 'var(--c-text)', margin: '0 0 6px' }}>No Home Exercises Found</p>
+                <p style={{ fontWeight: 700, fontSize: '17px', color: 'var(--c-text)', margin: '0 0 6px' }}>No Home Exercises Found</p>
                 <p style={{ fontSize: '13px', margin: 0, maxWidth: '360px' }}>Your therapist hasn't assigned any home routines for this visit yet.</p>
               </motion.div>
             </CCol>

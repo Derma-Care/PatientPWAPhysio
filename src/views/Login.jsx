@@ -178,7 +178,7 @@ const Login = () => {
               </div>
 
               <p style={{
-                fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 800,
+                fontSize: 17, fontWeight: 800,
                 color: 'var(--c-text)', margin: '0 0 4px', textAlign: 'center'
               }}>
                 {localStorage.getItem('savedUserName') || 'Patient'}
