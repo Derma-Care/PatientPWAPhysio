@@ -53,7 +53,7 @@ const ClinicDetails = () => {
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '70vh' }}>
-        <CSpinner color="primary" variant="grow" />
+        <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
       </div>
     );
   }

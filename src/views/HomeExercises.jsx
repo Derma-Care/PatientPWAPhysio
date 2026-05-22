@@ -37,50 +37,106 @@ import Swal from 'sweetalert2';
 const MediaPreviewModal = ({ visible, onClose, mediaUrl, type }) => {
   if (!mediaUrl) return null;
 
-  const isYouTube = type === 'youtube' || mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be');
+  const cleanUrl = mediaUrl.split('?')[0].toLowerCase();
+
+  const videoExtensions = ['.mp4', '.webm', '.ogg'];
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+
+  const isYouTube =
+    cleanUrl.includes('youtube.com') ||
+    cleanUrl.includes('youtu.be');
+
+  const isVideoFile = videoExtensions.some(ext =>
+    cleanUrl.endsWith(ext)
+  );
+
+  const isImageFile = imageExtensions.some(ext =>
+    cleanUrl.endsWith(ext)
+  );
 
   const getYouTubeId = (url) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const regExp =
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+
     const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+
+    return match && match[2].length === 11
+      ? match[2]
+      : null;
   };
 
+  console.log({
+    mediaUrl,
+    type,
+    isYouTube,
+    isVideoFile,
+    isImageFile
+  });
+
   return (
-    <CModal visible={visible} onClose={onClose} size="lg" alignment="center" className="premium-modal" backdrop="static">
-      <CModalHeader className="border-0 px-4 pt-4 pb-0" closeButton={false}>
-        <CModalTitle className="fw-bold d-flex align-items-center gap-2">
-          {isYouTube ? <PlayCircle size={20} className="text-danger" /> : (type === 'video' ? <Video size={20} /> : <ImageIcon size={20} />)}
-          {isYouTube ? 'Exercise Tutorial' : (type === 'video' ? 'Video Update' : 'Media Preview')}
+    <CModal
+      visible={visible}
+      onClose={onClose}
+      size="lg"
+      alignment="center"
+      className="premium-modal"
+      backdrop="static"
+    >
+      <CModalHeader className="border-0 px-4 pt-4 pb-0">
+        <CModalTitle className="fw-bold">
+          Media Preview
         </CModalTitle>
-        <CButton variant="ghost" onClick={onClose} className="p-0 border-0"><X size={28} /></CButton>
       </CModalHeader>
-      <CModalBody className="p-0 bg-black rounded-bottom-4 overflow-hidden d-flex justify-content-center align-items-center mt-3" style={{ minHeight: '350px' }}>
+
+      <CModalBody
+        className="p-0 bg-black rounded-bottom-4 overflow-hidden d-flex justify-content-center align-items-center mt-3"
+        style={{ minHeight: '350px' }}
+      >
         {isYouTube ? (
           <iframe
             width="100%"
             height="350"
-            src={`https://www.youtube.com/embed/${getYouTubeId(mediaUrl)}?autoplay=1`}
+            src={`https://www.youtube.com/embed/${getYouTubeId(mediaUrl)}`}
             title="YouTube video player"
             frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
-          ></iframe>
-        ) : type === 'video' ? (
-          <video src={mediaUrl} controls className="w-100 h-100" style={{ maxHeight: '70vh' }} autoPlay />
+          />
+        ) : isVideoFile ? (
+          <video
+            src={mediaUrl}
+            controls
+            className="w-100"
+            style={{ maxHeight: '70vh' }}
+          />
+        ) : isImageFile ? (
+          <img
+            src={mediaUrl}
+            alt="Preview"
+            className="img-fluid"
+            style={{
+              maxHeight: '70vh',
+              objectFit: 'contain'
+            }}
+          />
         ) : (
-          <img src={mediaUrl} alt="Preview" className="img-fluid" style={{ maxHeight: '70vh', objectFit: 'contain' }} />
+          <div className="text-white p-4">
+            Unsupported Media Type
+          </div>
         )}
       </CModalBody>
     </CModal>
   );
 };
 
-const HomeExerciseCard = React.memo(({ item, index, record, onTrack, onPreview, onViewProgress }) => {
-  const isCompleted = record?.status === 'completed';
+const HomeExerciseCard = React.memo(({ item, index, record, onTrack, onPreview, onViewProgress, viewingProgressId }) => {
+  const isCompleted = String(record?.status || '').toUpperCase() === 'COMPLETED';
+  const isActive =
+    ['ACTIVE', 'Active', 'active'].includes(record?.status);
   const hasCompletedSession = record?.therapyrecord && record.therapyrecord.length > 0;
   const totalSessions = parseInt(item.session || item.noOfSessions || item.sessions || 10, 10);
   const completedSessions = record?.therapyrecord?.length || 0;
   const remainingSessions = Math.max(0, totalSessions - completedSessions);
+  const exerciseId = item.id || item.exerciseId || item.programId || item.therapyExercisesId || '';
 
   return (
     <motion.div
@@ -189,15 +245,20 @@ const HomeExerciseCard = React.memo(({ item, index, record, onTrack, onPreview, 
               Track Progress <ChevronRight size={16} />
             </CButton>
           )}
-          {hasCompletedSession && (
+          {(hasCompletedSession || isActive) && (
             <CButton
               variant="outline"
               color="primary"
               className="flex-grow-1 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm rounded-3"
               style={{ fontSize: '0.85rem', borderWidth: '1.5px' }}
-              onClick={() => onViewProgress(record)}
+              disabled={viewingProgressId === exerciseId}
+              onClick={() => onViewProgress(item, exerciseId)}
             >
-              View Progress <TrendingUp size={16} />
+              {viewingProgressId === exerciseId ? (
+                <><CSpinner size="sm" /> Loading...</>
+              ) : (
+                <>View Progress <TrendingUp size={16} /></>
+              )}
             </CButton>
           )}
         </div>
@@ -334,11 +395,11 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
 
   return (
     <CModal visible={visible} onClose={onClose} alignment="center" className="premium-modal" size="md" backdrop="static">
-      <CModalHeader className="border-0 px-4 pt-4 pb-0" closeButton={false}>
+      <CModalHeader className="border-0 px-4 pt-4 pb-0"  >
         <CModalTitle className="fw-bold fs-5 ls-n1 d-flex align-items-center gap-2">
           <Activity size={20} className="text-primary" /> Activity Log
         </CModalTitle>
-        <CButton variant="ghost" onClick={onClose} className="p-0 border-0"><X size={24} /></CButton>
+        {/* <CButton variant="ghost" onClick={onClose} className="p-0 border-0"><X size={24} /></CButton> */}
       </CModalHeader>
 
       <CModalBody className="p-4">
@@ -507,11 +568,11 @@ const ViewProgressModal = ({ record, visible, onClose, onPreview }) => {
 
   return (
     <CModal visible={visible} onClose={onClose} alignment="center" className="premium-modal" size="lg" backdrop="static">
-      <CModalHeader className="border-0 px-4 pt-4 pb-0" closeButton={false}>
+      <CModalHeader className="border-0 px-4 pt-4 pb-0" >
         <CModalTitle className="fw-bold fs-5 ls-n1 d-flex align-items-center gap-2">
           <TrendingUp size={20} className="text-primary" /> Exercise Progress History
         </CModalTitle>
-        <CButton variant="ghost" onClick={onClose} className="p-0 border-0"><X size={24} /></CButton>
+        {/* <CButton variant="ghost" onClick={onClose} className="p-0 border-0"><X size={24} /></CButton> */}
       </CModalHeader>
 
       <CModalBody className="p-4">
@@ -520,8 +581,8 @@ const ViewProgressModal = ({ record, visible, onClose, onPreview }) => {
             <h5 className="fw-bold text-dark m-0">{record.name ? `${record.name}'s Routine` : "Exercise Routine"}</h5>
             <p className="text-secondary small mt-1 mb-0">Logged sessions and observations</p>
           </div>
-          <span className={`badge ${record.status?.toLowerCase() === 'completed' ? 'bg-success' : 'bg-primary'} px-3 py-2 rounded-pill fw-bold`}>
-            Status: {record.status}
+          <span className={`badge ${String(record.status || '').toLowerCase() === 'completed' ? 'bg-success' : 'bg-primary'} px-3 py-2 rounded-pill fw-bold`}>
+            Status: {record.status || 'Unknown'}
           </span>
         </div>
 
@@ -542,7 +603,7 @@ const ViewProgressModal = ({ record, visible, onClose, onPreview }) => {
                   Sets Done: <span className="fw-bold text-primary">{session.setsdone}</span>
                 </span>
                 <span className="small text-dark fw-semibold">
-                  Repetitions Completed: <span className={`fw-bold ${session.repitationdone ? 'text-success' : 'text-danger'}`}>{session.repitationdone ? 'Yes' : 'No'}</span>
+                  Reps Done: <span className="fw-bold text-info">{session.repitationdone ?? 0}</span>
                 </span>
                 <span className="small text-dark fw-semibold">
                   Session Completed: <span className={`fw-bold ${session.sessioncompleted ? 'text-success' : 'text-danger'}`}>{session.sessioncompleted ? 'Yes' : 'No'}</span>
@@ -565,10 +626,10 @@ const ViewProgressModal = ({ record, visible, onClose, onPreview }) => {
                   };
 
                   const mediaItems = [
-                    { key: 'beforeImage', label: 'Before Image', type: 'image', icon: ImageIcon, color: 'primary' },
-                    { key: 'afterImage', label: 'After Image', type: 'image', icon: ImageIcon, color: 'success' },
+                    { key: 'beforeImage', label: 'Before Image', type: 'image', icon: ImageIcon, color: 'info' },
+                    { key: 'afterImage', label: 'After Image', type: 'image', icon: ImageIcon, color: 'info' },
                     { key: 'beforeVideo', label: 'Before Video', type: 'video', icon: Video, color: 'info' },
-                    { key: 'afterVideo', label: 'After Video', type: 'video', icon: Video, color: 'warning' }
+                    { key: 'afterVideo', label: 'After Video', type: 'video', icon: Video, color: 'info' }
                   ];
 
                   return mediaItems.map(m => {
@@ -621,6 +682,7 @@ const HomeExercises = () => {
   const [patientName, setPatientName] = useState('');
   const [viewModalVisible, setViewModalVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [viewingProgressId, setViewingProgressId] = useState(null);
 
   const queryParams = useMemo(() => {
     const query = new URLSearchParams(location.search);
@@ -642,13 +704,24 @@ const HomeExercises = () => {
 
         setPatientId(pid);
 
-        const response = await physiotherapyService.getVisitHistory(pid, id);
-        const history = response.data || [];
+        let visit = location.state?.visit;
 
-        // Find the specific visit matching therapistRecordId, or fallback to latest
-        const visit = queryParams.therapistRecordId
-          ? history.find(v => v.physiotherapyDoctorData?.therapistRecordId === queryParams.therapistRecordId)
-          : history[0];
+        if (!visit) {
+          const response = await physiotherapyService.getVisitHistory({
+            doctorId: queryParams.doctorId || '',
+            patientId: pid,
+            bookingId: id,
+            clinicId: queryParams.clinicId || '',
+            branchId: queryParams.branchId || ''
+          });
+          const resData = response.data;
+          const history = resData ? (Array.isArray(resData) ? resData : [resData]) : [];
+
+          // Find the specific visit matching therapistRecordId, or fallback to latest
+          visit = queryParams.therapistRecordId
+            ? history.find(v => v.physiotherapyDoctorData?.therapistRecordId === queryParams.therapistRecordId)
+            : history[0];
+        }
 
         if (!visit) return;
 
@@ -701,9 +774,15 @@ const HomeExercises = () => {
                   const record = await localPhysiotherapyService.getByClinicBranchExercise(
                     resolvedClinicId,
                     resolvedBranchId,
+                    queryParams.therapistRecordId || "",
+                    pid || "",
                     exId
                   );
-                  if (record) recordsMap[exId] = record;
+                  if (record && record.success !== false) {
+                    recordsMap[exId] = Array.isArray(record.data)
+                      ? record.data[0]
+                      : (record.data || record);
+                  }
                 } catch (err) {
                   console.warn(`No existing therapy record for exercise ${exId}:`, err);
                 }
@@ -732,9 +811,10 @@ const HomeExercises = () => {
   };
 
   const handleSave = async (data) => {
+    console.log("data", data)
     try {
       setSaving(true);
-      const exerciseId = (data.exercise.id && data.exercise.id.trim())
+      const exerciseId = (data.exercise.exerciseId && data.exercise.exerciseId.trim())
         || data.exercise.exerciseId
         || data.exercise.programId
         || data.exercise.therapyExercisesId
@@ -748,7 +828,7 @@ const HomeExercises = () => {
 
       const newSession = {
         setsdone: parseInt(data.setsDone, 10) || 0,
-        repitationdone: parseInt(data.repsDone, 10) > 0,
+        repitationdone: parseInt(data.repsDone, 10) || 0,
         sessioncount: sessionCountDone,
         session: totalSessions,
         sessioncompleted: data.completed,
@@ -758,36 +838,36 @@ const HomeExercises = () => {
         beforeImage: data.beforeImage || "",
         afterImage: data.afterImage || "",
         beforeVideo: data.beforeVideo || "",
-        afterVideo: data.afterVideo || "",
-        // sessioncountremaining: remainingSessions
+        afterVideo: data.afterVideo || ""
       };
+
+      const isStatusCompleted = sessionCountDone >= totalSessions;
 
       let updatedRecord;
       if (existingRecord) {
         const updatedSessions = [...(existingRecord.therapyrecord || []), newSession];
-        const isCompleted = updatedSessions.length >= newSession.session;
         updatedRecord = {
           ...existingRecord,
-          // status: isCompleted ? "COMPLETED" : "ACTIVE",
-          doctorid: existingRecord.doctorid || doctorId || "",
-          frequency: data.exercise.frequency || existingRecord.frequency || "3 times a day",
-          duration: data.exercise.duration || existingRecord.duration || "",
-          // sessioncountremaining: remainingSessions,
-          therapyrecord: updatedSessions
-        };
-      } else {
-        const isCompleted = 1 >= newSession.session;
-        updatedRecord = {
+          therapyrecordid: queryParams.therapistRecordId || "",
           clincinid: queryParams.clinicId || "",
           brnchid: queryParams.branchId || "",
           patientid: patientId || "",
           doctorid: doctorId || "",
           name: patientName || "",
-          // status: isCompleted ? "COMPLETED" : "ACTIVE",
+          status: isStatusCompleted ? "COMPLETED" : "ACTIVE",
           excerciseId: exerciseId,
-          frequency: data.exercise.frequency || " ",
-          duration: data.exercise.duration || "",
-          // sessioncountremaining: remainingSessions,
+          therapyrecord: updatedSessions
+        };
+      } else {
+        updatedRecord = {
+          therapyrecordid: queryParams.therapistRecordId || "",
+          clincinid: queryParams.clinicId || "",
+          brnchid: queryParams.branchId || "",
+          patientid: patientId || "",
+          doctorid: doctorId || "",
+          name: patientName || "",
+          status: isStatusCompleted ? "COMPLETED" : "ACTIVE",
+          excerciseId: exerciseId,
           therapyrecord: [newSession]
         };
       }
@@ -802,10 +882,10 @@ const HomeExercises = () => {
 
       let response;
       if (existingRecord) {
-        const recordId = existingRecord.id || existingRecord.therapyrecordid;
-        console.log("Updating existing record with ID:", recordId);
-        console.log("PUT Endpoint: /api/customer/therapy-records/update/" + recordId);
-        response = await localPhysiotherapyService.updateTherapyRecord(recordId, updatedRecord);
+        const recordId = queryParams.therapistRecordId;
+        console.log("Updating existing record with ID:", recordId, "exercise:", exerciseId);
+        console.log("PUT Endpoint: /api/customer/therapy-records/update/" + recordId + "/" + exerciseId);
+        response = await localPhysiotherapyService.updateTherapyRecord(recordId, exerciseId, updatedRecord);
         console.log("Update Response:", response);
       } else {
         console.log("Creating new therapy record");
@@ -819,13 +899,17 @@ const HomeExercises = () => {
         const freshRecord = await localPhysiotherapyService.getByClinicBranchExercise(
           queryParams.clinicId || "",
           queryParams.branchId || "",
+          queryParams.therapistRecordId || "",
+          patientId || "",
           exerciseId
         );
-        if (freshRecord) {
+        if (freshRecord && freshRecord.success !== false) {
           console.log("Fresh record after save:", freshRecord);
           setTherapyRecords(prev => ({
             ...prev,
-            [exerciseId]: freshRecord
+            [exerciseId]: Array.isArray(freshRecord.data)
+              ? freshRecord.data[0]
+              : (freshRecord.data || freshRecord)
           }));
         }
       } catch (err) {
@@ -863,9 +947,33 @@ const HomeExercises = () => {
     }
   };
 
-  const handleViewProgress = (record) => {
-    setSelectedRecord(record);
-    setViewModalVisible(true);
+  const handleViewProgress = async (item, exerciseId) => {
+    setViewingProgressId(exerciseId);
+    try {
+      const clinicId = queryParams.clinicId || '';
+      const branchId = queryParams.branchId || '';
+      const therapistRecordId = queryParams.therapistRecordId || '';
+      const patientId = queryParams.patientId || '';
+      const res = await localPhysiotherapyService.getByClinicBranchExercise(
+        clinicId, branchId, therapistRecordId, patientId, exerciseId
+      );
+      const freshRecord = (res && res.success !== false)
+        ? (
+          Array.isArray(res.data)
+            ? res.data[0]
+            : (res.data || res)
+        )
+        : (therapyRecords[exerciseId] || null);
+      setSelectedRecord(freshRecord);
+      setViewModalVisible(true);
+    } catch (err) {
+      console.error('Error fetching progress record:', err);
+      // Fall back to cached record if fetch fails
+      setSelectedRecord(therapyRecords[exerciseId] || null);
+      setViewModalVisible(true);
+    } finally {
+      setViewingProgressId(null);
+    }
   };
 
   if (loading) {
@@ -924,6 +1032,7 @@ const HomeExercises = () => {
                   onTrack={handleTrack}
                   onPreview={handlePreview}
                   onViewProgress={handleViewProgress}
+                  viewingProgressId={viewingProgressId}
                 />
               </CCol>
             );

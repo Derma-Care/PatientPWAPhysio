@@ -66,7 +66,7 @@ const Bookings = () => {
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '70vh' }}>
-        <CSpinner color="primary" variant="grow" />
+        <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
       </div>
     );
   }
@@ -83,13 +83,13 @@ const Bookings = () => {
   return (
     <div className="fade-in">
       <div className="mb-4">
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 bookings-page-header">
           <div>
             <h2 className="fw-bold text-dark m-0">My Bookings</h2>
             <p className="text-secondary m-0">Track your appointments and treatment history</p>
           </div>
           <div className="d-flex gap-2 w-100 w-md-auto">
-            <CInputGroup className="shadow-sm rounded-4 overflow-hidden w-100" style={{ maxWidth: '400px' }}>
+            <CInputGroup className="bookings-search-group shadow-sm rounded-4 overflow-hidden w-100" style={{ maxWidth: '400px' }}>
               <CInputGroupText className="bg-white border-end-0 pe-0">
                 <Search size={18} className="text-secondary" />
               </CInputGroupText>
@@ -162,7 +162,7 @@ const Bookings = () => {
                     <div className="d-flex justify-content-between align-items-start mb-3 gap-2">
                       <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
                         <div className="bg-primary bg-opacity-10 p-3 rounded-4 d-none d-sm-flex align-items-center justify-content-center" style={{ flexShrink: 0, width: '56px', height: '56px' }}>
-                          <Stethoscope size={24} className="text-white" />
+                          <Stethoscope size={24} className="text-primary" />
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <div className="fw-bold fs-5 text-dark text-truncate">{booking.doctorName}</div>

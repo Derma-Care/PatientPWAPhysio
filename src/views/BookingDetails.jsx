@@ -31,7 +31,8 @@ import {
   CreditCard,
   Clipboard,
   FileSearch,
-  Download
+  Download,
+  Home
 } from 'lucide-react';
 import { customerService, clinicService, physiotherapyService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -44,14 +45,15 @@ const BookingDetails = () => {
   const [booking, setBooking] = useState(null);
   const [doctor, setDoctor] = useState(null);
   const [visitHistory, setVisitHistory] = useState([]);
+  const [visitDoctorId, setVisitDoctorId] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDetails = async () => {
       try {
         if (user?.customerId && id) {
-          const bookingsRes = await customerService.getBookings(user.customerId);
-          const currentBooking = bookingsRes.data.find(b => b.bookingId === id);
+          const bookingRes = await customerService.getBookingById(id);
+          const currentBooking = bookingRes.data || bookingRes;
 
           if (currentBooking) {
             setBooking(currentBooking);
@@ -63,8 +65,19 @@ const BookingDetails = () => {
             }
 
             // Fetch Visit History
-            const historyRes = await physiotherapyService.getVisitHistory(currentBooking.patientId, currentBooking.bookingId);
-            setVisitHistory(historyRes.data || []);
+            const historyRes = await physiotherapyService.getVisitHistory({
+              doctorId: currentBooking.doctorId || '',
+              patientId: currentBooking.patientId,
+              bookingId: currentBooking.bookingId,
+              clinicId: currentBooking.clinicId || '',
+              branchId: currentBooking.branchId || ''
+            });
+            const resData = historyRes.data;
+            const historyArray = resData ? (Array.isArray(resData) ? resData : [resData]) : [];
+            setVisitHistory(historyArray);
+            // Extract doctorId from visit history response (not available on booking object)
+            const extractedDoctorId = historyArray[0]?.physiotherapyDoctorData?.treatmentPlan?.doctorId || '';
+            setVisitDoctorId(extractedDoctorId);
           }
         }
       } catch (error) {
@@ -80,14 +93,28 @@ const BookingDetails = () => {
   if (loading) {
     return (
       <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
-        <CSpinner color="primary" variant="grow" className="mb-3" />
+        <img src="/favicon.png" className="logo-spinner-grow mb-3" alt="Loading..." />
         <h5 className="text-secondary opacity-75 fw-semibold">Fetching details...</h5>
       </div>
     );
   }
 
   if (!booking) {
-    return <div>Booking not found.</div>;
+    return (
+      <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
+        <p className="text-secondary opacity-75 mb-2 small" style={{ marginBottom: '0.75rem' }}>Booking not found</p>
+        <CButton
+          color="primary"
+          size="sm"
+          className="rounded-pill px-3 py-1 fw-bold text-white shadow-sm"
+          style={{ backgroundColor: 'var(--primary-color)', border: 'none' }}
+          onClick={() => navigate('/bookings')}
+        >
+          Back to Bookings
+        </CButton>
+
+      </div>
+    );
   }
 
   return (
@@ -96,9 +123,17 @@ const BookingDetails = () => {
         <CButton color="link" className="p-0 text-decoration-none text-secondary mb-3 d-flex align-items-center gap-2" onClick={() => navigate('/bookings')}>
           <ArrowLeft size={18} /> Back to Bookings
         </CButton>
-        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2  ">
           <h2 className="fw-bold text-dark m-0">Booking Details</h2>
-          <CBadge style={{ backgroundColor: 'var(--primary-color)' }} shape="pill" className="px-4 py-2 fs-6 text-capitalize text-white shadow-sm">
+          <CBadge
+            style={{
+              backgroundColor: 'var(--primary-color)',
+              fontSize: window.innerWidth < 768 ? '11px' : '16px',
+              padding: window.innerWidth < 768 ? '4px 10px' : '8px 16px',
+            }}
+            shape="pill"
+            className="text-capitalize text-white shadow-sm"
+          >
             {booking.status}
           </CBadge>
         </div>
@@ -107,7 +142,7 @@ const BookingDetails = () => {
       {/* Doctor Info Card - Show on top in mobile */}
       {doctor && (
         <div className="d-block d-lg-none mb-4">
-          <CCard className="premium-card border-0">
+          <CCard className="premium-card doctor-mobile-card border-0">
             <CCardBody className="p-4">
               <div className="d-flex align-items-center gap-3 mb-3">
                 <CAvatar
@@ -125,11 +160,11 @@ const BookingDetails = () => {
               <div className="d-flex flex-column gap-2 mb-3">
                 <div className="d-flex align-items-center gap-3 p-2 bg-light rounded-3">
                   <Stethoscope size={16} className="text-secondary" style={{ flexShrink: 0 }} />
-                  <div className="small"><span className="text-secondary">Licence: </span><span className="fw-bold text-dark">{doctor.doctorLicence}</span></div>
+                  <div className="small"><span className="text-secondary">Licence: </span><span className=" text-dark">{doctor.doctorLicence}</span></div>
                 </div>
                 <div className="d-flex align-items-center gap-3 p-2 bg-light rounded-3">
                   <MapPin size={16} className="text-secondary" style={{ flexShrink: 0 }} />
-                  <div className="small text-truncate"><span className="text-secondary">Available: </span><span className="fw-bold text-dark">{doctor.availableDays} • {doctor.availableTimes}</span></div>
+                  <div className="small text-truncate"><span className="text-secondary">Available: </span><p className=" text-dark">{doctor.availableDays} • {doctor.availableTimes}</p></div>
                 </div>
               </div>
 
@@ -150,7 +185,7 @@ const BookingDetails = () => {
           <CCard className="premium-card border-0 mb-4">
             <CCardBody className="p-4">
               <div className="d-flex align-items-center gap-3 mb-4">
-                <div className="bg-primary bg-opacity-10 p-3 rounded-4">
+                <div className="bg-primary bg-opacity-10 p-3 rounded-4 booking-section-icon">
                   <FileText size={24} className="text-white" />
                 </div>
                 <div>
@@ -243,7 +278,7 @@ const BookingDetails = () => {
           <CCard className="premium-card border-0 mb-4">
             <CCardBody className="p-4">
               <div className="d-flex align-items-center gap-3 mb-4">
-                <div className="bg-warning bg-opacity-10 p-3 rounded-4">
+                <div className="bg-warning bg-opacity-10 p-3 rounded-4 booking-section-icon">
                   <Clipboard size={24} className="text-warning" />
                 </div>
                 <div>
@@ -268,7 +303,7 @@ const BookingDetails = () => {
                   }
 
                   return allReports.map((report, rIdx) => (
-                    <CCol sm={6} key={rIdx}>
+                    <CCol sm={6} key={rIdx} className="report-col">
                       <div
                         className="p-3 border rounded-4 d-flex justify-content-between align-items-center cursor-pointer hover-bg-light h-100 transition-all shadow-sm-hover"
                         onClick={async () => {
@@ -340,9 +375,9 @@ const BookingDetails = () => {
           {/* Visit History Summary */}
           <CCard className="premium-card border-0 mb-4">
             <CCardBody className="p-4">
-              <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+              <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 visit-history-header">
                 <div className="d-flex align-items-center gap-3">
-                  <div className="bg-info bg-opacity-10 p-3 rounded-4">
+                  <div className="bg-info bg-opacity-10 p-3 rounded-4 booking-section-icon">
                     <Activity size={24} className="text-info" />
                   </div>
                   <div>
@@ -356,7 +391,7 @@ const BookingDetails = () => {
                     variant="outline"
                     className="rounded-4 fw-bold"
                     size="sm"
-                    onClick={() => navigate(`/bookings/${booking.bookingId}/history?patientId=${booking.patientId}`)}
+                    onClick={() => navigate(`/bookings/${booking.bookingId}/history?patientId=${booking.patientId}&doctorId=${visitDoctorId}&clinicId=${booking.clinicId || ''}&branchId=${booking.branchId || ''}`)}
                   >
                     View Full History <ChevronRight size={16} />
                   </CButton>
@@ -378,7 +413,7 @@ const BookingDetails = () => {
                       </CTableHead>
                       <CTableBody>
                         {visitHistory.slice(0, 3).map((visit, idx) => (
-                          <CTableRow key={idx} className="cursor-pointer">
+                          <CTableRow key={idx}>
                             <CTableDataCell className="ps-0">
                               <div className="fw-bold text-dark">{visit.visitNumber}</div>
                             </CTableDataCell>
@@ -392,9 +427,31 @@ const BookingDetails = () => {
                               </div>
                             </CTableDataCell>
                             <CTableDataCell className="text-end pe-0">
-                              <CButton color="link" className="p-0 text-primary" onClick={() => navigate(`/bookings/${booking.bookingId}/history?patientId=${booking.patientId}`)}>
-                                <ChevronRight size={18} />
-                              </CButton>
+                              <div className="d-flex gap-2 justify-content-end align-items-center">
+                                {visit.visitNumber?.toLowerCase() === 'visit 1' && (
+                                  <>
+                                    <CButton
+                                      size="sm"
+                                      className="btn-premium py-1 px-2 d-flex align-items-center gap-1"
+                                      style={{ fontSize: '0.75rem', background: '#0ea5e9', border: 'none' }}
+                                      onClick={() => navigate(`/bookings/${booking.bookingId}/sessions?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&therapistId=${visit.physiotherapyDoctorData?.treatmentPlan?.therapistId || ''}`)}
+                                    >
+                                      <Activity size={12} /> Sessions
+                                    </CButton>
+                                    <CButton
+                                      size="sm"
+                                      className="btn-premium py-1 px-2 d-flex align-items-center gap-1"
+                                      style={{ fontSize: '0.75rem', background: 'var(--primary-gradient)', border: 'none' }}
+                                      onClick={() => navigate(`/bookings/${booking.bookingId}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&doctorId=${visitDoctorId}`, { state: { visit } })}
+                                    >
+                                      <Home size={12} /> Exercises
+                                    </CButton>
+                                  </>
+                                )}
+                                <CButton color="link" className="p-0 text-primary" onClick={() => navigate(`/bookings/${booking.bookingId}/history?patientId=${booking.patientId}&doctorId=${visitDoctorId}&clinicId=${booking.clinicId || ''}&branchId=${booking.branchId || ''}`, { state: { singleVisit: true, visit } })}>
+                                  <ChevronRight size={18} />
+                                </CButton>
+                              </div>
                             </CTableDataCell>
                           </CTableRow>
                         ))}
@@ -402,15 +459,10 @@ const BookingDetails = () => {
                     </CTable>
                   </div>
 
-                  {/* Mobile Cards */}
                   <div className="d-flex d-md-none flex-column gap-2">
                     {visitHistory.slice(0, 3).map((visit, idx) => (
-                      <div
-                        key={idx}
-                        className="visit-mobile-card"
-                        onClick={() => navigate(`/bookings/${booking.bookingId}/history?patientId=${booking.patientId}`)}
-                      >
-                        <div className="d-flex justify-content-between align-items-start">
+                      <div key={idx} className="visit-mobile-card">
+                        <div className="d-flex justify-content-between align-items-start" onClick={() => navigate(`/bookings/${booking.bookingId}/history?patientId=${booking.patientId}&doctorId=${visitDoctorId}&clinicId=${booking.clinicId || ''}&branchId=${booking.branchId || ''}`, { state: { singleVisit: true, visit } })}>
                           <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
                             <div className="visit-mobile-number">{idx + 1}</div>
                             <div style={{ minWidth: 0 }}>
@@ -426,6 +478,26 @@ const BookingDetails = () => {
                             <div className="small fw-semibold text-dark text-truncate">
                               {visit.physiotherapyDoctorData.diagnosis.physioDiagnosis}
                             </div>
+                          </div>
+                        )}
+                        {visit.visitNumber?.toLowerCase() === 'visit 1' && (
+                          <div className="d-flex gap-2 mt-2 pt-2 border-top">
+                            <CButton
+                              size="sm"
+                              className="btn-premium flex-grow-1 py-1 d-flex align-items-center justify-content-center gap-1"
+                              style={{ fontSize: '0.75rem', background: '#0ea5e9', border: 'none' }}
+                              onClick={() => navigate(`/bookings/${booking.bookingId}/sessions?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&therapistId=${visit.physiotherapyDoctorData?.treatmentPlan?.therapistId || ''}`)}
+                            >
+                              <Activity size={12} /> Sessions
+                            </CButton>
+                            <CButton
+                              size="sm"
+                              className="btn-premium flex-grow-1 py-1 d-flex align-items-center justify-content-center gap-1"
+                              style={{ fontSize: '0.75rem', background: 'var(--primary-gradient)', border: 'none' }}
+                              onClick={() => navigate(`/bookings/${booking.bookingId}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&doctorId=${visitDoctorId}`, { state: { visit } })}
+                            >
+                              <Home size={12} /> Exercises
+                            </CButton>
                           </div>
                         )}
                       </div>

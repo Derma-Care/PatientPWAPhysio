@@ -48,6 +48,27 @@ const Dashboard = () => {
     fetchDashboardData();
   }, [user]);
 
+  const parseServiceDate = (dateStr) => {
+    if (!dateStr) return { month: 'N/A', day: '--' };
+    
+    let date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+      return {
+        month: date.toLocaleString('en-US', { month: 'short' }),
+        day: date.getDate()
+      };
+    }
+
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const day = parts[0];
+      const month = parts[1].substring(0, 3);
+      return { month: month.toUpperCase(), day };
+    }
+    
+    return { month: 'DATE', day: '??' };
+  };
+
   const stats = [
     { title: 'Total Bookings', value: bookings.length, icon: Calendar, color: 'var(--accent-orange)' },
     { title: 'Ongoing Sessions', value: bookings.filter(b => b.status === 'in-progress').length, icon: Activity, color: '#2dd4bf' },
@@ -67,7 +88,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '70vh' }}>
-        <CSpinner color="primary" variant="grow" />
+        <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
       </div>
     );
   }
@@ -120,14 +141,15 @@ const Dashboard = () => {
                         {/* Top Row: Doctor & Status */}
                         <div className="d-flex justify-content-between align-items-start mb-2">
                           <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
-                            <div className="booking-date-pill">
-                              <div className="booking-date-month">
-                                {new Date(booking.serviceDate).toLocaleString('en-US', { month: 'short' })}
-                              </div>
-                              <div className="booking-date-day">
-                                {new Date(booking.serviceDate).getDate()}
-                              </div>
-                            </div>
+                            {(() => {
+                              const { month, day } = parseServiceDate(booking.serviceDate);
+                              return (
+                                <div className="booking-date-pill">
+                                  <div className="booking-date-month">{month}</div>
+                                  <div className="booking-date-day">{day}</div>
+                                </div>
+                              );
+                            })()}
                             <div style={{ minWidth: 0 }}>
                               <div className="fw-bold text-dark text-truncate">{booking.doctorName}</div>
                               <div className="small text-secondary text-truncate">
@@ -167,7 +189,7 @@ const Dashboard = () => {
         </CCol>
 
         <CCol md={4} className="mb-4">
-          <CCard className="premium-card h-100 border-0 text-white" style={{ background: 'var(--orange-gradient)' }}>
+          <CCard className="premium-card health-score-card h-100 border-0 text-white" style={{ background: 'var(--orange-gradient)' }}>
             <CCardBody className="p-4 d-flex flex-column justify-content-between">
               <div>
                 <div className="bg-white bg-opacity-25 rounded-circle d-inline-flex p-3 mb-4">

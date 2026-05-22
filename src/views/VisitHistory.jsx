@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { physiotherapyService, customerService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { CModal, CModalHeader, CModalTitle, CModalBody } from '@coreui/react';
+import { CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter } from '@coreui/react';
 
 const MediaPreviewModal = ({ visible, onClose, mediaUrl, type }) => {
   if (!mediaUrl) return null;
@@ -89,22 +89,42 @@ const VisitHistory = () => {
   const [loading, setLoading] = useState(true);
   const [previewData, setPreviewData] = useState({ visible: false, url: '', type: '' });
 
+  // Extract all available URL params
+  const urlParams = new URLSearchParams(location.search);
+  const urlPatientId = urlParams.get('patientId');
+  const urlClinicId = urlParams.get('clinicId') || '';
+  const urlBranchId = urlParams.get('branchId') || '';
+  const urlDoctorId = urlParams.get('doctorId') || '';
+
   useEffect(() => {
     const abortController = new AbortController();
 
     const fetchHistory = async () => {
       try {
-        const urlParams = new URLSearchParams(location.search);
-        let patientId = urlParams.get('patientId');
+        let patientId = urlPatientId;
+        let clinicId = urlClinicId;
+        let branchId = urlBranchId;
+        let doctorId = urlDoctorId;
 
         setLoading(true);
 
-        // Fallback: If patientId is missing from URL, try to find it from user's bookings
+        // Check if we already passed the specific visit data via location state
+        if (location.state?.singleVisit && location.state?.visit) {
+          if (!abortController.signal.aborted) {
+            setHistory([location.state.visit]);
+          }
+          return;
+        }
+
+        // Fallback: get patientId from bookings if missing from URL
         if (!patientId && user?.customerId) {
           const bookingsRes = await customerService.getBookings(user.customerId);
           const currentBooking = bookingsRes.data?.find(b => b.bookingId === id);
           if (currentBooking) {
             patientId = currentBooking.patientId;
+            clinicId = clinicId || currentBooking.clinicId || '';
+            branchId = branchId || currentBooking.branchId || '';
+            doctorId = doctorId || currentBooking.doctorId || '';
           }
         }
 
@@ -113,9 +133,33 @@ const VisitHistory = () => {
           return;
         }
 
-        const response = await physiotherapyService.getVisitHistory(patientId, id);
+        // If doctorId is missing from URL, fetch it from first-visit-history response
+        if (!doctorId) {
+          try {
+            const firstVisitRes = await physiotherapyService.getVisitHistory({
+              doctorId: '',
+              patientId,
+              bookingId: id,
+              clinicId,
+              branchId
+            });
+            const firstData = firstVisitRes.data;
+            const firstVisit = Array.isArray(firstData) ? firstData[0] : firstData;
+            doctorId = firstVisit?.physiotherapyDoctorData?.treatmentPlan?.doctorId || '';
+          } catch (e) {
+            console.warn('Could not extract doctorId from first visit:', e);
+          }
+        }
+
+        const response = await physiotherapyService.getFullVisitHistory({
+          doctorId,
+          patientId,
+          bookingId: id
+        });
         if (!abortController.signal.aborted) {
-          setHistory(response.data || []);
+          const resData = response.data;
+          const historyArray = resData ? (Array.isArray(resData) ? resData : [resData]) : [];
+          setHistory(historyArray);
         }
       } catch (error) {
         if (!abortController.signal.aborted) {
@@ -135,7 +179,7 @@ const VisitHistory = () => {
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '70vh' }}>
-        <CSpinner color="primary" variant="grow" />
+        <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
       </div>
     );
   }
@@ -173,23 +217,20 @@ const VisitHistory = () => {
                     </div>
                   </CAccordionHeader>
                   <CAccordionBody className="visit-accordion-body">
-                    {/* Mobile: Stacked layout | Desktop: Side by side */}
                     <div className="visit-details-grid">
-                      {/* Section 1: Complaints & Investigation */}
+                      {/* Section 1: Complaints & Investigation + Prescription */}
                       <div className="visit-detail-panel">
                         <div className="visit-section-card h-100">
                           <h6 className="fw-bold text-dark mb-3 d-flex align-items-center gap-2 border-bottom pb-2">
                             <Activity size={18} className="text-danger" /> Complaints & Investigation
                           </h6>
-                          
                           <div className="mb-4">
                             <div className="text-secondary small fw-bold text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>Details</div>
                             <div className="fw-semibold text-dark p-3 bg-light rounded-3" style={{ fontSize: '0.95rem', lineHeight: '1.5' }}>
                               {visit.physiotherapyDoctorData?.complaints?.complaintDetails || 'No complaints recorded.'}
                             </div>
                           </div>
-                          
-                          <div>
+                          <div className="mb-3">
                             <div className="text-secondary small fw-bold text-uppercase mb-2" style={{ letterSpacing: '0.5px' }}>Tests Performed</div>
                             <div className="d-flex flex-wrap gap-2">
                               {visit.physiotherapyDoctorData?.investigation?.tests?.length > 0 ? (
@@ -274,13 +315,11 @@ const VisitHistory = () => {
                                       }
                                       const link = document.createElement('a');
                                       link.href = url;
-                                      link.download = `Report_${visit.visitDate || 'Document'}.pdf`;
+                                      link.download = `Prescription_${visit.visitNumber || 'Visit'}.pdf`;
                                       document.body.appendChild(link);
                                       link.click();
                                       document.body.removeChild(link);
-                                      if (isBlobUrl) {
-                                        URL.revokeObjectURL(url);
-                                      }
+                                      if (isBlobUrl) URL.revokeObjectURL(url);
                                     } catch (error) {
                                       console.error('Error downloading PDF:', error);
                                       alert('Failed to download PDF document.');
@@ -295,7 +334,7 @@ const VisitHistory = () => {
                         })()}
                       </div>
 
-                      {/* Section 2: Diagnosis & Treatment */}
+                      {/* Section 2: Diagnosis & Treatment Plan */}
                       <div className="visit-detail-panel">
                         <div className="visit-section-card mb-0">
                           <h6 className="fw-bold text-dark mb-3 d-flex align-items-center gap-2 border-bottom pb-2">
@@ -316,25 +355,8 @@ const VisitHistory = () => {
                             <div className="d-flex align-items-center gap-2 p-2 bg-light rounded-3">
                               <Target size={16} className="text-secondary" />
                               <span className="small text-secondary fw-semibold">Affected Area:</span>
-                              <span className="small fw-bold text-dark">{visit.physiotherapyDoctorData?.diagnosis?.affectedArea || visit.bodyPartName || visit.physiotherapyDoctorData?.bodyPartName || 'N/A'}</span>
+                              <span className="small fw-bold text-dark">{visit.physiotherapyDoctorData?.diagnosis?.affectedArea || 'N/A'}</span>
                             </div>
-                            {(() => {
-                              const pImg = visit.partImage || visit.physiotherapyDoctorData?.diagnosis?.partImage || visit.physiotherapyDoctorData?.partImage;
-                              if (!pImg) return null;
-                              return (
-                                <div className="mt-3 p-2 border rounded-3 bg-light text-center cursor-pointer transition-all hover-scale" onClick={() => setPreviewData({ visible: true, url: pImg.startsWith('http') || pImg.startsWith('data:') ? pImg : `data:image/png;base64,${pImg}`, type: 'image' })}>
-                                  <span className="small text-secondary fw-bold text-uppercase d-block mb-2" style={{ letterSpacing: '0.5px' }}>Affected Area Diagram</span>
-                                  <div className="bg-white p-2 rounded shadow-sm d-inline-block">
-                                    <img 
-                                      src={pImg.startsWith('http') || pImg.startsWith('data:') ? pImg : `data:image/png;base64,${pImg}`} 
-                                      alt="Affected Area" 
-                                      className="img-fluid rounded" 
-                                      style={{ maxHeight: '120px', objectFit: 'contain' }} 
-                                    />
-                                  </div>
-                                </div>
-                              );
-                            })()}
                           </div>
                         </div>
 
@@ -342,56 +364,50 @@ const VisitHistory = () => {
                           <h6 className="fw-bold text-dark mb-3 d-flex align-items-center gap-2 border-bottom pb-2">
                             <FlaskConical size={18} className="text-warning" /> Treatment Plan
                           </h6>
-                          
                           <div className="d-flex align-items-center justify-content-between p-2 bg-light rounded-3 mb-3">
                             <span className="small text-secondary fw-semibold">Therapist:</span>
                             <span className="fw-bold text-dark">{visit.physiotherapyDoctorData?.treatmentPlan?.therapistName || 'Not Assigned'}</span>
                           </div>
-
-                          <div className="mb-4 flex-grow-1">
-                            <div className="text-secondary small fw-bold text-uppercase mb-2" style={{ letterSpacing: '0.5px' }}>Prescribed Programs</div>
+                          <div className="mb-3 flex-grow-1">
+                            <div className="text-secondary small fw-bold text-uppercase mb-2" style={{ letterSpacing: '0.5px' }}>Therapy Sessions</div>
                             <div className="d-flex flex-column gap-2">
-                              {visit.physiotherapyDoctorData?.therapySessions?.[0]?.programs?.length > 0 ? (
-                                visit.physiotherapyDoctorData.therapySessions[0].programs.map((prog, i) => (
-                                  <div key={i} className="p-3 border rounded-3 bg-white shadow-sm d-flex justify-content-between align-items-center transition-all hover-scale">
-                                    <span className="fw-semibold text-dark" style={{ fontSize: '0.9rem', lineHeight: '1.4' }}>{prog.programName}</span>
-                                    {prog.videoUrl && (
-                                      <CButton 
-                                        color="danger" 
-                                        size="sm" 
-                                        variant="ghost" 
-                                        className="p-1 border-0"
-                                        style={{ flexShrink: 0 }}
-                                        onClick={() => setPreviewData({ visible: true, url: prog.videoUrl, type: 'youtube' })}
-                                      >
-                                        <PlayCircle size={22} />
-                                      </CButton>
-                                    )}
-                                  </div>
-                                ))
+                              {visit.physiotherapyDoctorData?.therapySessions?.length > 0 ? (
+                                visit.physiotherapyDoctorData.therapySessions.map((session, si) =>
+                                  session.therapyData?.map((therapy, ti) => (
+                                    <div key={`${si}-${ti}`} className="p-3 border rounded-3 bg-white shadow-sm">
+                                      <div className="fw-semibold text-dark mb-1" style={{ fontSize: '0.9rem' }}>{therapy.therapyName}</div>
+                                      <div className="small text-secondary">
+                                        {therapy.exercises?.length || 0} exercise(s) — ₹{therapy.totalTherapyPrice?.toFixed(0) || 0}
+                                      </div>
+                                    </div>
+                                  ))
+                                )
                               ) : (
                                 <div className="p-3 bg-light rounded-3 text-center text-secondary small fst-italic">
-                                  No programs prescribed yet.
+                                  No sessions prescribed yet.
                                 </div>
                               )}
                             </div>
                           </div>
 
-                          <div className="visit-action-buttons mt-auto">
-                            <CButton
-                              className="btn-premium visit-action-btn"
-                              onClick={() => navigate(`/bookings/${id}/sessions?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}`)}
-                            >
-                              <Activity size={18} /> View Sessions
-                            </CButton>
-                            <CButton
-                              className="btn-premium visit-action-btn"
-                              style={{ background: 'var(--primary-gradient)' }}
-                              onClick={() => navigate(`/bookings/${id}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&doctorId=${visit.physiotherapyDoctorData?.doctorId || ''}`)}
-                            >
-                              <Home size={18} /> Home Exercises
-                            </CButton>
-                          </div>
+                          {/* Action Buttons — only for Visit 1 */}
+                          {visit.visitNumber?.toLowerCase() === 'visit 1' && (
+                            <div className="visit-action-buttons mt-auto">
+                              <CButton
+                                className="btn-premium visit-action-btn"
+                                onClick={() => navigate(`/bookings/${id}/sessions?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&therapistId=${visit.physiotherapyDoctorData?.treatmentPlan?.therapistId || ''}`)}
+                              >
+                                <Activity size={18} /> View Sessions
+                              </CButton>
+                              <CButton
+                                className="btn-premium visit-action-btn"
+                                style={{ background: 'var(--primary-gradient)' }}
+                                onClick={() => navigate(`/bookings/${id}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&doctorId=${visit.physiotherapyDoctorData?.doctorId || ''}`, { state: { visit } })}
+                              >
+                                <Home size={18} /> Home Exercises
+                              </CButton>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -405,6 +421,7 @@ const VisitHistory = () => {
               mediaUrl={previewData.url}
               type={previewData.type}
             />
+
             </>
           ) : (
             <div className="text-center py-5">

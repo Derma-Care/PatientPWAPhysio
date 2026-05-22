@@ -24,7 +24,7 @@ const PrivateRoute = ({ children }) => {
   if (loading) {
     return (
       <div className="min-vh-100 d-flex justify-content-center align-items-center">
-        <CSpinner color="primary" variant="grow" />
+        <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
       </div>
     );
   }
@@ -39,7 +39,7 @@ const App = () => {
         <Suspense
           fallback={
             <div className="min-vh-100 d-flex justify-content-center align-items-center">
-              <CSpinner color="primary" variant="grow" />
+              <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
             </div>
           }
         >

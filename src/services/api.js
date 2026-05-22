@@ -10,7 +10,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000,
+  timeout: 60000,
 });
 
 // Request interceptor for adding tokens if needed
@@ -65,8 +65,12 @@ export const authService = {
 };
 
 export const customerService = {
-  getBookings: async (customerId) => {
-    const response = await api.get(`/api/customer/bookings/customerId/${customerId}`);
+  getBookings: async (customerId, branchId) => {
+    const response = await api.get(`/api/customer/bookings/customerId/${customerId}/000101`); //TODO:remove branch Id here hardcoded here
+    return response.data;
+  },
+  getBookingById: async (bookingId) => {
+    const response = await api.get(`/clinic-admin/getBookedServiceById/${bookingId}`);
     return response.data;
   },
   getProfile: async (customerId) => {
@@ -91,24 +95,32 @@ export const clinicService = {
 };
 
 export const physiotherapyService = {
-  getVisitHistory: async (patientId, bookingId) => {
-    const response = await api.get(`/api/physiotherapy-doctor/visitHistoryByUsingPatientIdAndBooking/${patientId}/${bookingId}`);
+  getVisitHistory: async ({ doctorId, patientId, bookingId, clinicId, branchId }) => {
+    const response = await api.post('/api/customer/first-visit-history', { doctorId, patientId, bookingId, clinicId, branchId });
     return response.data;
   },
-  getActivitySessions: async (clinicId, branchId, bookingId, patientId, therapistRecordId) => {
-    const response = await api.get(`/api/physiotherapy-doctor/payment/getExerciseSessionsWithRecords/${clinicId}/${branchId}/${bookingId}/${patientId}/${therapistRecordId}`);
+  getFullVisitHistory: async ({ doctorId, patientId, bookingId }) => {
+    const response = await api.post('/api/customer/visit-history', { doctorId, patientId, bookingId });
+    return response.data;
+  },
+  getActivitySessions: async ({ clinicId, branchId, patientId, bookingId, therapistId, therapistRecordId }) => {
+    const response = await api.post('/api/customer/getExerciseSessionsWithRecords', { clinicId, branchId, patientId, bookingId, therapistId, therapistRecordId });
     return response.data;
   },
   saveHomeExercise: async (data) => {
     const response = await api.post('/api/customer/therapy-records/create', data);
     return response.data;
   },
+  getCompletedTherapyRecord: async (clinicId, branchId, therapistRecordId, sessionId) => {
+    const response = await api.get(`/api/physiotherapy-doctor/getCompletedTherapyRecord/${clinicId}/${branchId}/${therapistRecordId}/${sessionId}`);
+    return response.data;
+  },
 };
 
 export const localPhysiotherapyService = {
-  getByClinicBranchExercise: async (clinicId, branchId, exerciseId) => {
-    console.log(`[localPhysiotherapyService] Fetching record for: clinic=${clinicId}, branch=${branchId}, exercise=${exerciseId}`);
-    const response = await api.get(`/api/customer/therapy-records/getByClinicBranchExercise/${clinicId}/${branchId}/${exerciseId}`);
+  getByClinicBranchExercise: async (clinicId, branchId, therapistRecordId, patientId, exerciseId) => {
+    console.log(`[localPhysiotherapyService] Fetching record for: clinic=${clinicId}, branch=${branchId}, therapistRecord=${therapistRecordId}, patient=${patientId}, exercise=${exerciseId}`);
+    const response = await api.get(`/api/customer/therapy-records/getByClinicBranchExercise/${clinicId}/${branchId}/${therapistRecordId}/${patientId}/${exerciseId}`);
     return response.data;
   },
   createTherapyRecord: async (data) => {
@@ -116,9 +128,9 @@ export const localPhysiotherapyService = {
     const response = await api.post(`/api/customer/therapy-records/create`, data);
     return response.data;
   },
-  updateTherapyRecord: async (id, data) => {
-    console.log(`[localPhysiotherapyService] Updating therapy record with ID: ${id}`);
-    const response = await api.put(`/api/customer/therapy-records/update/${id}`, data);
+  updateTherapyRecord: async (therapistRecordId, exerciseId, data) => {
+    console.log(`[localPhysiotherapyService] Updating therapy record with ID: ${therapistRecordId}, exerciseId: ${exerciseId}`);
+    const response = await api.put(`/api/customer/therapy-records/update/${therapistRecordId}/${exerciseId}`, data);
     return response.data;
   }
 };
