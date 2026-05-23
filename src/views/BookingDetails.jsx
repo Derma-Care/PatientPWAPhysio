@@ -7,6 +7,8 @@ import {
   Star, Shield, AlertCircle, CheckCircle, TrendingUp,
   Building2,
   BadgeIndianRupee,
+  ImageIcon,
+  ClipboardList,
 } from 'lucide-react';
 import { customerService, clinicService, physiotherapyService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -46,6 +48,13 @@ const BookingDetails = () => {
   const [visitDoctorId, setVisitDoctorId] = useState('');
   const [loading, setLoading] = useState(true);
   const [showDoctorModal, setShowDoctorModal] = useState(false);
+  const [previewFile, setPreviewFile] = useState("");
+  const [previewType, setPreviewType] = useState("");
+
+  const openPreview = (url, type = "image") => {
+    setPreviewFile(url);
+    setPreviewType(type);
+  };
   useEffect(() => {
     (async () => {
       try {
@@ -71,6 +80,84 @@ const BookingDetails = () => {
       finally { setLoading(false); }
     })();
   }, [id, user]);
+
+  const openPdf = (base64) => {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], {
+      type: "application/pdf",
+    });
+
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+  };
+  const createBlobUrl = (base64, type = "image/jpeg") => {
+    try {
+      const cleaned = base64.includes("base64,")
+        ? base64.split("base64,")[1]
+        : base64;
+
+      const byteCharacters = atob(cleaned);
+      const byteNumbers = new Array(byteCharacters.length);
+
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+
+      const byteArray = new Uint8Array(byteNumbers);
+
+      const blob = new Blob([byteArray], { type });
+
+      return URL.createObjectURL(blob);
+    } catch (e) {
+      console.error(e);
+      return "";
+    }
+  };
+  const attachmentUrls = React.useMemo(() => {
+    return booking?.attachments?.map((file) =>
+      createBlobUrl(file)
+    ) || [];
+  }, [booking?.attachments]);
+
+  const partImageUrl = React.useMemo(() => {
+    return booking?.partImage
+      ? createBlobUrl(booking.partImage)
+      : "";
+  }, [booking?.partImage]);
+
+  const pdfUrl = React.useMemo(() => {
+    return booking?.consentFormPdf
+      ? createBlobUrl(
+        booking.consentFormPdf,
+        "application/pdf"
+      )
+      : "";
+  }, [booking?.consentFormPdf]);
+
+  useEffect(() => {
+    return () => {
+
+      attachmentUrls.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+
+      if (partImageUrl) {
+        URL.revokeObjectURL(partImageUrl);
+      }
+
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+
+    };
+  }, []);
 
   if (loading) return (
     <div className="app-loading">
@@ -125,6 +212,17 @@ const BookingDetails = () => {
   const doctorAvatar = doctor
     ? (doctor.doctorPicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.doctorName)}&background=1B4F8A&color=fff&bold=true&size=200`)
     : '';
+  const getImageSrc = (file) => {
+    if (!file) return "";
+
+    if (file.startsWith("data:")) {
+      return file;
+    }
+
+    return `data:image/jpeg;base64,${file}`;
+  };
+
+
 
   return (
     <div className="app-page">
@@ -222,7 +320,17 @@ const BookingDetails = () => {
 
           {/* LEFT */}
           <div>
+            {
+              booking.status.toLowerCase() !== "confirmed" && (
+                <div style={{ display: 'flex', justifyContent: 'end', marginBottom: "20px" }}>
+                  <button className="app-btn-payment" onClick={() =>
+                    navigate(`/payment/${booking.bookingId}`)
+                  }>
+                    < BadgeIndianRupee size={12} /> View Payment Details
+                  </button>
 
+                </div>
+              )}
             {/* Case Information */}
             <div className="app-card">
               <div className="app-card-header">
@@ -272,7 +380,331 @@ const BookingDetails = () => {
                   )}
                 </div>
               </div>
+
+
+
+
+
+
+              <div className="app-card mt-3">
+
+                <div className="app-card-header">
+                  <div className="app-card-header-left">
+                    <div className="app-icon-box app-icon-sky">
+                      <ImageIcon size={18} />
+                    </div>
+
+                    <div>
+                      <p className="app-card-title">
+                        Attachments & Files
+                      </p>
+
+                      <p className="app-card-sub">
+                        Images and consent forms
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="app-card-body">
+
+                  <div className="pd-file-list">
+
+                    {/* ATTACHMENTS */}
+                    {attachmentUrls.map((url, idx) => (
+                      <div className="pd-file-row" key={idx}>
+
+                        <div className="pd-file-left">
+                          <div className="pd-file-icon image">
+                            <ImageIcon size={16} />
+                          </div>
+
+                          <div>
+                            <h6>Attachment {idx + 1}</h6>
+                            <p>Image File</p>
+                          </div>
+                        </div>
+
+                        <div className="pd-file-actions">
+                          <button
+                            className="pd-file-btn view"
+                            onClick={() => openPreview(url)}
+                          >
+                            View
+                          </button>
+
+                          <a
+                            href={url}
+                            download={`attachment-${idx + 1}.jpg`}
+                            className="pd-file-btn download"
+                          >
+                            Download
+                          </a>
+                        </div>
+
+                      </div>
+                    ))}
+
+                    {/* PART IMAGE */}
+                    {partImageUrl && (
+                      <div className="pd-file-row">
+
+                        <div className="pd-file-left">
+                          <div className="pd-file-icon body">
+                            <Activity size={16} />
+                          </div>
+
+                          <div>
+                            <h6>Body Part Image</h6>
+                            <p>Injury Area</p>
+                          </div>
+                        </div>
+
+                        <div className="pd-file-actions">
+                          <button
+                            className="pd-file-btn view"
+                            onClick={() => openPreview(partImageUrl)}
+                          >
+                            View
+                          </button>
+
+                          <a
+                            href={partImageUrl}
+                            download="part-image.jpg"
+                            className="pd-file-btn download"
+                          >
+                            Download
+                          </a>
+                        </div>
+
+                      </div>
+                    )}
+
+                    {/* PDF */}
+                    {pdfUrl && (
+                      <div className="pd-file-row">
+
+                        <div className="pd-file-left">
+                          <div className="pd-file-icon pdf">
+                            <FileText size={16} />
+                          </div>
+
+                          <div>
+                            <h6>Consent Form</h6>
+                            <p>PDF Document</p>
+                          </div>
+                        </div>
+
+                        <div className="pd-file-actions">
+                          <button
+                            className="pd-file-btn view"
+                            onClick={() =>
+                              openPreview(pdfUrl, "pdf")
+                            }
+                          >
+                            View
+                          </button>
+
+                          <a
+                            href={pdfUrl}
+                            download="consent-form.pdf"
+                            className="pd-file-btn download"
+                          >
+                            Download
+                          </a>
+                        </div>
+
+                      </div>
+                    )}
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              {booking?.theraphyAnswers &&
+                Object.entries(booking.theraphyAnswers).map(([part, questions]) => (
+
+                  <div className="pd-section mt-3" key={part}>
+
+                    <div className="pd-section-header">
+                      <div className="pd-header-left">
+                        <ClipboardList size={18} />
+                        <span>{part} Therapy Questions</span>
+                      </div>
+                    </div>
+
+                    <div className="pd-qa-list">
+
+                      {questions.map((item, idx) => (
+                        <div className="pd-qa-card" key={idx}>
+
+                          <p className="pd-question">
+                            {item.question}
+                          </p>
+
+                          <span
+                            className={`pd-answer-pill ${item.answer === "YES"
+                              ? "yes"
+                              : item.answer === "NO"
+                                ? "no"
+                                : "normal"
+                              }`}
+                          >
+                            {item.answer}
+                          </span>
+
+                        </div>
+                      ))}
+
+                    </div>
+
+                  </div>
+                ))}
+
+
+              {booking?.reasonForCancel && (
+                <div className="pd-cancel-box">
+                  <AlertCircle size={16} />
+
+                  <div>
+                    <h6>Cancellation Reason</h6>
+                    <p>{booking.reasonForCancel}</p>
+                  </div>
+                </div>
+              )}
+
+              {(
+                booking?.referredByType ||
+                booking?.referredByName ||
+                booking?.previousInjuries ||
+                booking?.currentMedications ||
+                booking?.allergies ||
+                booking?.occupation ||
+                booking?.insuranceProvider ||
+                booking?.policyNumber ||
+                booking?.activityLevels?.length > 0 ||
+                booking?.reasonforVisit ||
+                booking?.parts?.length > 0
+              ) && (
+                  <div className="pd-section mt-3">
+
+                    <div className="pd-section-header">
+                      <div className="pd-header-left">
+                        <ClipboardList size={18} />
+                        <span>Additional Details</span>
+                      </div>
+                    </div>
+
+                    <div className="pd-info-grid">
+
+                      {/* REFERRED BY */}
+                      {booking?.referredByType && (
+                        <div className="pd-info-card">
+                          <span>Referred By Type</span>
+                          <h6>{booking.referredByType}</h6>
+                        </div>
+                      )}
+
+                      {booking?.referredByName && (
+                        <div className="pd-info-card">
+                          <span>Referred By Name</span>
+                          <h6>{booking.referredByName}</h6>
+                        </div>
+                      )}
+
+                      {/* PREVIOUS INJURIES */}
+                      {booking?.previousInjuries && (
+                        <div className="pd-info-card">
+                          <span>Previous Injuries</span>
+                          <h6>{booking.previousInjuries}</h6>
+                        </div>
+                      )}
+
+                      {/* CURRENT MEDICATIONS */}
+                      {booking?.currentMedications && (
+                        <div className="pd-info-card">
+                          <span>Current Medications</span>
+                          <h6>{booking.currentMedications}</h6>
+                        </div>
+                      )}
+
+                      {/* ALLERGIES */}
+                      {booking?.allergies && (
+                        <div className="pd-info-card">
+                          <span>Allergies</span>
+                          <h6>{booking.allergies}</h6>
+                        </div>
+                      )}
+
+                      {/* OCCUPATION */}
+                      {booking?.occupation && (
+                        <div className="pd-info-card">
+                          <span>Occupation</span>
+                          <h6>{booking.occupation}</h6>
+                        </div>
+                      )}
+
+                      {/* INSURANCE */}
+                      {booking?.insuranceProvider && (
+                        <div className="pd-info-card">
+                          <span>Insurance Provider</span>
+                          <h6>{booking.insuranceProvider}</h6>
+                        </div>
+                      )}
+
+                      {booking?.policyNumber && (
+                        <div className="pd-info-card">
+                          <span>Policy Number</span>
+                          <h6>{booking.policyNumber}</h6>
+                        </div>
+                      )}
+
+                      {/* REASON */}
+                      {booking?.reasonforVisit && (
+                        <div className="pd-info-card">
+                          <span>Reason For Visit</span>
+                          <h6>{booking.reasonforVisit}</h6>
+                        </div>
+                      )}
+
+                      {/* ACTIVITY LEVEL */}
+                      {booking?.activityLevels?.length > 0 && (
+                        <div className="pd-info-card">
+                          <span>Activity Levels</span>
+
+                          <div className="pd-tag-wrap">
+                            {booking.activityLevels.map((item, idx) => (
+                              <div className="pd-tag" key={idx}>
+                                {item}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* BODY PARTS */}
+                      {booking?.parts?.length > 0 && (
+                        <div className="pd-info-card">
+                          <span>Affected Parts</span>
+
+                          <div className="pd-tag-wrap">
+                            {booking.parts.map((part, idx) => (
+                              <div className="pd-tag part" key={idx}>
+                                {part}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
+
+                  </div>
+                )}
             </div>
+
 
             {/* Reports */}
             <div className="app-card">
@@ -314,6 +746,9 @@ const BookingDetails = () => {
                   </div>
                 )}
               </div>
+
+
+
             </div>
 
             {/* Visit History */}
@@ -435,16 +870,45 @@ const BookingDetails = () => {
           >
             View Payment Details
           </button> */}
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <button className="app-btn-payment" onClick={() =>
-              navigate(`/payment/${booking.bookingId}`)
-            }>
-              < BadgeIndianRupee size={12} /> View Payment Details
-            </button>
+          <CModal
+            visible={!!previewFile}
+            onClose={() => setPreviewFile("")}
+            alignment="center"
+            size="lg"
+          >
 
-          </div>
+            <CModalHeader>
+              <CModalTitle>
+                File Preview
+              </CModalTitle>
+            </CModalHeader>
 
+            <CModalBody>
 
+              {previewType === "pdf" ? (
+                <iframe
+                  src={previewFile}
+                  title="PDF Preview"
+                  width="100%"
+                  height="600px"
+                  style={{ border: "none" }}
+                />
+              ) : (
+                <img
+                  src={previewFile}
+                  alt="preview"
+                  style={{
+                    width: "100%",
+                    borderRadius: "12px",
+                    maxHeight: "80vh",
+                    objectFit: "contain"
+                  }}
+                />
+              )}
+
+            </CModalBody>
+
+          </CModal>
           {/* SIDEBAR */}
           <div className="app-sidebar-col">
             {doctor && (

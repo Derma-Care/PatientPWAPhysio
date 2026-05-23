@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
     Wallet,
     CreditCard,
@@ -15,7 +15,8 @@ import {
     Dumbbell,
     Stethoscope,
     LayoutGrid,
-    ClipboardList
+    ClipboardList,
+    ArrowLeft
 } from 'lucide-react';
 import '../styles/PaymentDetails.css'
 import { paymentService } from '../services/api';
@@ -28,7 +29,7 @@ const PaymentDetails = () => {
     const [expandedPrograms, setExpandedPrograms] = useState({});
     const [expandedTherapies, setExpandedTherapies] = useState({});
     const [expandedExercises, setExpandedExercises] = useState({});
-
+    const navigate = useNavigate();
     useEffect(() => {
         fetchPayment();
     }, []);
@@ -76,28 +77,41 @@ const PaymentDetails = () => {
         );
     }
 
+    const stats = [
+        { label: 'Total Amount', value: paymentData.totalAmount, icon: BadgeIndianRupee, color: 'var(--c-navy)', iconBg: 'var(--c-navy-xlight)', accent: 'navy' },
+        { label: 'Discount', value: paymentData.discountAmount, icon: Wallet, color: 'var(--c-orange)', iconBg: 'var(--c-orange-light)', accent: 'orange' },
+        { label: 'Paid Amount', value: paymentData.totalPaid, icon: CheckCircle, color: 'var(--c-info)', iconBg: 'var(--c-info-light)', accent: 'sky' },
+        { label: 'Balance', value: paymentData.balanceAmount, icon: CreditCard, color: 'var(--c-danger)', iconBg: 'var(--c-danger-light)', accent: 'rose' },
+    ];
+
     return (
-        <div className="pd-wrapper">
+        <div className="app-page">
 
             {/* ── HERO HEADER ── */}
-            <div className="pd-hero">
-                <div className="pd-hero-left">
-                    <span className="pd-hero-label">Payment Details</span>
-                    <h2 className="pd-hero-booking">
-                        #{paymentData.bookingId}
-                    </h2>
-                    <span className="pd-hero-sub">Booking Reference</span>
-                </div>
-                <div className="pd-hero-right">
-                    <div className={`pd-status-badge ${paymentData.paymentStatus === 'Paid' ? 'paid' : paymentData.paymentStatus === 'Partial' ? 'partial' : 'unpaid'}`}>
-                        <span className="pd-status-dot" />
-                        {paymentData.paymentStatus}
+
+
+            <div className="app-hero">
+                <div className="app-hero-inner">
+                    <button className="app-back-btn" onClick={() => navigate(-1)}>
+                        <ArrowLeft size={14} /> Back to Bookings
+                    </button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+                        <div>
+                            <h1 className="app-hero-title">Payment Details</h1>
+                            <p className="app-hero-sub">Ref ID: {paymentData.bookingId}</p>
+                        </div>
+                        <div className="pd-hero-right">
+                            <span className={`pd-status-badge ${paymentData.paymentStatus === 'Paid' ? 'paid' : paymentData.paymentStatus === 'Partial' ? 'partial' : 'unpaid'}`}>
+                                <span className="pd-status-dot" />
+                                {paymentData.paymentStatus}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* ── SUMMARY STRIP ── */}
-            <div className="pd-summary-strip">
+            {/* <div className="pd-summary-strip">
                 <SummaryTile
                     icon={BadgeIndianRupee}
                     label="Total Amount"
@@ -122,6 +136,23 @@ const PaymentDetails = () => {
                     value={`₹${paymentData.balanceAmount}`}
                     accent="orange"
                 />
+            </div> */}
+
+            <div className="dashboard-stats-grid mb-4">
+                {stats.map((stat, idx) => (
+                    <div key={idx} className="dashboard-stat-card">
+                        <div
+                            className="stat-icon-circle"
+                            style={{ background: `${stat.color}15`, color: stat.color }}
+                        >
+                            <stat.icon size={22} />
+                        </div>
+                        <div>
+                            <div className="stat-title">{stat.label}</div>
+                            <div className="stat-number">₹ {stat.value}</div>
+                        </div>
+                    </div>
+                ))}
             </div>
 
             {/* ── SESSION INFO ── */}
@@ -141,40 +172,51 @@ const PaymentDetails = () => {
             {/* ── PAYMENT HISTORY ── */}
             <div className="pd-section">
                 <div className="pd-section-header">
-                    <ClipboardList size={16} />
-                    <span>Payment History</span>
-                    <span className="pd-badge">{paymentData.paymentHistory?.length} Payments</span>
+                    <div className="pd-header-left">
+                        <ClipboardList size={18} />
+                        <span>Payment History</span>
+                    </div>
+
+                    <span className="pd-badge">
+                        {paymentData.paymentHistory?.length || 0} Payments
+                    </span>
                 </div>
 
-                <div className="pd-table-wrap">
-                    <table className="pd-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Amount</th>
-                                <th>Mode</th>
-                                <th>Type</th>
-                                <th>Level</th>
-                                <th>Date</th>
-                                <th>Discount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paymentData.paymentHistory?.map((payment, index) => (
-                                <tr key={index}>
-                                    <td className="pd-table-idx">{index + 1}</td>
-                                    <td className="pd-table-amount">₹{payment.amount}</td>
-                                    <td>
-                                        <span className="pd-mode-chip">{payment.paymentMode}</span>
-                                    </td>
-                                    <td>{payment.paymentType}</td>
-                                    <td>{payment.paymentLevel}</td>
-                                    <td className="pd-table-date">{payment.paymentDate}</td>
-                                    <td>₹{payment.discountAmount}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="pd-timeline">
+                    {paymentData.paymentHistory?.map((payment, index) => (
+                        <div className="pd-timeline-item" key={index}>
+
+                            <div className="pd-line-dot"></div>
+
+                            <div className="pd-payment-row">
+
+                                <div className="pd-left">
+
+
+                                    <div>
+                                        <h4>₹{payment.amount}</h4>
+                                        <p>{payment.paymentDate}</p>
+                                    </div>
+                                    <div className="pd-right">
+                                        <span className="pd-chip mode">
+                                            {payment.paymentMode}
+                                        </span>
+
+                                        <span className="pd-chip type">
+                                            {payment.paymentType}
+                                        </span>
+
+                                        <span className="pd-chip level">
+                                            {payment.paymentLevel}
+                                        </span>
+                                    </div>
+                                </div>
+
+
+
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
 
@@ -253,18 +295,19 @@ const PaymentDetails = () => {
                                                             </div>
                                                             <div>
                                                                 <h5 className="pd-therapy-name">{therapy.therapyName}</h5>
-                                                                <small className="text-muted">ID: {therapy.therapyId}</small>
+                                                                <div className="pd-program-meta w-100  mt-3">
+                                                                    <small className="pd-meta-chip">{therapy.exercises?.length} Act</small>
+                                                                    <small className="pd-meta-chip success">{paidExercises} Paid</small>
+                                                                    <small className="pd-meta-chip danger">{therapy.exercises?.length - paidExercises} Pending</small>
+                                                                </div>
+                                                                {/* <small className="text-muted">ID: {therapy.therapyId}</small> */}
                                                             </div>
                                                         </div>
                                                         <div className="pd-therapy-header-right">
-                                                            <div className="pd-program-meta">
-                                                                <span className="pd-meta-chip">{therapy.exercises?.length} Exercises</span>
-                                                                <span className="pd-meta-chip success">{paidExercises} Paid</span>
-                                                                <span className="pd-meta-chip danger">{therapy.exercises?.length - paidExercises} Pending</span>
-                                                            </div>
-                                                            <div className={`status-pill ${therapy.paymentStatus === 'Paid' ? 'paid' : 'unpaid'}`}>
+
+                                                            {/* <div className={`status-pill ${therapy.paymentStatus === 'Paid' ? 'paid' : 'unpaid'}`}>
                                                                 {therapy.paymentStatus}
-                                                            </div>
+                                                            </div> */}
                                                             {isTherapyExpanded
                                                                 ? <ChevronUp size={14} className="pd-chevron" />
                                                                 : <ChevronDown size={14} className="pd-chevron" />
@@ -303,9 +346,9 @@ const PaymentDetails = () => {
                                                                                 </small>
                                                                             </div>
                                                                             <div className="pd-exercise-header-right">
-                                                                                <div className={`status-pill ${exercise.paymentStatus === 'Paid' ? 'paid' : 'unpaid'}`}>
+                                                                                {/* <div className={`status-pill ${exercise.paymentStatus === 'Paid' ? 'paid' : 'unpaid'}`}>
                                                                                     {exercise.paymentStatus}
-                                                                                </div>
+                                                                                </div> */}
                                                                                 {isExerciseExpanded
                                                                                     ? <ChevronUp size={13} className="pd-chevron" />
                                                                                     : <ChevronDown size={13} className="pd-chevron" />
@@ -316,7 +359,7 @@ const PaymentDetails = () => {
                                                                         {/* Exercise Details */}
                                                                         {isExerciseExpanded && (
                                                                             <>
-                                                                                <div className="pd-info-grid mt-2">
+                                                                                {/* <div className="pd-info-grid mt-2">
                                                                                     <InfoTile label="Sessions" value={exercise.noOfSessions} />
                                                                                     <InfoTile label="Paid Sessions" value={paidSessions} />
                                                                                     <InfoTile label="Completed Sessions" value={completedSessions} />
@@ -328,39 +371,48 @@ const PaymentDetails = () => {
                                                                                     <InfoTile label="Machine" value={exercise.machine} />
                                                                                     <InfoTile label="Intensity" value={exercise.intensity} />
                                                                                     <InfoTile label="Notes" value={exercise.notes} />
-                                                                                </div>
+                                                                                </div> */}
 
                                                                                 {/* Session Table */}
                                                                                 {exercise.sessions?.length > 0 && (
-                                                                                    <div className="pd-table-wrap mt-3">
-                                                                                        <table className="pd-table pd-session-table">
-                                                                                            <thead>
-                                                                                                <tr>
-                                                                                                    <th>Session</th>
-                                                                                                    <th>Date</th>
-                                                                                                    <th>Status</th>
-                                                                                                    <th>Payment</th>
-                                                                                                </tr>
-                                                                                            </thead>
-                                                                                            <tbody>
-                                                                                                {exercise.sessions?.map((session, sIdx) => (
-                                                                                                    <tr key={sIdx}>
-                                                                                                        <td>Session {session.sessionNo}</td>
-                                                                                                        <td>{session.date}</td>
-                                                                                                        <td>
-                                                                                                            <span className={`mini-pill ${session.status === 'Completed' ? 'paid' : 'warning'}`}>
-                                                                                                                {session.status}
-                                                                                                            </span>
-                                                                                                        </td>
-                                                                                                        <td>
-                                                                                                            <span className={`mini-pill ${session.paymentStatus === 'Paid' ? 'paid' : 'unpaid'}`}>
-                                                                                                                {session.paymentStatus}
-                                                                                                            </span>
-                                                                                                        </td>
-                                                                                                    </tr>
-                                                                                                ))}
-                                                                                            </tbody>
-                                                                                        </table>
+                                                                                    <div className="pd-session-list mt-3">
+                                                                                        {exercise.sessions?.map((session, sIdx) => (
+                                                                                            <div className="pd-session-card" key={sIdx}>
+
+                                                                                                <div className="pd-session-left">
+                                                                                                    {/* <div className="pd-session-number">
+                                                                                                        {session.sessionNo}
+                                                                                                    </div> */}
+
+                                                                                                    <div>
+                                                                                                        <h5>Session {session.sessionNo}</h5>
+                                                                                                        <p>{session.date}</p>
+                                                                                                    </div>
+                                                                                                    <div>
+                                                                                                        <span
+                                                                                                            className={`pd-session-pill ${session.status === "Completed"
+                                                                                                                ? "completed"
+                                                                                                                : "pending"
+                                                                                                                } ms-2 mx-2`}
+                                                                                                        >
+                                                                                                            {session.status}
+                                                                                                        </span>
+
+                                                                                                        <span
+                                                                                                            className={`pd-session-pill ${session.paymentStatus === "Paid"
+                                                                                                                ? "paid"
+                                                                                                                : "unpaid"
+                                                                                                                }`}
+                                                                                                        >
+                                                                                                            {session.paymentStatus}
+                                                                                                        </span>
+                                                                                                    </div>
+
+                                                                                                </div>
+
+
+                                                                                            </div>
+                                                                                        ))}
                                                                                     </div>
                                                                                 )}
                                                                             </>
