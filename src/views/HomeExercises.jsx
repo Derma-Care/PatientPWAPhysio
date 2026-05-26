@@ -38,20 +38,27 @@ import Swal from 'sweetalert2';
 const MediaPreviewModal = ({ visible, onClose, mediaUrl, type }) => {
   if (!mediaUrl) return null;
 
-  const cleanUrl = mediaUrl.split('?')[0].toLowerCase();
+  const cleanUrl = mediaUrl.toLowerCase();
   const videoExtensions = ['.mp4', '.webm', '.ogg'];
   const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
   const isYouTube = cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be');
-  const isVideoFile = videoExtensions.some(ext => cleanUrl.endsWith(ext));
-  const isImageFile = imageExtensions.some(ext => cleanUrl.endsWith(ext));
+  const isVideoFile = !isYouTube && videoExtensions.some(ext => cleanUrl.split('?')[0].endsWith(ext));
+  const isImageFile = !isYouTube && imageExtensions.some(ext => cleanUrl.split('?')[0].endsWith(ext));
 
   const getYouTubeId = (url) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return match && match[2].length === 11 ? match[2] : null;
+    // Handles: watch?v=, /embed/, youtu.be/, /shorts/
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+    ];
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) return match[1];
+    }
+    return null;
   };
 
-  console.log({ mediaUrl, type, isYouTube, isVideoFile, isImageFile });
+  console.log({ mediaUrl, isYouTube, isVideoFile, isImageFile, youtubeId: isYouTube ? getYouTubeId(mediaUrl) : null });
 
   return (
     <CModal visible={visible} onClose={onClose} size="lg" alignment="center" backdrop="static">
@@ -64,9 +71,29 @@ const MediaPreviewModal = ({ visible, onClose, mediaUrl, type }) => {
         </CModalTitle>
       </CModalHeader>
       <CModalBody style={{ padding: 0, background: '#0f172a', borderRadius: '0 0 16px 16px', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '350px' }}>
-        {isYouTube ? (
-          <iframe width="100%" height="350" src={`https://www.youtube.com/embed/${getYouTubeId(mediaUrl)}`} title="YouTube video player" frameBorder="0" allowFullScreen />
-        ) : isVideoFile ? (
+        {isYouTube ? (() => {
+          const videoId = getYouTubeId(mediaUrl);
+          if (!videoId) return (
+            <div style={{ color: '#fff', padding: '32px', textAlign: 'center' }}>
+              <p style={{ fontSize: '14px', marginBottom: '12px' }}>Could not extract video ID.</p>
+              <a href={mediaUrl} target="_blank" rel="noopener noreferrer"
+                style={{ color: '#60a5fa', fontSize: '13px', textDecoration: 'underline' }}>
+                Open on YouTube ↗
+              </a>
+            </div>
+          );
+          return (
+            <iframe
+              width="100%"
+              height="350"
+              src={`https://www.youtube.com/embed/${videoId}`}
+              title="YouTube video player"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          );
+        })() : isVideoFile ? (
           <video src={mediaUrl} controls className="w-100" style={{ maxHeight: '70vh' }} />
         ) : isImageFile ? (
           <img src={mediaUrl} alt="Preview" className="img-fluid" style={{ maxHeight: '70vh', objectFit: 'contain' }} />
