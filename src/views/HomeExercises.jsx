@@ -727,7 +727,7 @@ const HomeExercises = () => {
     console.log("data", data);
     try {
       setSaving(true);
-      const exerciseId = (data.exercise.exerciseId && data.exercise.exerciseId.trim()) || data.exercise.exerciseId || data.exercise.programId || data.exercise.therapyExercisesId || (data.exercise.name ? data.exercise.name.trim().replace(/\s+/g, '_').toUpperCase() : '') || "";
+      const exerciseId = (data.exercise.id && data.exercise.id.trim()) || data.exercise.exerciseId || data.exercise.programId || data.exercise.therapyExercisesId || (data.exercise.name ? data.exercise.name.trim().replace(/\s+/g, '_').toUpperCase() : '') || "";
       const existingRecord = therapyRecords[exerciseId];
       const totalSessions = parseInt(data.exercise.session || data.exercise.noOfSessions || data.exercise.sessions || 10, 10);
       const sessionCountDone = existingRecord ? (existingRecord.therapyrecord?.length || 0) + 1 : 1;

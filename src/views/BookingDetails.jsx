@@ -5,12 +5,12 @@ import {
   FileText, Activity, ChevronRight, Stethoscope,
   CreditCard, Clipboard, FileSearch, Download, Home,
   Star, Shield, AlertCircle, CheckCircle, TrendingUp,
-  Building2,
+  Building2, Eye,
   BadgeIndianRupee,
   ImageIcon,
   ClipboardList,
 } from 'lucide-react';
-import { customerService, clinicService, physiotherapyService } from '../services/api';
+import { customerService, clinicService, physiotherapyService, IMAGE_BASE_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Swal from 'sweetalert2';
 import '../styles/theme.css'; // ← shared theme
@@ -97,65 +97,100 @@ const BookingDetails = () => {
     const url = URL.createObjectURL(blob);
     window.open(url, "_blank");
   };
-  const createBlobUrl = (base64, type = "image/jpeg") => {
+  /**
+   * Fix double-encoded S3 URLs.
+   * Backend sometimes stores a full presigned URL as the S3 key, producing:
+   *   https://bucket.s3.../https%3A%2F%2Fbucket.s3...%2Factual-key?outerSigning
+   * This extracts the inner presigned URL which is the real, working one.
+   */
+  const cleanS3Url = (url) => {
+    if (!url) return url;
     try {
-      const cleaned = base64.includes("base64,")
-        ? base64.split("base64,")[1]
-        : base64;
-
-      const byteCharacters = atob(cleaned);
-      const byteNumbers = new Array(byteCharacters.length);
-
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      const parsed = new URL(url);
+      // The pathname (without leading /) is the S3 key
+      const key = parsed.pathname.slice(1);
+      // Decode the key — if it starts with http then the key IS a presigned URL
+      const decodedKey = decodeURIComponent(key);
+      if (decodedKey.startsWith('https://') || decodedKey.startsWith('http://')) {
+        return decodedKey; // Return the inner presigned URL directly
       }
+    } catch (e) { /* not a valid URL, ignore */ }
+    return url;
+  };
 
-      const byteArray = new Uint8Array(byteNumbers);
-
-      const blob = new Blob([byteArray], { type });
-
-      return URL.createObjectURL(blob);
+  /** Returns a usable URL for any file value (S3 URL or legacy base64). */
+  const resolveFileUrl = (file, mimeType = 'image/jpeg') => {
+    if (!file) return '';
+    // Already an HTTP(S) URL — clean up double-encoding, then use directly
+    if (file.startsWith('http://') || file.startsWith('https://')) return cleanS3Url(file);
+    // data URI — use directly
+    if (file.startsWith('data:')) return file;
+    // Legacy base64 — decode to blob URL
+    try {
+      const cleaned = file.includes('base64,') ? file.split('base64,')[1] : file;
+      const byteCharacters = atob(cleaned);
+      const byteNumbers = new Uint8Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
+      return URL.createObjectURL(new Blob([byteNumbers], { type: mimeType }));
     } catch (e) {
-      console.error(e);
-      return "";
+      console.error('resolveFileUrl error:', e);
+      return '';
     }
   };
+
+  /** True when the value is an S3/HTTP URL (not a blob: or data: that we own) */
+  const isHttpUrl = (url) => url?.startsWith('http://') || url?.startsWith('https://');
+
+  /** Download any file (S3 URL or blob URL) by fetching it as a blob first */
+  const handleFileDownload = async (url, filename) => {
+    try {
+      if (isHttpUrl(url)) {
+        // For S3 URLs, fetch as blob to bypass cross-origin download restrictions
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error('Download failed');
+        const blob = await resp.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      } else {
+        // blob: or data: URL — direct download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } catch (e) {
+      console.error('handleFileDownload error:', e);
+      // Fallback: open in new tab
+      window.open(url, '_blank');
+    }
+  };
+
   const attachmentUrls = React.useMemo(() => {
-    return booking?.attachments?.map((file) =>
-      createBlobUrl(file)
-    ) || [];
+    return booking?.attachments?.map((file) => resolveFileUrl(file)) || [];
   }, [booking?.attachments]);
 
   const partImageUrl = React.useMemo(() => {
-    return booking?.partImage
-      ? createBlobUrl(booking.partImage)
-      : "";
+    return booking?.partImage ? resolveFileUrl(booking.partImage) : '';
   }, [booking?.partImage]);
 
   const pdfUrl = React.useMemo(() => {
-    return booking?.consentFormPdf
-      ? createBlobUrl(
-        booking.consentFormPdf,
-        "application/pdf"
-      )
-      : "";
+    return booking?.consentFormPdf ? resolveFileUrl(booking.consentFormPdf, 'application/pdf') : '';
   }, [booking?.consentFormPdf]);
 
   useEffect(() => {
     return () => {
-
-      attachmentUrls.forEach((url) => {
-        URL.revokeObjectURL(url);
-      });
-
-      if (partImageUrl) {
-        URL.revokeObjectURL(partImageUrl);
-      }
-
-      if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl);
-      }
-
+      // Only revoke blob: URLs that we created — S3 URLs don't need revoking
+      attachmentUrls.filter(u => u.startsWith('blob:')).forEach(u => URL.revokeObjectURL(u));
+      if (partImageUrl?.startsWith('blob:')) URL.revokeObjectURL(partImageUrl);
+      if (pdfUrl?.startsWith('blob:')) URL.revokeObjectURL(pdfUrl);
     };
   }, []);
 
@@ -178,30 +213,16 @@ const BookingDetails = () => {
 
   const allReports = (booking?.reports || []).flatMap(r => Array.isArray(r?.reportsList) ? r.reportsList : []);
 
-  const handleDownload = async (report) => {
-    const fileData = report.reportFile?.[0];
-    if (fileData) {
-      try {
-        let url, isBlobUrl = false;
-        if (fileData.startsWith('http://') || fileData.startsWith('https://')) {
-          url = fileData;
-        } else {
-          const b64 = (fileData.includes('base64,') ? fileData.split('base64,')[1] : fileData).replace(/\s/g, '');
-          const blob = await (await fetch(`data:application/pdf;base64,${b64}`)).blob();
-          url = URL.createObjectURL(blob); isBlobUrl = true;
-        }
-        const a = document.createElement('a');
-        a.href = url; a.download = `${report.reportName || 'Report'}.pdf`;
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        if (isBlobUrl) URL.revokeObjectURL(url);
-      } catch {
-        Swal.fire({ icon: 'error', title: 'Download Failed', text: 'Error processing file.' });
-      }
-    } else if (report.reportUrl) {
-      window.open(report.reportUrl, '_blank');
-    } else {
-      Swal.fire({ icon: 'info', title: 'Report Unavailable', text: 'This report is being processed.', timer: 3000 });
+  /** Build a usable URL for a report file (S3 key, presigned URL, or base64) */
+  const getReportUrl = (report) => {
+    const rawKey = report.reportFile?.[0];
+    if (!rawKey) return '';
+    // If the value is already a full URL (presigned), resolve it directly
+    if (rawKey.startsWith('http://') || rawKey.startsWith('https://')) {
+      return resolveFileUrl(rawKey, 'application/pdf');
     }
+    // It's an S3 key like "booking-reports/xxx.pdf" — prepend bucket base
+    return `${IMAGE_BASE_URL}/${rawKey}`;
   };
 
   const navHistory = (extra = {}) => navigate(
@@ -411,39 +432,46 @@ const BookingDetails = () => {
                   <div className="pd-file-list">
 
                     {/* ATTACHMENTS */}
-                    {attachmentUrls.map((url, idx) => (
-                      <div className="pd-file-row" key={idx}>
+                    {attachmentUrls.map((url, idx) => {
+                      // Detect file type from URL or raw attachment value
+                      const rawFile = booking?.attachments?.[idx] || '';
+                      const isPdf = /\.pdf(\?|$)/i.test(url) || /\.pdf(\?|$)/i.test(rawFile);
+                      const fileType = isPdf ? 'pdf' : 'image';
+                      const fileExt = isPdf ? 'pdf' : 'jpg';
 
-                        <div className="pd-file-left">
-                          <div className="pd-file-icon image">
-                            <ImageIcon size={16} />
+                      return (
+                        <div className="pd-file-row" key={idx}>
+
+                          <div className="pd-file-left">
+                            <div className={`pd-file-icon ${isPdf ? 'pdf' : 'image'}`}>
+                              {isPdf ? <FileText size={16} /> : <ImageIcon size={16} />}
+                            </div>
+
+                            <div>
+                              <h6>Attachment {idx + 1}</h6>
+                              <p>{isPdf ? 'PDF Document' : 'Image File'}</p>
+                            </div>
                           </div>
 
-                          <div>
-                            <h6>Attachment {idx + 1}</h6>
-                            <p>Image File</p>
+                          <div className="pd-file-actions">
+                            <button
+                              className="pd-file-btn view"
+                              onClick={() => openPreview(url, fileType)}
+                            >
+                              View
+                            </button>
+
+                            <button
+                              className="pd-file-btn download"
+                              onClick={() => handleFileDownload(url, `attachment-${idx + 1}.${fileExt}`)}
+                            >
+                              Download
+                            </button>
                           </div>
+
                         </div>
-
-                        <div className="pd-file-actions">
-                          <button
-                            className="pd-file-btn view"
-                            onClick={() => openPreview(url)}
-                          >
-                            View
-                          </button>
-
-                          <a
-                            href={url}
-                            download={`attachment-${idx + 1}.jpg`}
-                            className="pd-file-btn download"
-                          >
-                            Download
-                          </a>
-                        </div>
-
-                      </div>
-                    ))}
+                      );
+                    })}
 
                     {/* PART IMAGE */}
                     {partImageUrl && (
@@ -463,18 +491,17 @@ const BookingDetails = () => {
                         <div className="pd-file-actions">
                           <button
                             className="pd-file-btn view"
-                            onClick={() => openPreview(partImageUrl)}
+                            onClick={() => openPreview(partImageUrl, 'image')}
                           >
                             View
                           </button>
 
-                          <a
-                            href={partImageUrl}
-                            download="part-image.jpg"
+                          <button
                             className="pd-file-btn download"
+                            onClick={() => handleFileDownload(partImageUrl, 'part-image.jpg')}
                           >
                             Download
-                          </a>
+                          </button>
                         </div>
 
                       </div>
@@ -498,20 +525,17 @@ const BookingDetails = () => {
                         <div className="pd-file-actions">
                           <button
                             className="pd-file-btn view"
-                            onClick={() =>
-                              openPreview(pdfUrl, "pdf")
-                            }
+                            onClick={() => openPreview(pdfUrl, 'pdf')}
                           >
                             View
                           </button>
 
-                          <a
-                            href={pdfUrl}
-                            download="consent-form.pdf"
+                          <button
                             className="pd-file-btn download"
+                            onClick={() => handleFileDownload(pdfUrl, 'consent-form.pdf')}
                           >
                             Download
-                          </a>
+                          </button>
                         </div>
 
                       </div>
@@ -727,8 +751,9 @@ const BookingDetails = () => {
                   <div className="app-report-grid">
                     {allReports.map((report, i) => {
                       const isNormal = report.reportStatus === 'Normal';
+                      const reportUrl = getReportUrl(report);
                       return (
-                        <div key={i} className={`app-report-card ${isNormal ? 'normal' : 'abnormal'}`} onClick={() => handleDownload(report)}>
+                        <div key={i} className={`app-report-card ${isNormal ? 'normal' : 'abnormal'}`}>
                           <div className="app-report-icon" style={{
                             background: isNormal ? 'var(--c-navy-xlight)' : 'var(--c-danger-light)',
                             color: isNormal ? 'var(--c-navy)' : 'var(--c-danger)',
@@ -739,7 +764,26 @@ const BookingDetails = () => {
                             <p className="app-report-name">{report.reportName}</p>
                             <p className="app-report-meta">{report.reportType} · {report.reportDate}</p>
                           </div>
-                          <span className="app-report-dl"><Download size={16} /></span>
+                          {reportUrl ? (
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                              <button
+                                className="pd-file-btn view"
+                                style={{ padding: '4px 10px', fontSize: 12 }}
+                                onClick={(e) => { e.stopPropagation(); openPreview(reportUrl, 'pdf'); }}
+                              >
+                                <Eye size={13} />
+                              </button>
+                              <button
+                                className="pd-file-btn download"
+                                style={{ padding: '4px 10px', fontSize: 12 }}
+                                onClick={(e) => { e.stopPropagation(); handleFileDownload(reportUrl, `${report.reportName || 'Report'}.pdf`); }}
+                              >
+                                <Download size={13} />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="app-report-dl" style={{ opacity: 0.4 }}><AlertCircle size={16} /></span>
+                          )}
                         </div>
                       );
                     })}
@@ -781,7 +825,7 @@ const BookingDetails = () => {
                         <thead>
                           <tr>
                             <th>#</th><th>Visit</th><th>Date & Time</th>
-                            <th style={{ textAlign: 'right' }}>Actions</th>
+                            {/* <th style={{ textAlign: 'right' }}>Actions</th> */}
                           </tr>
                         </thead>
                         <tbody>
@@ -810,9 +854,9 @@ const BookingDetails = () => {
                                       </button>
                                     </>
                                   )}
-                                  <button className="app-btn-ghost" onClick={() => navHistory({ state: { singleVisit: true, visit } })}>
+                                  {/* <button className="app-btn-ghost" onClick={() => navHistory({ state: { singleVisit: true, visit } })}>
                                     <ChevronRight size={18} />
-                                  </button>
+                                  </button> */}
                                 </div>
                               </td>
                             </tr>
@@ -886,13 +930,15 @@ const BookingDetails = () => {
             <CModalBody>
 
               {previewType === "pdf" ? (
-                <iframe
-                  src={previewFile}
-                  title="PDF Preview"
-                  width="100%"
-                  height="600px"
-                  style={{ border: "none" }}
-                />
+                <div style={{ textAlign: 'center' }}>
+                  <iframe
+                    src={previewFile}
+                    title="PDF Preview"
+                    width="100%"
+                    height="600px"
+                    style={{ border: "none" }}
+                  />
+                </div>
               ) : (
                 <img
                   src={previewFile}
@@ -902,6 +948,10 @@ const BookingDetails = () => {
                     borderRadius: "12px",
                     maxHeight: "80vh",
                     objectFit: "contain"
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling && (e.target.nextSibling.style.display = 'block');
                   }}
                 />
               )}

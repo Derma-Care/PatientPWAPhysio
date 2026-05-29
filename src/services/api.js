@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // test
 const BASE_URL = 'http://3.7.216.95:9090';
-
+export const IMAGE_BASE_URL = "https://physiocare-prod-storage.s3.ap-south-1.amazonaws.com";
 const api = axios.create({
   baseURL: BASE_URL,
   headers: {
