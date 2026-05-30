@@ -246,22 +246,81 @@ const SessionModal = ({ exercise, visible, onClose, clinicId, branchId, therapis
                     {record ? (
                       <div>
                         {/* Meta row */}
-                        <div style={{
-                          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px',
-                          background: 'var(--c-surface-2)', borderRadius: 'var(--r-sm)',
-                          padding: '12px 14px', marginBottom: '14px',
-                          border: '1px solid var(--c-border-light)',
-                        }}>
+                        <div
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: window.innerWidth < 768
+                              ? '1fr'
+                              : 'repeat(3, 1fr)',
+                            gap: '10px',
+                            background: 'var(--c-surface-2)',
+                            borderRadius: 'var(--r-sm)',
+                            padding: '12px 14px',
+                            marginBottom: '14px',
+                            border: '1px solid var(--c-border-light)',
+                          }}
+                        >
                           {[
-                            { label: 'Completed On', value: `${record.completedDate || session.date}${record.completedTime ? ` · ${record.completedTime}` : ''}` },
-                            { label: 'Duration', value: record.duration || 'N/A' },
-                            { label: 'Result', value: record.result || 'Completed', badge: true, success: true },
+                            {
+                              label: 'Completed On',
+                              value: `${record.completedDate || session.date} · ${record.completedTime
+                                ? new Date(`1970-01-01T${record.completedTime}`)
+                                  .toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })
+                                : ''
+                                }`,
+                            },
+                            {
+                              label: 'Duration',
+                              value: record.duration || 'N/A',
+                            },
+                            // {
+                            //   label: 'Result',
+                            //   value: record.result || 'Completed',
+                            //   badge: true,
+                            // },
                           ].map((m, i) => (
                             <div key={i}>
-                              <div style={{ fontSize: '10px', color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '4px' }}>{m.label}</div>
-                              {m.badge
-                                ? <span style={{ background: 'var(--c-success-light)', color: 'var(--c-success)', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: 'var(--r-pill)', display: 'inline-block' }}>{m.value}</span>
-                                : <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--c-text)' }}>{m.value}</div>}
+                              <div
+                                style={{
+                                  fontSize: '10px',
+                                  color: 'var(--c-text-3)',
+                                  fontWeight: 700,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.4px',
+                                  marginBottom: '4px',
+                                }}
+                              >
+                                {m.label}
+                              </div>
+
+                              {m.badge ? (
+                                <span
+                                  style={{
+                                    background: 'var(--c-success-light)',
+                                    color: 'var(--c-success)',
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    padding: '3px 10px',
+                                    borderRadius: 'var(--r-pill)',
+                                    display: 'inline-block',
+                                  }}
+                                >
+                                  {m.value}
+                                </span>
+                              ) : (
+                                <div
+                                  style={{
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    color: 'var(--c-text)',
+                                  }}
+                                >
+                                  {m.value}
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -351,6 +410,7 @@ const SessionModal = ({ exercise, visible, onClose, clinicId, branchId, therapis
                                   { key: 'beforeVideo', label: 'Before', type: 'video', icon: Video, colorClass: 'app-icon-sky' },
                                   { key: 'afterVideo', label: 'After', type: 'video', icon: Video, colorClass: 'app-icon-sky' },
                                   { key: 'voiceRecord', label: 'Voice', type: 'audio', icon: Mic, colorClass: 'app-icon-purple' },
+                                  { key: 'consentPdfUrl', label: 'Consent Form', type: 'file', icon: FileText, colorClass: 'app-icon-purple' },
                                 ];
                                 return mediaItems.map(item => {
                                   const data = record[item.key];

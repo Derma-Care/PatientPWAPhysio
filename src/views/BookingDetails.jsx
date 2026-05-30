@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Calendar, Clock, MapPin, Phone, User,
-  FileText, Activity, ChevronRight, Stethoscope,
+  FileText, Activity, ChevronRight, ChevronDown, Stethoscope,
   CreditCard, Clipboard, FileSearch, Download, Home,
   Star, Shield, AlertCircle, CheckCircle, TrendingUp,
   Building2, Eye,
   BadgeIndianRupee,
   ImageIcon,
   ClipboardList,
+  PersonStanding,
 } from 'lucide-react';
 import { customerService, clinicService, physiotherapyService, IMAGE_BASE_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -16,6 +17,7 @@ import Swal from 'sweetalert2';
 import '../styles/theme.css'; // ← shared theme
 import { CButton, CModal, CModalBody, CModalHeader, CModalTitle } from '@coreui/react';
 import DoctorModal from './DoctorModal';
+import { body } from 'framer-motion/client';
 
 /* ── status helper ── */
 const statusClass = (s = '') => {
@@ -50,6 +52,11 @@ const BookingDetails = () => {
   const [showDoctorModal, setShowDoctorModal] = useState(false);
   const [previewFile, setPreviewFile] = useState("");
   const [previewType, setPreviewType] = useState("");
+  const [openAccordion, setOpenAccordion] = useState("case");
+
+  const toggleAccordion = (section) => {
+    setOpenAccordion(prev => prev === section ? null : section);
+  };
 
   const openPreview = (url, type = "image") => {
     setPreviewFile(url);
@@ -230,9 +237,41 @@ const BookingDetails = () => {
     extra,
   );
 
-  const doctorAvatar = doctor
-    ? (doctor.doctorPicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.doctorName)}&background=1B4F8A&color=fff&bold=true&size=200`)
+  // Resolves the doctor avatar to a usable src string.
+  // Cases handled:
+  //  1. No picture → initials avatar
+  //  2. S3 URL whose KEY is a base64 data URI (data%3Aimage... in path) → extract data URI
+  //  3. Normal S3 / HTTP URL → use directly (browser loads it)
+  const getDoctorAvatar = (pic, name) => {
+    const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(name || '')}&background=1B4F8A&color=fff&bold=true&size=200`;
+    if (!pic) return fallback;
+
+    // Case 2: backend accidentally stored the data URI as the S3 object key
+    // URL looks like: https://bucket.s3.../data%3Aimage%2Fjpeg%3Bbase64%2CABC123...
+    // or:             https://bucket.s3.../data:image/jpeg;base64,ABC123...
+    const hasEncodedDataUri = pic.includes('data%3Aimage') || pic.includes('data%3aimage');
+    const hasRawDataUri = /\/data:image\//i.test(pic);
+    if (hasEncodedDataUri || hasRawDataUri) {
+      try {
+        const decoded = decodeURIComponent(pic);
+        const idx = decoded.indexOf('data:image/');
+        if (idx !== -1) {
+          const extracted = decoded.slice(idx);
+          if (extracted.startsWith('data:image/')) return extracted;
+        }
+      } catch (e) { }
+      return fallback;
+    }
+
+    // Case 3: normal URL
+    return pic;
+  };
+
+  const doctorAvatarFallback = doctor
+    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.doctorName || '')}&background=1B4F8A&color=fff&bold=true&size=200`
     : '';
+  const doctorAvatar = doctor ? getDoctorAvatar(doctor.doctorPicture, doctor.doctorName) : '';
+
   const getImageSrc = (file) => {
     if (!file) return "";
 
@@ -277,6 +316,7 @@ const BookingDetails = () => {
               src={doctorAvatar}
               alt={doctor.doctorName}
               className="app-doc-float-avatar"
+              onError={(e) => { e.target.onerror = null; e.target.src = doctorAvatarFallback; }}
             />
 
             <div style={{ minWidth: 0, flex: 1 }}>
@@ -354,7 +394,7 @@ const BookingDetails = () => {
               )}
             {/* Case Information */}
             <div className="app-card">
-              <div className="app-card-header">
+              <div className="app-card-header" onClick={() => toggleAccordion('case')} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div className="app-card-header-left">
                   <div className="app-icon-box app-icon-navy"><FileText size={20} /></div>
                   <div>
@@ -362,54 +402,68 @@ const BookingDetails = () => {
                     <p className="app-card-sub">Appointment & patient details</p>
                   </div>
                 </div>
+                {openAccordion === 'case' ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
               </div>
-              <div className="app-card-body">
-                <div className="app-info-grid">
-                  <InfoItem icon={Calendar} label="Service Date" value={booking.serviceDate} iconColor="var(--c-navy)" />
-                  <InfoItem icon={Clock} label="Time Slot" value={booking.servicetime} iconColor="var(--c-info)" />
-                  <InfoItem icon={MapPin} label="Clinic Branch" value={booking.branchname} iconColor="var(--c-warning)" />
-                  <InfoItem icon={Activity} label="Chief Complaint" value={booking.problem || 'Not specified'} iconColor="var(--c-danger)" />
-                  <InfoItem icon={User} label="Patient" value={booking.name}
-                    sub={`${booking.age} Yrs · ${booking.gender}`} iconColor="var(--c-success)" />
-                  <InfoItem icon={Phone} label="Contact" value={booking.patientMobileNumber} iconColor="var(--c-purple)" />
+              {openAccordion === 'case' && (
+                <div className="app-card-body">
+                  <div className="app-info-grid">
+                    <InfoItem icon={Calendar} label="Service Date" value={booking.serviceDate} iconColor="var(--c-navy)" />
+                    <InfoItem icon={Clock} label="Time Slot" value={booking.servicetime} iconColor="var(--c-info)" />
+                    <InfoItem icon={MapPin} label="Clinic Branch" value={booking.branchname} iconColor="var(--c-warning)" />
+                    <InfoItem icon={Activity} label="Chief Complaint" value={booking.problem || 'Not specified'} iconColor="var(--c-danger)" />
+                    <InfoItem icon={User} label="Patient" value={booking.name}
+                      sub={`${booking.age} Yrs · ${booking.gender}`} iconColor="var(--c-success)" />
+                    <InfoItem icon={Phone} label="Contact" value={booking.patientMobileNumber} iconColor="var(--c-purple)" />
+
+                    {booking?.parts?.length > 0 && (
+
+                      <InfoItem icon={PersonStanding} label="Affected Parts" value={booking.parts.map((part, idx) => (
+                        <div className="pd-tag part" key={idx}>
+                          {part}
+                        </div>
+                      ))} iconColor="var(--c-purple)" />
+
+                    )}
+
+                  </div>
+
+                  <div className="app-payment-box">
+                    <p className="app-payment-title"><CreditCard size={13} /> Payment Summary</p>
+                    {booking.consultationFee && (
+                      <div className="app-payment-row">
+                        <span>Consultation Fee</span>
+                        <span style={{ fontWeight: 600 }}>₹{booking.consultationFee}</span>
+                      </div>
+                    )}
+                    {booking.totalBill && (
+                      <div className="app-payment-row total">
+                        <span>Total Bill</span><span>₹{booking.totalBill}</span>
+                      </div>
+                    )}
+                    {booking.paidAmount && (
+                      <div className="app-payment-row success">
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><CheckCircle size={12} /> Paid</span>
+                        <span>₹{booking.paidAmount}</span>
+                      </div>
+                    )}
+                    {booking.balance && (
+                      <div className="app-payment-row danger">
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><AlertCircle size={12} /> Balance Due</span>
+                        <span>₹{booking.balance}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-
-                <div className="app-payment-box">
-                  <p className="app-payment-title"><CreditCard size={13} /> Payment Summary</p>
-                  {booking.consultationFee && (
-                    <div className="app-payment-row">
-                      <span>Consultation Fee</span>
-                      <span style={{ fontWeight: 600 }}>₹{booking.consultationFee}</span>
-                    </div>
-                  )}
-                  {booking.totalBill && (
-                    <div className="app-payment-row total">
-                      <span>Total Bill</span><span>₹{booking.totalBill}</span>
-                    </div>
-                  )}
-                  {booking.paidAmount && (
-                    <div className="app-payment-row success">
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><CheckCircle size={12} /> Paid</span>
-                      <span>₹{booking.paidAmount}</span>
-                    </div>
-                  )}
-                  {booking.balance && (
-                    <div className="app-payment-row danger">
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><AlertCircle size={12} /> Balance Due</span>
-                      <span>₹{booking.balance}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+              )}
 
 
 
 
 
 
-              <div className="app-card mt-3">
+              <div className="  mt-3">
 
-                <div className="app-card-header">
+                <div className="app-card-header" onClick={() => toggleAccordion('attachments')} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div className="app-card-header-left">
                     <div className="app-icon-box app-icon-sky">
                       <ImageIcon size={18} />
@@ -425,164 +479,189 @@ const BookingDetails = () => {
                       </p>
                     </div>
                   </div>
+                  {openAccordion === 'attachments' ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                 </div>
 
-                <div className="app-card-body">
+                {openAccordion === 'attachments' && (
+                  <div className="app-card-body">
 
-                  <div className="pd-file-list">
+                    <div className="pd-file-list">
 
-                    {/* ATTACHMENTS */}
-                    {attachmentUrls.map((url, idx) => {
-                      // Detect file type from URL or raw attachment value
-                      const rawFile = booking?.attachments?.[idx] || '';
-                      const isPdf = /\.pdf(\?|$)/i.test(url) || /\.pdf(\?|$)/i.test(rawFile);
-                      const fileType = isPdf ? 'pdf' : 'image';
-                      const fileExt = isPdf ? 'pdf' : 'jpg';
+                      {/* ATTACHMENTS */}
+                      {attachmentUrls.map((url, idx) => {
+                        // Detect file type from URL or raw attachment value
+                        const rawFile = booking?.attachments?.[idx] || '';
+                        const isPdf = /\.pdf(\?|$)/i.test(url) || /\.pdf(\?|$)/i.test(rawFile);
+                        const fileType = isPdf ? 'pdf' : 'image';
+                        const fileExt = isPdf ? 'pdf' : 'jpg';
 
-                      return (
-                        <div className="pd-file-row" key={idx}>
+                        return (
+                          <div className="pd-file-row" key={idx}>
+
+                            <div className="pd-file-left">
+                              <div className={`pd-file-icon ${isPdf ? 'pdf' : 'image'}`}>
+                                {isPdf ? <FileText size={16} /> : <ImageIcon size={16} />}
+                              </div>
+
+                              <div>
+                                <h6>Attachment {idx + 1}</h6>
+                                <p>{isPdf ? 'PDF Document' : 'Image File'}</p>
+                              </div>
+                            </div>
+
+                            <div className="pd-file-actions">
+                              <button
+                                className="pd-file-btn view"
+                                onClick={() => openPreview(url, fileType)}
+                              >
+                                View
+                              </button>
+
+                              <button
+                                className="pd-file-btn download"
+                                onClick={() => handleFileDownload(url, `attachment-${idx + 1}.${fileExt}`)}
+                              >
+                                Download
+                              </button>
+                            </div>
+
+                          </div>
+                        );
+                      })}
+
+                      {/* PART IMAGE */}
+                      {partImageUrl && (
+                        <div className="pd-file-row">
 
                           <div className="pd-file-left">
-                            <div className={`pd-file-icon ${isPdf ? 'pdf' : 'image'}`}>
-                              {isPdf ? <FileText size={16} /> : <ImageIcon size={16} />}
+                            <div className="pd-file-icon body">
+                              <Activity size={16} />
                             </div>
 
                             <div>
-                              <h6>Attachment {idx + 1}</h6>
-                              <p>{isPdf ? 'PDF Document' : 'Image File'}</p>
+                              <h6>Body Part Image</h6>
+                              <p>Injury Area</p>
                             </div>
                           </div>
 
                           <div className="pd-file-actions">
                             <button
                               className="pd-file-btn view"
-                              onClick={() => openPreview(url, fileType)}
+                              onClick={() => openPreview(partImageUrl, 'image')}
                             >
                               View
                             </button>
 
                             <button
                               className="pd-file-btn download"
-                              onClick={() => handleFileDownload(url, `attachment-${idx + 1}.${fileExt}`)}
+                              onClick={() => handleFileDownload(partImageUrl, 'part-image.jpg')}
                             >
                               Download
                             </button>
                           </div>
 
                         </div>
-                      );
-                    })}
+                      )}
 
-                    {/* PART IMAGE */}
-                    {partImageUrl && (
-                      <div className="pd-file-row">
+                      {/* PDF */}
+                      {pdfUrl && (
+                        <div className="pd-file-row">
 
-                        <div className="pd-file-left">
-                          <div className="pd-file-icon body">
-                            <Activity size={16} />
+                          <div className="pd-file-left">
+                            <div className="pd-file-icon pdf">
+                              <FileText size={16} />
+                            </div>
+
+                            <div>
+                              <h6>Consent Form</h6>
+                              <p>PDF Document</p>
+                            </div>
                           </div>
 
-                          <div>
-                            <h6>Body Part Image</h6>
-                            <p>Injury Area</p>
-                          </div>
-                        </div>
+                          <div className="pd-file-actions">
+                            <button
+                              className="pd-file-btn view"
+                              onClick={() => openPreview(pdfUrl, 'pdf')}
+                            >
+                              View
+                            </button>
 
-                        <div className="pd-file-actions">
-                          <button
-                            className="pd-file-btn view"
-                            onClick={() => openPreview(partImageUrl, 'image')}
-                          >
-                            View
-                          </button>
-
-                          <button
-                            className="pd-file-btn download"
-                            onClick={() => handleFileDownload(partImageUrl, 'part-image.jpg')}
-                          >
-                            Download
-                          </button>
-                        </div>
-
-                      </div>
-                    )}
-
-                    {/* PDF */}
-                    {pdfUrl && (
-                      <div className="pd-file-row">
-
-                        <div className="pd-file-left">
-                          <div className="pd-file-icon pdf">
-                            <FileText size={16} />
+                            <button
+                              className="pd-file-btn download"
+                              onClick={() => handleFileDownload(pdfUrl, 'consent-form.pdf')}
+                            >
+                              Download
+                            </button>
                           </div>
 
-                          <div>
-                            <h6>Consent Form</h6>
-                            <p>PDF Document</p>
-                          </div>
                         </div>
+                      )}
 
-                        <div className="pd-file-actions">
-                          <button
-                            className="pd-file-btn view"
-                            onClick={() => openPreview(pdfUrl, 'pdf')}
-                          >
-                            View
-                          </button>
-
-                          <button
-                            className="pd-file-btn download"
-                            onClick={() => handleFileDownload(pdfUrl, 'consent-form.pdf')}
-                          >
-                            Download
-                          </button>
-                        </div>
-
-                      </div>
-                    )}
+                    </div>
 
                   </div>
-
-                </div>
+                )}
 
               </div>
 
               {booking?.theraphyAnswers &&
                 Object.entries(booking.theraphyAnswers).map(([part, questions]) => (
 
-                  <div className="pd-section mt-3" key={part}>
+                  <div className=" mt-3" key={part}>
 
-                    <div className="pd-section-header">
-                      <div className="pd-header-left">
-                        <ClipboardList size={18} />
-                        <span>{part} Therapy Questions</span>
+                    <div className="app-card-header" onClick={() => toggleAccordion(`therapy-${part}`)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {/* <div className="app-card-title">
+                        <ClipboardList size={18} className='app-icon-box app-icon-sky' />
+
+                        <p className="app-card-title">
+                          {part} Therapy Questions
+                        </p>
+                      </div> */}
+
+                      <div className="app-card-header-left"  >
+                        <div className="app-icon-box app-icon-sky"   >
+                          <ClipboardList size={18} />
+                        </div>
+
+                        <div>
+                          <p className="app-card-title">
+                            {part} Therapy Questions
+                          </p>
+
+                          {/* <p className="app-card-sub">
+                        Images and consent forms
+                      </p> */}
+                        </div>
+                        {openAccordion === `therapy-${part}` ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                       </div>
                     </div>
 
-                    <div className="pd-qa-list">
+                    {openAccordion === `therapy-${part}` && (
+                      <div className="pd-qa-list p-2">
 
-                      {questions.map((item, idx) => (
-                        <div className="pd-qa-card" key={idx}>
+                        {questions.map((item, idx) => (
+                          <div className="pd-qa-card" key={idx}>
 
-                          <p className="pd-question">
-                            {item.question}
-                          </p>
+                            <p className="pd-question">
+                              {item.question}
+                            </p>
 
-                          <span
-                            className={`pd-answer-pill ${item.answer === "YES"
-                              ? "yes"
-                              : item.answer === "NO"
-                                ? "no"
-                                : "normal"
-                              }`}
-                          >
-                            {item.answer}
-                          </span>
+                            <span
+                              className={`pd-answer-pill ${item.answer === "YES"
+                                ? "yes"
+                                : item.answer === "NO"
+                                  ? "no"
+                                  : "normal"
+                                }`}
+                            >
+                              {item.answer}
+                            </span>
 
-                        </div>
-                      ))}
+                          </div>
+                        ))}
 
-                    </div>
+                      </div>
+                    )}
 
                   </div>
                 ))}
@@ -612,274 +691,288 @@ const BookingDetails = () => {
                 booking?.reasonforVisit ||
                 booking?.parts?.length > 0
               ) && (
-                  <div className="pd-section mt-3">
+                  <div className="  mt-3">
 
-                    <div className="pd-section-header">
-                      <div className="pd-header-left">
+                    <div className="app-card-header" onClick={() => toggleAccordion('additional')} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {/* <div className="pd-header-left">
                         <ClipboardList size={18} />
                         <span>Additional Details</span>
+                      </div> */}
+
+                      <div className="app-card-header-left"  >
+                        <div className="app-icon-box app-icon-sky"   >
+                          <ClipboardList size={18} />
+                        </div>
+
+                        <div>
+                          <p className="app-card-title">
+                            Additional Details
+                          </p>
+
+                          {/* <p className="app-card-sub">
+                        Images and consent forms
+                      </p> */}
+                        </div>
                       </div>
+
+                      {openAccordion === 'additional' ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                     </div>
 
-                    <div className="pd-info-grid">
+                    {openAccordion === 'additional' && (
+                      <div className="pd-info-grid p-2">
 
-                      {/* REFERRED BY */}
-                      {booking?.referredByType && (
-                        <div className="pd-info-card">
-                          <span>Referred By Type</span>
-                          <h6>{booking.referredByType}</h6>
-                        </div>
-                      )}
-
-                      {booking?.referredByName && (
-                        <div className="pd-info-card">
-                          <span>Referred By Name</span>
-                          <h6>{booking.referredByName}</h6>
-                        </div>
-                      )}
-
-                      {/* PREVIOUS INJURIES */}
-                      {booking?.previousInjuries && (
-                        <div className="pd-info-card">
-                          <span>Previous Injuries</span>
-                          <h6>{booking.previousInjuries}</h6>
-                        </div>
-                      )}
-
-                      {/* CURRENT MEDICATIONS */}
-                      {booking?.currentMedications && (
-                        <div className="pd-info-card">
-                          <span>Current Medications</span>
-                          <h6>{booking.currentMedications}</h6>
-                        </div>
-                      )}
-
-                      {/* ALLERGIES */}
-                      {booking?.allergies && (
-                        <div className="pd-info-card">
-                          <span>Allergies</span>
-                          <h6>{booking.allergies}</h6>
-                        </div>
-                      )}
-
-                      {/* OCCUPATION */}
-                      {booking?.occupation && (
-                        <div className="pd-info-card">
-                          <span>Occupation</span>
-                          <h6>{booking.occupation}</h6>
-                        </div>
-                      )}
-
-                      {/* INSURANCE */}
-                      {booking?.insuranceProvider && (
-                        <div className="pd-info-card">
-                          <span>Insurance Provider</span>
-                          <h6>{booking.insuranceProvider}</h6>
-                        </div>
-                      )}
-
-                      {booking?.policyNumber && (
-                        <div className="pd-info-card">
-                          <span>Policy Number</span>
-                          <h6>{booking.policyNumber}</h6>
-                        </div>
-                      )}
-
-                      {/* REASON */}
-                      {booking?.reasonforVisit && (
-                        <div className="pd-info-card">
-                          <span>Reason For Visit</span>
-                          <h6>{booking.reasonforVisit}</h6>
-                        </div>
-                      )}
-
-                      {/* ACTIVITY LEVEL */}
-                      {booking?.activityLevels?.length > 0 && (
-                        <div className="pd-info-card">
-                          <span>Activity Levels</span>
-
-                          <div className="pd-tag-wrap">
-                            {booking.activityLevels.map((item, idx) => (
-                              <div className="pd-tag" key={idx}>
-                                {item}
-                              </div>
-                            ))}
+                        {/* REFERRED BY */}
+                        {booking?.referredByType && (
+                          <div className="pd-info-card">
+                            <span>Referred By Type</span>
+                            <h6>{booking.referredByType}</h6>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                      {/* BODY PARTS */}
-                      {booking?.parts?.length > 0 && (
-                        <div className="pd-info-card">
-                          <span>Affected Parts</span>
-
-                          <div className="pd-tag-wrap">
-                            {booking.parts.map((part, idx) => (
-                              <div className="pd-tag part" key={idx}>
-                                {part}
-                              </div>
-                            ))}
+                        {booking?.referredByName && (
+                          <div className="pd-info-card">
+                            <span>Referred By Name</span>
+                            <h6>{booking.referredByName}</h6>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                    </div>
-
-                  </div>
-                )}
-            </div>
-
-
-            {/* Reports */}
-            <div className="app-card">
-              <div className="app-card-header">
-                <div className="app-card-header-left">
-                  <div className="app-icon-box app-icon-amber"><Clipboard size={20} /></div>
-                  <div>
-                    <p className="app-card-title">Reports & Prescriptions</p>
-                    <p className="app-card-sub">Medical documents & clinical records</p>
-                  </div>
-                </div>
-              </div>
-              <div className="app-card-body">
-                {allReports.length === 0 ? (
-                  <div className="app-report-empty">
-                    <FileSearch size={36} style={{ opacity: .28, display: 'block', margin: '0 auto 8px' }} />
-                    <p style={{ margin: 0, fontSize: 13 }}>No medical reports available yet</p>
-                  </div>
-                ) : (
-                  <div className="app-report-grid">
-                    {allReports.map((report, i) => {
-                      const isNormal = report.reportStatus === 'Normal';
-                      const reportUrl = getReportUrl(report);
-                      return (
-                        <div key={i} className={`app-report-card ${isNormal ? 'normal' : 'abnormal'}`}>
-                          <div className="app-report-icon" style={{
-                            background: isNormal ? 'var(--c-navy-xlight)' : 'var(--c-danger-light)',
-                            color: isNormal ? 'var(--c-navy)' : 'var(--c-danger)',
-                          }}>
-                            <FileSearch size={18} />
+                        {/* PREVIOUS INJURIES */}
+                        {booking?.previousInjuries && (
+                          <div className="pd-info-card">
+                            <span>Previous Injuries</span>
+                            <h6>{booking.previousInjuries}</h6>
                           </div>
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <p className="app-report-name">{report.reportName}</p>
-                            <p className="app-report-meta">{report.reportType} · {report.reportDate}</p>
+                        )}
+
+                        {/* CURRENT MEDICATIONS */}
+                        {booking?.currentMedications && (
+                          <div className="pd-info-card">
+                            <span>Current Medications</span>
+                            <h6>{booking.currentMedications}</h6>
                           </div>
-                          {reportUrl ? (
-                            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-                              <button
-                                className="pd-file-btn view"
-                                style={{ padding: '4px 10px', fontSize: 12 }}
-                                onClick={(e) => { e.stopPropagation(); openPreview(reportUrl, 'pdf'); }}
-                              >
-                                <Eye size={13} />
-                              </button>
-                              <button
-                                className="pd-file-btn download"
-                                style={{ padding: '4px 10px', fontSize: 12 }}
-                                onClick={(e) => { e.stopPropagation(); handleFileDownload(reportUrl, `${report.reportName || 'Report'}.pdf`); }}
-                              >
-                                <Download size={13} />
-                              </button>
+                        )}
+
+                        {/* ALLERGIES */}
+                        {booking?.allergies && (
+                          <div className="pd-info-card">
+                            <span>Allergies</span>
+                            <h6>{booking.allergies}</h6>
+                          </div>
+                        )}
+
+                        {/* OCCUPATION */}
+                        {booking?.occupation && (
+                          <div className="pd-info-card">
+                            <span>Occupation</span>
+                            <h6>{booking.occupation}</h6>
+                          </div>
+                        )}
+
+                        {/* INSURANCE */}
+                        {booking?.insuranceProvider && (
+                          <div className="pd-info-card">
+                            <span>Insurance Provider</span>
+                            <h6>{booking.insuranceProvider}</h6>
+                          </div>
+                        )}
+
+                        {booking?.policyNumber && (
+                          <div className="pd-info-card">
+                            <span>Policy Number</span>
+                            <h6>{booking.policyNumber}</h6>
+                          </div>
+                        )}
+
+                        {/* REASON */}
+                        {booking?.reasonforVisit && (
+                          <div className="pd-info-card">
+                            <span>Reason For Visit</span>
+                            <h6>{booking.reasonforVisit}</h6>
+                          </div>
+                        )}
+
+                        {/* ACTIVITY LEVEL */}
+                        {booking?.activityLevels?.length > 0 && (
+                          <div className="pd-info-card">
+                            <span>Activity Levels</span>
+
+                            <div className="pd-tag-wrap">
+                              {booking.activityLevels.map((item, idx) => (
+                                <div className="pd-tag" key={idx}>
+                                  {item}
+                                </div>
+                              ))}
                             </div>
-                          ) : (
-                            <span className="app-report-dl" style={{ opacity: 0.4 }}><AlertCircle size={16} /></span>
-                          )}
-                        </div>
-                      );
-                    })}
+                          </div>
+                        )}
+
+                        {/* BODY PARTS */}
+
+
+                      </div>
+                    )}
+
                   </div>
                 )}
-              </div>
-
-
-
-            </div>
-
-            {/* Visit History */}
-            <div className="app-card">
-              <div className="app-card-header">
-                <div className="app-card-header-left">
-                  <div className="app-icon-box app-icon-sky"><TrendingUp size={20} /></div>
-                  <div>
-                    <p className="app-card-title">Visit History</p>
-                    <p className="app-card-sub">{visitHistory.length} recorded visit{visitHistory.length !== 1 ? 's' : ''}</p>
+              {/* Reports */}
+              <div className="  mt-3">
+                <div className="app-card-header" onClick={() => toggleAccordion('reports')} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="app-card-header-left">
+                    <div className="app-icon-box app-icon-amber"><Clipboard size={20} /></div>
+                    <div>
+                      <p className="app-card-title">Reports & Prescriptions</p>
+                      {/* <p className="app-card-sub">Medical documents & clinical records</p> */}
+                    </div>
                   </div>
+                  {openAccordion === 'reports' ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                 </div>
-                {visitHistory.length > 0 && (
-                  <button className="app-btn-outline-navy" onClick={() => navHistory()}>
-                    Full History <ChevronRight size={14} />
-                  </button>
-                )}
-              </div>
-              <div className="app-card-body">
-                {visitHistory.length === 0 ? (
-                  <div className="app-empty">
-                    <Activity size={36} />
-                    <p style={{ margin: 0, fontSize: 13 }}>No visit history available</p>
+                {openAccordion === 'reports' && (
+                  <div className="app-card-body">
+                    {allReports.length === 0 ? (
+                      <div className="app-report-empty">
+                        <FileSearch size={36} style={{ opacity: .28, display: 'block', margin: '0 auto 8px' }} />
+                        <p style={{ margin: 0, fontSize: 13 }}>No medical reports available yet</p>
+                      </div>
+                    ) : (
+                      <div className="app-report-grid">
+                        {allReports.map((report, i) => {
+                          const isNormal = report.reportStatus === 'Normal';
+                          const reportUrl = getReportUrl(report);
+                          return (
+                            <div key={i} className={`app-report-card ${isNormal ? 'normal' : 'abnormal'}`}>
+                              <div className="app-report-icon" style={{
+                                background: isNormal ? 'var(--c-navy-xlight)' : 'var(--c-danger-light)',
+                                color: isNormal ? 'var(--c-navy)' : 'var(--c-danger)',
+                              }}>
+                                <FileSearch size={18} />
+                              </div>
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <p className="app-report-name">{report.reportName}</p>
+                                <p className="app-report-meta">{report.reportType} · {report.reportDate}</p>
+                              </div>
+                              {reportUrl ? (
+                                <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                                  <button
+                                    className="pd-file-btn view"
+                                    style={{ padding: '4px 10px', fontSize: 12 }}
+                                    onClick={(e) => { e.stopPropagation(); openPreview(reportUrl, 'pdf'); }}
+                                  >
+                                    <Eye size={13} />
+                                  </button>
+                                  <button
+                                    className="pd-file-btn download"
+                                    style={{ padding: '4px 10px', fontSize: 12 }}
+                                    onClick={(e) => { e.stopPropagation(); handleFileDownload(reportUrl, `${report.reportName || 'Report'}.pdf`); }}
+                                  >
+                                    <Download size={13} />
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="app-report-dl" style={{ opacity: 0.4 }}><AlertCircle size={16} /></span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <>
-                    {/* Desktop */}
-                    <div className="d-none d-md-block" style={{ overflowX: 'auto' }}>
-                      <table className="app-visit-table">
-                        <thead>
-                          <tr>
-                            <th>#</th><th>Visit</th><th>Date & Time</th>
-                            {/* <th style={{ textAlign: 'right' }}>Actions</th> */}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {visitHistory.slice(0, 3).map((visit, idx) => (
-                            <tr key={idx}>
-                              <td><div className="app-visit-num">{idx + 1}</div></td>
-                              <td style={{ fontWeight: 700 }}>{visit.visitNumber}</td>
-                              <td>
-                                <div style={{ fontWeight: 600 }}>{visit.visitDate}</div>
-                                <div style={{ fontSize: 11, color: 'var(--c-text-3)' }}>{visit.visitTime}</div>
-                              </td>
-                              {/* <td>
+                )}
+
+
+
+              </div>
+
+              {/* Visit History */}
+              <div className=" mt-3">
+                <div className="app-card-header" onClick={() => toggleAccordion('history')} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="app-card-header-left">
+                    <div className="app-icon-box app-icon-sky"><TrendingUp size={20} /></div>
+                    <div>
+                      <p className="app-card-title">Visit History</p>
+                      <p className="app-card-sub">{visitHistory.length} recorded visit{visitHistory.length !== 1 ? 's' : ''}</p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {visitHistory.length > 0 && (
+                        <button className="app-btn-outline-navy" onClick={(e) => { e.stopPropagation(); navHistory(); }}>
+                          {/* Full History <ChevronRight size={14} /> */}
+                          Full History
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {openAccordion === 'history' ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+
+                </div>
+                {openAccordion === 'history' && (
+                  <div className="app-card-body">
+                    {visitHistory.length === 0 ? (
+                      <div className="app-empty">
+                        <Activity size={36} />
+                        <p style={{ margin: 0, fontSize: 13 }}>No visit history available</p>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Desktop */}
+                        <div className="d-none d-md-block" style={{ overflowX: 'auto' }}>
+                          <table className="app-visit-table">
+                            <thead>
+                              <tr>
+                                <th>#</th><th>Visit</th><th>Date & Time</th>
+                                {/* <th style={{ textAlign: 'right' }}>Actions</th> */}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {visitHistory.slice(0, 3).map((visit, idx) => (
+                                <tr key={idx}>
+                                  <td><div className="app-visit-num">{idx + 1}</div></td>
+                                  <td style={{ fontWeight: 700 }}>{visit.visitNumber}</td>
+                                  <td>
+                                    <div style={{ fontWeight: 600 }}>{visit.visitDate}</div>
+                                    <div style={{ fontSize: 11, color: 'var(--c-text-3)' }}>{visit.visitTime}</div>
+                                  </td>
+                                  {/* <td>
                                 <span className="app-diag-badge">
                                   {visit.physiotherapyDoctorData?.diagnosis?.physioDiagnosis || 'N/A'}
                                 </span>
                               </td> */}
-                              <td>
-                                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
-                                  {visit.visitNumber?.toLowerCase() === 'visit 1' && (
-                                    <>
-                                      <button className="app-btn-sessions" onClick={() => navigate(`/bookings/${booking.bookingId}/sessions?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&therapistId=${visit.physiotherapyDoctorData?.treatmentPlan?.therapistId || ''}`)}>
-                                        <Activity size={12} /> Sessions
-                                      </button>
-                                      <button className="app-btn-exercises" onClick={() => navigate(`/bookings/${booking.bookingId}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&doctorId=${visitDoctorId}`, { state: { visit } })}>
-                                        <Home size={12} /> Exercises
-                                      </button>
-                                    </>
-                                  )}
-                                  {/* <button className="app-btn-ghost" onClick={() => navHistory({ state: { singleVisit: true, visit } })}>
+                                  <td>
+                                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+                                      {visit.visitNumber?.toLowerCase() === 'visit 1' && (
+                                        <>
+                                          <button className="app-btn-sessions" onClick={() => navigate(`/bookings/${booking.bookingId}/sessions?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&therapistId=${visit.physiotherapyDoctorData?.treatmentPlan?.therapistId || ''}`)}>
+                                            <Activity size={12} /> Sessions
+                                          </button>
+                                          <button className="app-btn-exercises" onClick={() => navigate(`/bookings/${booking.bookingId}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&doctorId=${visitDoctorId}`, { state: { visit } })}>
+                                            <Home size={12} /> Exercises
+                                          </button>
+                                        </>
+                                      )}
+                                      {/* <button className="app-btn-ghost" onClick={() => navHistory({ state: { singleVisit: true, visit } })}>
                                     <ChevronRight size={18} />
                                   </button> */}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
 
-                    {/* Mobile */}
-                    <div className="d-flex d-md-none flex-column">
-                      {visitHistory.slice(0, 3).map((visit, idx) => (
-                        <div key={idx} className="app-visit-mobile">
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate(`/bookings/${booking.bookingId}/visit-details`, { state: { singleVisit: true, visit } })}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                              <div className="app-visit-num">{idx + 1}</div>
-                              <div style={{ minWidth: 0 }}>
-                                <div style={{ fontWeight: 700, fontSize: 13 }}>{visit.visitNumber}</div>
-                                <div style={{ fontSize: 11, color: 'var(--c-text-3)' }}>{visit.visitDate} · {visit.visitTime}</div>
+                        {/* Mobile */}
+                        <div className="d-flex d-md-none flex-column">
+                          {visitHistory.slice(0, 3).map((visit, idx) => (
+                            <div key={idx} className="app-visit-mobile">
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate(`/bookings/${booking.bookingId}/visit-details`, { state: { singleVisit: true, visit } })}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                                  <div className="app-visit-num">{idx + 1}</div>
+                                  <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontWeight: 700, fontSize: 13 }}>{visit.visitNumber}</div>
+                                    <div style={{ fontSize: 11, color: 'var(--c-text-3)' }}>{visit.visitDate} · {visit.visitTime}</div>
+                                  </div>
+                                </div>
+                                <ChevronRight size={16} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
                               </div>
-                            </div>
-                            <ChevronRight size={16} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
-                          </div>
-                          {/* {visit.physiotherapyDoctorData?.diagnosis?.physioDiagnosis && (
+                              {/* {visit.physiotherapyDoctorData?.diagnosis?.physioDiagnosis && (
                             <div style={{ borderTop: '1px solid var(--c-border)', marginTop: 10, paddingTop: 10 }}>
                               <div style={{ fontSize: 10, color: 'var(--c-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.3px', marginBottom: 3 }}>Diagnosis</div>
                               <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -887,23 +980,28 @@ const BookingDetails = () => {
                               </div>
                             </div>
                           )} */}
-                          {visit.visitNumber?.toLowerCase() === 'visit 1' && (
-                            <div style={{ display: 'flex', gap: 8, borderTop: '1px solid var(--c-border)', marginTop: 10, paddingTop: 10 }}>
-                              <button className="app-btn-sessions" style={{ flex: 1, justifyContent: 'center' }} onClick={() => navigate(`/bookings/${booking.bookingId}/sessions?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&therapistId=${visit.physiotherapyDoctorData?.treatmentPlan?.therapistId || ''}`)}>
-                                <Activity size={12} /> Sessions
-                              </button>
-                              <button className="app-btn-exercises" style={{ flex: 1, justifyContent: 'center' }} onClick={() => navigate(`/bookings/${booking.bookingId}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&doctorId=${visitDoctorId}`, { state: { visit } })}>
-                                <Home size={12} /> Exercises
-                              </button>
+                              {visit.visitNumber?.toLowerCase() === 'visit 1' && (
+                                <div style={{ display: 'flex', gap: 8, borderTop: '1px solid var(--c-border)', marginTop: 10, paddingTop: 10 }}>
+                                  <button className="app-btn-sessions" style={{ flex: 1, justifyContent: 'center' }} onClick={() => navigate(`/bookings/${booking.bookingId}/sessions?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&therapistId=${visit.physiotherapyDoctorData?.treatmentPlan?.therapistId || ''}`)}>
+                                    <Activity size={12} /> Sessions
+                                  </button>
+                                  <button className="app-btn-exercises" style={{ flex: 1, justifyContent: 'center' }} onClick={() => navigate(`/bookings/${booking.bookingId}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&doctorId=${visitDoctorId}`, { state: { visit } })}>
+                                    <Home size={12} /> Exercises
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                          )}
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
+
+
+
           </div>{/* end left */}
 
           {/* <button
@@ -964,7 +1062,12 @@ const BookingDetails = () => {
             {doctor && (
               <div className="app-doc-sidebar">
                 <div className="app-doc-sidebar-banner">
-                  <img src={doctorAvatar} alt={doctor.doctorName} className="app-doc-sidebar-avatar" />
+                  <img
+                    src={doctorAvatar}
+                    alt={doctor.doctorName}
+                    className="app-doc-sidebar-avatar"
+                    onError={(e) => { e.target.onerror = null; e.target.src = doctorAvatarFallback; }}
+                  />
                   <p className="app-doc-sidebar-name">{doctor.doctorName}</p>
                   <p className="app-doc-sidebar-spec">{doctor.specialization}</p>
                   <div className="app-doc-exp-badge"><Star size={11} /> {doctor.experience} Years Experience</div>

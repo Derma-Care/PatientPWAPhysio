@@ -30,9 +30,10 @@ import {
   Image as ImageIcon,
   Video
 } from 'lucide-react';
-import { physiotherapyService, localPhysiotherapyService } from '../services/api';
+import { physiotherapyService, localPhysiotherapyService, IMAGE_BASE_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Swal from 'sweetalert2';
+import { uploadFile } from '../services/S3UploadService';
 
 /* ── Media Preview Modal ─────────────────────────────────────── */
 const MediaPreviewModal = ({ visible, onClose, mediaUrl, type }) => {
@@ -207,9 +208,15 @@ const HomeExerciseCard = React.memo(({ item, index, record, onTrack, onPreview, 
             </button>
           )}
           {(() => {
-            const ensureBase64Prefix = (str, type) => {
+            const resolveMediaUrl = (str, type) => {
               if (!str || str === "null") return null;
-              if (str.startsWith('data:') || str.startsWith('http')) return str;
+              // Already a full HTTP URL (S3 presigned or public)
+              if (str.startsWith('http://') || str.startsWith('https://')) return str;
+              // data: URI — use as-is
+              if (str.startsWith('data:')) return str;
+              // S3 fileKey (e.g. 'before-images/abc123.jpg') — build full URL
+              if (str.includes('/') || str.includes('.')) return `${IMAGE_BASE_URL}/${str}`;
+              // Legacy raw base64 — add MIME prefix
               return `data:${type === 'video' ? 'video/mp4' : 'image/jpeg'};base64,${str}`;
             };
             const mediaItems = [
@@ -221,7 +228,7 @@ const HomeExerciseCard = React.memo(({ item, index, record, onTrack, onPreview, 
             return mediaItems.map(m => {
               const data = item[m.key];
               if (!data || data === "null") return null;
-              const fullUrl = ensureBase64Prefix(data, m.type);
+              const fullUrl = resolveMediaUrl(data, m.type);
               return (
                 <button
                   key={m.key}
@@ -271,10 +278,13 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
   const [repsDone, setRepsDone] = useState('');
   const [notes, setNotes] = useState('');
   const [completed, setCompleted] = useState(false);
+  // These store the S3 fileKey returned after a successful upload
   const [beforeImage, setBeforeImage] = useState('');
   const [afterImage, setAfterImage] = useState('');
   const [beforeVideo, setBeforeVideo] = useState('');
   const [afterVideo, setAfterVideo] = useState('');
+  // Per-field uploading state for UI feedback
+  const [uploading, setUploading] = useState({});
 
   useEffect(() => {
     if (exercise) {
@@ -283,63 +293,55 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
       setCompleted(false); setNotes('');
       setBeforeImage(''); setAfterImage('');
       setBeforeVideo(''); setAfterVideo('');
+      setUploading({});
     }
   }, [exercise, visible]);
 
-  const compressImage = (file, maxSizeMB) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
-          let canvas = document.createElement('canvas');
-          let width = img.width, height = img.height, quality = 0.9;
-          const maxBytes = maxSizeMB * 1024 * 1024;
-          const compress = () => {
-            canvas.width = width; canvas.height = height;
-            let ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            let dataUrl = canvas.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', quality);
-            let bytes = Math.round((dataUrl.length * 3) / 4);
-            if (bytes <= maxBytes || quality <= 0.1 || width <= 100) { resolve(dataUrl); }
-            else { width = Math.floor(width * 0.8); height = Math.floor(height * 0.8); quality -= 0.1; compress(); }
-          };
-          compress();
-        };
-        img.onerror = (err) => reject(err);
-      };
-      reader.onerror = (err) => reject(err);
-    });
+  // File size limits per field (bytes) — must match backend API
+  const FILE_LIMITS = {
+    beforeImage: { maxBytes: 204800,   label: '200 KB', extension: 'jpg' },
+    afterImage:  { maxBytes: 204800,   label: '200 KB', extension: 'jpg' },
+    beforeVideo: { maxBytes: 2097152,  label: '2 MB',   extension: 'mp4' },
+    afterVideo:  { maxBytes: 2097152,  label: '2 MB',   extension: 'mp4' },
   };
 
-  const handleFileChange = async (e, key, type) => {
+  const setFileKey = (key, val) => {
+    if (key === 'beforeImage') setBeforeImage(val);
+    else if (key === 'afterImage') setAfterImage(val);
+    else if (key === 'beforeVideo') setBeforeVideo(val);
+    else if (key === 'afterVideo') setAfterVideo(val);
+  };
+
+  const handleFileChange = async (e, key) => {
     const file = e.target.files[0];
     if (!file) return;
-    const sizeInMB = file.size / (1024 * 1024);
-    if (sizeInMB > 10) {
-      Swal.fire({ icon: 'error', title: 'File too large', text: 'Maximum file size is 10MB.', customClass: { popup: 'premium-swal-popup' } });
-      e.target.value = ''; return;
-    }
-    const setBase64 = (b) => {
-      if (key === 'beforeImage') setBeforeImage(b);
-      else if (key === 'afterImage') setAfterImage(b);
-      else if (key === 'beforeVideo') setBeforeVideo(b);
-      else if (key === 'afterVideo') setAfterVideo(b);
-    };
-    if (type === 'image' && sizeInMB > 1) {
-      try { const c = await compressImage(file, 1); setBase64(c.split(',')[1]); }
-      catch { Swal.fire({ icon: 'error', title: 'Compression failed', text: 'Could not compress the image.', customClass: { popup: 'premium-swal-popup' } }); e.target.value = ''; }
+
+    const limit = FILE_LIMITS[key];
+    if (file.size > limit.maxBytes) {
+      Swal.fire({
+        icon: 'error', title: 'File too large',
+        text: `Maximum size for ${key} is ${limit.label}.`,
+        customClass: { popup: 'premium-swal-popup' },
+      });
+      e.target.value = '';
       return;
     }
-    if (type === 'video' && sizeInMB > 1) {
-      Swal.fire({ icon: 'error', title: 'Video too large', text: 'Video must be under 1MB.', customClass: { popup: 'premium-swal-popup' } });
-      e.target.value = ''; return;
+
+    setUploading(prev => ({ ...prev, [key]: true }));
+    try {
+      const fileKey = await uploadFile(key, file);
+      setFileKey(key, fileKey);
+    } catch (err) {
+      console.error(`S3 upload failed for ${key}:`, err);
+      Swal.fire({
+        icon: 'error', title: 'Upload Failed',
+        text: err.message || `Could not upload ${key}. Please try again.`,
+        customClass: { popup: 'premium-swal-popup' },
+      });
+      e.target.value = '';
+    } finally {
+      setUploading(prev => ({ ...prev, [key]: false }));
     }
-    const reader = new FileReader();
-    reader.onloadend = () => setBase64(reader.result.split(',')[1]);
-    reader.readAsDataURL(file);
   };
 
   if (!exercise) return null;
@@ -455,8 +457,8 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
         {/* File Uploads */}
         <CRow className="g-2">
           {[
-            { title: 'Before Session', color: 'app-icon-navy', titleColor: 'var(--c-navy)', keys: [{ key: 'beforeImage', type: 'image', label: 'Image', accept: 'image/*' }, { key: 'beforeVideo', type: 'video', label: 'Video', accept: 'video/*' }] },
-            { title: 'After Session', color: 'app-icon-green', titleColor: 'var(--c-success)', keys: [{ key: 'afterImage', type: 'image', label: 'Image', accept: 'image/*' }, { key: 'afterVideo', type: 'video', label: 'Video', accept: 'video/*' }] },
+            { title: 'Before Session', color: 'app-icon-navy', titleColor: 'var(--c-navy)', keys: [{ key: 'beforeImage', type: 'image', label: 'Image', accept: 'image/jpeg,image/png,.jpg,.jpeg,.png' }, { key: 'beforeVideo', type: 'video', label: 'Video (MP4)', accept: 'video/mp4,.mp4' }] },
+            { title: 'After Session', color: 'app-icon-green', titleColor: 'var(--c-success)', keys: [{ key: 'afterImage', type: 'image', label: 'Image', accept: 'image/jpeg,image/png,.jpg,.jpeg,.png' }, { key: 'afterVideo', type: 'video', label: 'Video (MP4)', accept: 'video/mp4,.mp4' }] },
           ].map((section, si) => (
             <CCol md={6} key={si}>
               <div style={{ padding: '12px', borderRadius: 'var(--r-sm)', border: '1px solid var(--c-border)', background: 'var(--c-surface)', height: '100%' }}>
@@ -469,8 +471,27 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {section.keys.map(f => (
                     <div key={f.key}>
-                      <label style={{ ...labelStyle, marginBottom: '4px' }}>{f.label}</label>
-                      <input type="file" accept={f.accept} className="form-control form-control-sm" onChange={e => handleFileChange(e, f.key, f.type)} />
+                      <label style={{ ...labelStyle, marginBottom: '4px' }}>
+                        {f.label}
+                        <span style={{ fontWeight: 400, color: 'var(--c-text-3)', textTransform: 'none', letterSpacing: 0 }}>
+                          {' '}(max {FILE_LIMITS[f.key]?.label})
+                        </span>
+                      </label>
+                      <input
+                        type="file"
+                        accept={f.accept}
+                        className="form-control form-control-sm"
+                        onChange={e => handleFileChange(e, f.key)}
+                        disabled={uploading[f.key]}
+                      />
+                      {uploading[f.key] && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, fontSize: 11, color: 'var(--c-navy)', fontWeight: 600 }}>
+                          <CSpinner size="sm" /> Uploading to S3…
+                        </div>
+                      )}
+                      {!uploading[f.key] && (beforeImage && f.key === 'beforeImage' || afterImage && f.key === 'afterImage' || beforeVideo && f.key === 'beforeVideo' || afterVideo && f.key === 'afterVideo') && (
+                        <div style={{ marginTop: 4, fontSize: 11, color: 'var(--c-success)', fontWeight: 600 }}>✓ Uploaded successfully</div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -484,6 +505,7 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
         <button
           className="app-btn-navy w-100"
           style={{ justifyContent: 'center', padding: '12px', fontSize: '14px', borderRadius: '12px' }}
+          disabled={Object.values(uploading).some(Boolean)}
           onClick={() => onSave({ exercise, setsDone: setsDone || '0', repsDone: repsDone || '0', notes, completed, beforeImage, afterImage, beforeVideo, afterVideo })}
         >
           {saving ? <CSpinner size="sm" /> : 'Save Activity Log'}
@@ -594,9 +616,11 @@ const ViewProgressModal = ({ record, visible, onClose, onPreview }) => {
                 {/* Media */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                   {(() => {
-                    const ensureBase64Prefix = (str, type) => {
+                    const resolveMediaUrl = (str, type) => {
                       if (!str || str === "null") return null;
-                      if (str.startsWith('data:') || str.startsWith('http')) return str;
+                      if (str.startsWith('http://') || str.startsWith('https://')) return str;
+                      if (str.startsWith('data:')) return str;
+                      if (str.includes('/') || str.includes('.')) return `${IMAGE_BASE_URL}/${str}`;
                       return `data:${type === 'video' ? 'video/mp4' : 'image/jpeg'};base64,${str}`;
                     };
                     const mediaItems = [
@@ -608,7 +632,7 @@ const ViewProgressModal = ({ record, visible, onClose, onPreview }) => {
                     return mediaItems.map(m => {
                       const data = session[m.key];
                       if (!data || data === "null") return null;
-                      const fullUrl = ensureBase64Prefix(data, m.type);
+                      const fullUrl = resolveMediaUrl(data, m.type);
                       return (
                         <button
                           key={m.key}
