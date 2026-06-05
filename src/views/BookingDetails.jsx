@@ -820,7 +820,7 @@ const BookingDetails = () => {
                   <div className="app-card-header-left">
                     <div className="app-icon-box app-icon-amber"><Clipboard size={20} /></div>
                     <div>
-                      <p className="app-card-title">Reports & Prescriptions</p>
+                      <p className="app-card-title">Reports</p>
                       {/* <p className="app-card-sub">Medical documents & clinical records</p> */}
                     </div>
                   </div>

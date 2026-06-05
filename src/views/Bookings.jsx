@@ -34,10 +34,16 @@ const Bookings = () => {
 
   useEffect(() => {
     const fetchBookings = async () => {
+      setLoading(true);
       try {
         if (user?.customerId) {
-          const response = await customerService.getBookings(user.customerId);
-          setBookings(response.data || []);
+          if (activeTab === 'ongoing') {
+            const response = await customerService.getBookings(user.customerId);
+            setBookings(response.data || []);
+          } else if (activeTab === 'completed') {
+            const response = await customerService.getCompletedBookings(user.customerId);
+            setBookings(response.data || []);
+          }
         }
       } catch (error) {
         console.error('Error fetching bookings:', error);
@@ -46,7 +52,7 @@ const Bookings = () => {
       }
     };
     fetchBookings();
-  }, [user]);
+  }, [user, activeTab]);
 
   const filteredBookings = bookings.filter((booking) => {
     const doctorName = booking?.doctorName || '';
@@ -78,9 +84,6 @@ const Bookings = () => {
       </div>
     );
   }
-
-  const ongoingCount = bookings.filter(b => b.status?.toLowerCase() !== 'completed').length;
-  const completedCount = bookings.filter(b => b.status?.toLowerCase() === 'completed').length;
 
   return (
     <div className="app-page">
@@ -169,8 +172,8 @@ const Bookings = () => {
             }}
           >
             {[
-              { key: 'ongoing', label: 'Ongoing', count: ongoingCount },
-              { key: 'completed', label: 'Completed', count: completedCount },
+              { key: 'ongoing', label: 'Ongoing' },
+              { key: 'completed', label: 'Completed' },
             ].map(tab => (
               <button
                 key={tab.key}
@@ -204,25 +207,6 @@ const Bookings = () => {
                 }}
               >
                 {tab.label}
-
-                <span
-                  style={{
-                    background:
-                      activeTab === tab.key
-                        ? 'rgba(255,255,255,0.22)'
-                        : 'var(--c-surface-3)',
-                    color:
-                      activeTab === tab.key
-                        ? '#fff'
-                        : 'var(--c-primary)',
-                    borderRadius: 'var(--r-pill)',
-                    padding: '1px 8px',
-                    fontSize: '11px',
-                    fontWeight: 800,
-                  }}
-                >
-                  {tab.count}
-                </span>
               </button>
             ))}
           </div>

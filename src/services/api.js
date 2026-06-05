@@ -3,7 +3,7 @@ import axios from 'axios';
 // const BASE_URL = 'http://3.111.28.174:9090';
 
 // test
-export const BASE_URL = 'https://api.ccmsphysioelite.com';
+export const BASE_URL = 'http://3.7.216.95:9090';
 export const IMAGE_BASE_URL = "https://physiocare-prod-storage.s3.ap-south-1.amazonaws.com";
 const api = axios.create({
   baseURL: BASE_URL,
@@ -72,6 +72,10 @@ export const authService = {
 export const customerService = {
   getBookings: async (customerId, branchId) => {
     const response = await api.get(`/api/customer/bookings/customerId/${customerId}`); //TODO:remove branch Id here hardcoded here
+    return response.data;
+  },
+  getCompletedBookings: async (customerId) => {
+    const response = await api.get(`/api/customer/booking/completed/customerId/${customerId}`);
     return response.data;
   },
   getBookingById: async (bookingId) => {

@@ -123,9 +123,9 @@ const MediaPreviewModal = ({ visible, onClose, mediaUrl, type }) => {
       <CModalHeader style={{ border: 'none', padding: '18px 20px 10px', fontFamily: 'var(--font-display)' }}>
         <CModalTitle style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 700, fontSize: '16px', color: 'var(--c-text)' }}>
           <div className="app-icon-box app-icon-navy" style={{ width: '34px', height: '34px', borderRadius: '9px' }}>
-            {type === 'video' ? <Video size={16} /> : type === 'audio' ? <Mic size={16} /> : <ImageIcon size={16} />}
+            {type === 'video' ? <Video size={16} /> : type === 'audio' ? <Mic size={16} /> : type === 'file' ? <FileText size={16} /> : <ImageIcon size={16} />}
           </div>
-          {type === 'video' ? 'Video Update' : type === 'audio' ? 'Voice Record' : 'Media Preview'}
+          {type === 'video' ? 'Video Update' : type === 'audio' ? 'Voice Record' : type === 'file' ? 'Document Preview' : 'Media Preview'}
         </CModalTitle>
       </CModalHeader>
       <CModalBody style={{ padding: 0, background: '#0f172a', borderRadius: '0 0 16px 16px', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: type === 'audio' ? '150px' : '300px' }}>
@@ -135,6 +135,8 @@ const MediaPreviewModal = ({ visible, onClose, mediaUrl, type }) => {
           <div style={{ width: '100%', padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <audio src={mediaUrl} controls className="w-100" autoPlay />
           </div>
+        ) : type === 'file' ? (
+          <iframe src={mediaUrl} title="Document Preview" className="w-100" style={{ height: '70vh', border: 'none' }} />
         ) : (
           <img src={mediaUrl} alt="Preview" className="img-fluid" style={{ maxHeight: '70vh', objectFit: 'contain' }} />
         )}
@@ -401,7 +403,7 @@ const SessionModal = ({ exercise, visible, onClose, clinicId, branchId, therapis
                                 const ensureBase64Prefix = (str, type) => {
                                   if (!str || str === "null") return null;
                                   if (str.startsWith('http') || str.startsWith('data:')) return str;
-                                  const mimeType = type === 'video' ? 'video/mp4' : type === 'audio' ? 'audio/webm' : 'image/jpeg';
+                                  const mimeType = type === 'video' ? 'video/mp4' : type === 'audio' ? 'audio/webm' : type === 'file' ? 'application/pdf' : 'image/jpeg';
                                   return `data:${mimeType};base64,${str}`;
                                 };
                                 const mediaItems = [
@@ -426,7 +428,7 @@ const SessionModal = ({ exercise, visible, onClose, clinicId, branchId, therapis
                                       <div className={`app-icon-box ${item.colorClass}`} style={{ width: '22px', height: '22px', borderRadius: '6px' }}>
                                         <item.icon size={12} />
                                       </div>
-                                      {item.label} {item.type === 'audio' ? 'Record' : item.type === 'video' ? 'Video' : 'Image'}
+                                      {item.type === 'file' ? item.label : `${item.label} ${item.type === 'audio' ? 'Record' : item.type === 'video' ? 'Video' : 'Image'}`}
                                     </button>
                                   );
                                 });
