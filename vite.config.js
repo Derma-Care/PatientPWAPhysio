@@ -13,8 +13,8 @@ export default defineConfig({
         enabled: true,
       },
       manifest: {
-        name: 'PhysioCare Customer',
-        short_name: 'PhysioCare',
+        name: 'Kinetix App',
+        short_name: 'Kinetix App',
         description: 'Your personal health companion for physiotherapy tracking and bookings.',
         theme_color: '#6366f1',
         display: 'standalone',
