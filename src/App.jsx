@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CSpinner } from '@coreui/react';
@@ -21,6 +21,8 @@ import Settings from './views/Settings';
 import './styles/theme.css'
 import VisitDetails from './views/VisitDetails';
 import PaymentDetails from './views/PaymentDetails';
+import SplashScreen from './components/SplashScreen';
+
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
@@ -36,8 +38,12 @@ const PrivateRoute = ({ children }) => {
 };
 
 const App = () => {
+  const [showSplash, setShowSplash] = useState(true);
+
   return (
-    <BrowserRouter>
+    <>
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      <BrowserRouter>
       <AuthProvider>
         <NetworkStatusNotification />
         <Suspense
@@ -78,6 +84,7 @@ const App = () => {
         </Suspense>
       </AuthProvider>
     </BrowserRouter>
+    </>
   );
 };
 
