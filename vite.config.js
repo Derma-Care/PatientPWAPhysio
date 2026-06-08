@@ -16,7 +16,7 @@ export default defineConfig({
         name: 'Kinetix App',
         short_name: 'Kinetix App',
         description: 'Your personal health companion for physiotherapy tracking and bookings.',
-        theme_color: '#6366f1',
+        theme_color: 'var(--c-navy)',
         display: 'standalone',
         icons: [
           {
