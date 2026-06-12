@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/api';
 import { toast, confirmDialog } from '../utils/toast';
 import { Fingerprint, User, Lock, Eye, EyeOff, ArrowLeft, Heart } from 'lucide-react';
+import { getFCMToken } from '../firebase';
 
 const Login = () => {
   const [userName, setUserName] = useState('000101_CR_');
@@ -27,10 +28,11 @@ const Login = () => {
 
   const executeLogin = async (uName, pwd) => {
     try {
+      const fcmToken = await getFCMToken();
       const response = await authService.login({
         userName: uName,
         password: pwd,
-        deviceId: "doc3O1rkTCKSoTfadDR8ap:APA91bFizh_rYgFk5CcAOjOSajPpzvIApq21uqd7O0DKLbqoUGt7dF_nVLeQXKu4eau9iXYrtp7KmfjDrfbNy5ZsDNwSIC7_2h93zkxA_4ucoJ-kHLKLX7A"
+        deviceId: fcmToken || ""
       });
       if (response.success) {
         const isBioEnabled = localStorage.getItem('biometricEnabled') === 'true';

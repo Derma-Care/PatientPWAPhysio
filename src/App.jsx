@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CSpinner } from '@coreui/react';
 import NetworkStatusNotification from './components/NetworkStatusNotification';
+import { NotificationProvider } from './context/NotificationContext';
 
 // Layouts
 import DefaultLayout from './layout/DefaultLayout';
@@ -24,6 +25,7 @@ import PaymentDetails from './views/PaymentDetails';
 import appLogo from '/kinetix-logo.png';
 import PatientFeedback from './views/PatientFeedback';
 import PatientFeedbackDashboard from './views/PatientFeedbackDashboard';
+import Notifications from './views/Notifications';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -188,9 +190,10 @@ const App = () => {
       )}
       <BrowserRouter>
         <AuthProvider>
-          <NetworkStatusNotification />
-          <Suspense
-            fallback={
+          <NotificationProvider>
+            <NetworkStatusNotification />
+            <Suspense
+              fallback={
               <div className="min-vh-100 d-flex justify-content-center align-items-center">
                 <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
               </div>
@@ -228,6 +231,10 @@ const App = () => {
                   path="PatientFeedbackDashboard"
                   element={<PatientFeedbackDashboard />}
                 />
+                <Route
+                  path="notifications"
+                  element={<Notifications />}
+                />
 
               </Route>
 
@@ -236,6 +243,7 @@ const App = () => {
               <Route path="*" element={<Navigate to="/dashboard" />} />
             </Routes>
           </Suspense>
+          </NotificationProvider>
         </AuthProvider>
       </BrowserRouter >
     </>

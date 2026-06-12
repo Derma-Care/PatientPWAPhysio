@@ -17,6 +17,7 @@
     "axios": "^1.16.0",
     "bootstrap": "^5.3.8",
     "file-saver": "^2.0.5",
+    "firebase": "^12.14.0",
     "framer-motion": "^12.38.0",
     "jszip": "^3.10.1",
     "lucide-react": "^1.14.0",

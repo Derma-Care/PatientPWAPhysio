@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { clinicService } from '../services/api';
 import { LogOut, User, Settings, Bell, Activity, ChevronRight } from 'lucide-react';
 import { confirmDialog } from '../utils/toast';
+import { useNotifications } from '../context/NotificationContext';
 
 /* ── nav items config ─────────────────────────────────────────────────────── */
 const NAV = [
@@ -25,6 +26,7 @@ const DefaultLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [visible, setVisible] = React.useState(true);
+  const { unreadCount } = useNotifications();
   const [clinic, setClinic] = React.useState(null);
   const [userProfilePic, setUserProfilePic] = React.useState(
     () => localStorage.getItem('profilePicture')
@@ -229,17 +231,31 @@ const DefaultLayout = () => {
             {/* Right: bell + avatar dropdown */}
             <CHeaderNav style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 
-              {/* Bell */}
+              {/* Bell → navigates to /notifications */}
               <CNavItem>
-                <CNavLink href="#" style={{ padding: 0 }}>
-                  <div style={{
+                <div
+                  role="button"
+                  onClick={() => navigate('/notifications')}
+                  style={{
                     width: 38, height: 38, borderRadius: 'var(--r-sm)',
                     background: 'var(--c-surface-2)', border: '1px solid var(--c-border)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                  }}>
-                    <Bell size={17} color="var(--c-text-2)" />
-                  </div>
-                </CNavLink>
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', position: 'relative'
+                  }}
+                >
+                  <Bell size={17} color="var(--c-text-2)" />
+                  {unreadCount > 0 && (
+                    <span style={{
+                      position: 'absolute', top: 5, right: 7, width: 9, height: 9,
+                      background: '#ef4444', borderRadius: '50%',
+                      boxShadow: '0 0 0 2px var(--c-surface)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 6, color: '#fff', fontWeight: 800
+                    }}>
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </div>
               </CNavItem>
 
               {/* Avatar + dropdown */}
