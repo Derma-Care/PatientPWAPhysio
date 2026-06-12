@@ -12,13 +12,13 @@ const formatDate = (iso) => {
   const now = new Date();
   const diffMs = now - d;
   const diffMin = Math.floor(diffMs / 60000);
-  const diffHr  = Math.floor(diffMs / 3600000);
+  const diffHr = Math.floor(diffMs / 3600000);
   const diffDay = Math.floor(diffMs / 86400000);
 
-  if (diffMin < 1)  return 'Just now';
+  if (diffMin < 1) return 'Just now';
   if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHr  < 24) return `${diffHr}h ago`;
-  if (diffDay < 7)  return `${diffDay}d ago`;
+  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffDay < 7) return `${diffDay}d ago`;
   return d.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
@@ -26,12 +26,12 @@ const formatDate = (iso) => {
 const getIcon = (title = '') => {
   const t = title.toLowerCase();
   if (t.includes('appoint') || t.includes('booking')) return '📅';
-  if (t.includes('payment') || t.includes('bill'))    return '💳';
-  if (t.includes('result')  || t.includes('report'))  return '📋';
-  if (t.includes('remind'))                           return '⏰';
-  if (t.includes('welcome') || t.includes('hello'))   return '👋';
-  if (t.includes('cancel'))                           return '❌';
-  if (t.includes('complete') || t.includes('done'))   return '✅';
+  if (t.includes('payment') || t.includes('bill')) return '💳';
+  if (t.includes('result') || t.includes('report')) return '📋';
+  if (t.includes('remind')) return '⏰';
+  if (t.includes('welcome') || t.includes('hello')) return '👋';
+  if (t.includes('cancel')) return '❌';
+  if (t.includes('complete') || t.includes('done')) return '✅';
   return '🔔';
 };
 
@@ -87,7 +87,7 @@ const Notifications = () => {
               cursor: 'pointer', transition: 'all 0.2s',
             }}
             onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.22)'; }}
-            onMouseOut={e  => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+            onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
           >
             <ArrowLeft size={15} /> Back
           </button>
@@ -144,7 +144,7 @@ const Notifications = () => {
                 boxShadow: '0 2px 8px rgba(0,0,0,0.06)', transition: 'all 0.2s',
               }}
               onMouseOver={e => { e.currentTarget.style.background = '#eff6ff'; }}
-              onMouseOut={e  => { e.currentTarget.style.background = '#fff'; }}
+              onMouseOut={e => { e.currentTarget.style.background = '#fff'; }}
             >
               <CheckCheck size={15} /> Mark all read
             </button>
@@ -158,7 +158,7 @@ const Notifications = () => {
                 boxShadow: '0 2px 8px rgba(0,0,0,0.06)', transition: 'all 0.2s',
               }}
               onMouseOver={e => { e.currentTarget.style.background = '#fff5f5'; }}
-              onMouseOut={e  => { e.currentTarget.style.background = '#fff'; }}
+              onMouseOut={e => { e.currentTarget.style.background = '#fff'; }}
             >
               <Trash2 size={15} /> Clear all
             </button>
@@ -268,17 +268,23 @@ const Notifications = () => {
                       display: 'flex', alignItems: 'center',
                     }}
                     onMouseOver={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#fee2e2'; }}
-                    onMouseOut={e  => { e.currentTarget.style.color = '#cbd5e1'; e.currentTarget.style.background = 'none'; }}
+                    onMouseOut={e => { e.currentTarget.style.color = '#cbd5e1'; e.currentTarget.style.background = 'none'; }}
                     title="Delete notification"
                   >
                     <Trash2 size={15} />
                   </button>
                 </div>
 
-                <p style={{
-                  margin: '0 0 10px', fontSize: 13, color: '#64748b',
-                  lineHeight: 1.55, wordBreak: 'break-word',
-                }}>
+                <p
+                  style={{
+                    whiteSpace: 'pre-line',
+                    margin: '0 0 10px',
+                    fontSize: '13px',
+                    color: '#64748b',
+                    lineHeight: 1.55,
+                    wordBreak: 'break-word',
+                  }}
+                >
                   {notif.body}
                 </p>
 

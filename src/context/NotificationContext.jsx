@@ -7,7 +7,7 @@ const NotificationContext = createContext();
 
 // ── IndexedDB helpers ────────────────────────────────────────────────────────
 const DB_NAME = 'physiocare_notifications';
-const STORE   = 'notifications';
+const STORE = 'notifications';
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -19,7 +19,7 @@ function openDB() {
       }
     };
     req.onsuccess = (e) => resolve(e.target.result);
-    req.onerror   = (e) => reject(e.target.error);
+    req.onerror = (e) => reject(e.target.error);
   });
 }
 
@@ -27,10 +27,10 @@ export async function getAllFromDB() {
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-      const tx  = db.transaction(STORE, 'readonly');
+      const tx = db.transaction(STORE, 'readonly');
       const req = tx.objectStore(STORE).getAll();
       req.onsuccess = () => { db.close(); resolve(req.result || []); };
-      req.onerror   = (e) => reject(e.target.error);
+      req.onerror = (e) => reject(e.target.error);
     });
   } catch { return []; }
 }
@@ -42,7 +42,7 @@ async function putToDB(notification) {
       const tx = db.transaction(STORE, 'readwrite');
       tx.objectStore(STORE).put(notification);
       tx.oncomplete = () => { db.close(); resolve(); };
-      tx.onerror    = (e) => reject(e.target.error);
+      tx.onerror = (e) => reject(e.target.error);
     });
   } catch { /* silent */ }
 }
@@ -54,7 +54,7 @@ async function deleteFromDB(id) {
       const tx = db.transaction(STORE, 'readwrite');
       tx.objectStore(STORE).delete(id);
       tx.oncomplete = () => { db.close(); resolve(); };
-      tx.onerror    = (e) => reject(e.target.error);
+      tx.onerror = (e) => reject(e.target.error);
     });
   } catch { /* silent */ }
 }
@@ -66,7 +66,7 @@ async function clearDB() {
       const tx = db.transaction(STORE, 'readwrite');
       tx.objectStore(STORE).clear();
       tx.oncomplete = () => { db.close(); resolve(); };
-      tx.onerror    = (e) => reject(e.target.error);
+      tx.onerror = (e) => reject(e.target.error);
     });
   } catch { /* silent */ }
 }
@@ -75,11 +75,12 @@ async function clearDB() {
 export const NotificationProvider = ({ children }) => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount]     = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // ── Core sync: always re-read IndexedDB as source of truth ────────────────
   const refreshFromDB = useCallback(async () => {
-    const all    = await getAllFromDB();
+
+    const all = await getAllFromDB();
     const sorted = [...all].sort((a, b) => new Date(b.date) - new Date(a.date));
     setNotifications(sorted);
     setUnreadCount(sorted.filter(n => !n.read).length);
@@ -130,19 +131,31 @@ export const NotificationProvider = ({ children }) => {
       console.log('[FCM Foreground] Raw payload:', JSON.stringify(payload));
 
       const n = payload.notification || {};
-      const d = payload.data         || {};
+      const d = payload.data || {};
 
       const title = n.title || d.title || d.subject || 'New Notification';
-      const body  = n.body  || d.body  || d.message || '';
+      const body = n.body || d.body || d.message || '';
+      const notificationKey = `${title}_${body}`;
+      const existing = await getAllFromDB();
+
+      const isDuplicate = existing.some(
+        n => n.title === title && n.body === body
+      );
+
+      if (isDuplicate) {
+        console.log('Duplicate notification ignored');
+        return;
+      }
 
       const notif = {
-        id:    `fcm_${Date.now()}`,
+        id: crypto.randomUUID(),
         title,
         body,
-        date:  new Date().toISOString(),
-        read:  false,
-        data:  d,
+        date: new Date().toISOString(),
+        read: false,
+        data: d,
       };
+
 
       // Save to IndexedDB first, then refresh state from DB (single source of truth)
       await putToDB(notif);
