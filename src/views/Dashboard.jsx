@@ -189,16 +189,24 @@ const Dashboard = () => {
         <CCol md={4} className="mb-4">
           <div className="app-health-card">
             <div className="app-health-card-body">
+
               <div className="app-health-icon-wrap">
                 <TrendingUp size={28} color="#fff" />
               </div>
-              <h3 className="app-health-title">Your Health Score</h3>
+
+              <h3 className="app-health-title">
+                Stay Healthy & Active
+              </h3>
+
               <p className="app-health-desc">
-                You've completed <strong style={{ color: '#fdba74' }}>85%</strong> of your recommended sessions this week. Keep it up!
+                Small daily improvements lead to better recovery and a healthier lifestyle. Stay consistent with your wellness journey.
               </p>
-              <button className="app-health-cta">
-                View Recommendations <ArrowRight size={15} />
-              </button>
+
+              {/* <button className="app-health-cta">
+                Explore Health Tips
+                <ArrowRight size={15} />
+              </button> */}
+
             </div>
           </div>
         </CCol>

@@ -11,6 +11,7 @@ import { cilHome, cilCalendarCheck, cilUser, cilHospital, cilMenu, cilHistory } 
 import { useAuth } from '../context/AuthContext';
 import { clinicService } from '../services/api';
 import { LogOut, User, Settings, Bell, Activity, ChevronRight } from 'lucide-react';
+import { confirmDialog } from '../utils/toast';
 
 /* ── nav items config ─────────────────────────────────────────────────────── */
 const NAV = [
@@ -48,7 +49,33 @@ const DefaultLayout = () => {
     return () => { window.removeEventListener('storage', handleStorageChange); clearInterval(interval); };
   }, [user]);
 
-  const handleLogout = () => { logout(); navigate('/login'); };
+  const handleLogout = async () => {
+    const confirmed = await confirmDialog(
+      'Logout',
+      'Are you sure you want to log out?',
+      { confirmText: 'Yes, Log Out', cancelText: 'Cancel', danger: true }
+    );
+    if (confirmed) {
+      // Preserve persistent settings
+      const bioEnabled = localStorage.getItem('biometricEnabled');
+      const bioCredId = localStorage.getItem('bioCredId');
+      const savedUser = localStorage.getItem('savedUserName');
+      const savedPass = localStorage.getItem('savedPassKey');
+      const clinic = localStorage.getItem('selectedClinic');
+
+      localStorage.clear();
+
+      if (bioEnabled) localStorage.setItem('biometricEnabled', bioEnabled);
+      if (bioCredId) localStorage.setItem('bioCredId', bioCredId);
+      if (savedUser) localStorage.setItem('savedUserName', savedUser);
+      if (savedPass) localStorage.setItem('savedPassKey', savedPass);
+      if (clinic) localStorage.setItem('selectedClinic', clinic);
+
+      sessionStorage.clear();
+      logout();
+      navigate('/login');
+    }
+  };
   const handleLinkClick = () => {
     if (window.innerWidth < 768) {
       setVisible(false);

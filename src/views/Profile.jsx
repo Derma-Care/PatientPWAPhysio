@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { customerService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import Swal from 'sweetalert2';
+import { toast } from '../utils/toast';
 
 // ─── Reusable field ──────────────────────────────────────────────────────────
 const Field = ({ label, icon: Icon, value, name, editing, onChange }) => (
@@ -96,12 +96,7 @@ const Profile = () => {
       const b64 = reader.result;
       setPreviewImage(b64);
       localStorage.setItem('profilePicture', b64);
-      Swal.fire({
-        icon: 'success',
-        title: 'Profile picture updated!',
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      toast.success('Photo Updated', 'Your profile picture has been saved.');
     };
     reader.readAsDataURL(file);
   };
@@ -113,20 +108,10 @@ const Profile = () => {
       await customerService.updateProfile(user.customerId, draft);
       setProfile(draft);
       setEditing(false);
-      Swal.fire({
-        icon: 'success',
-        title: 'Profile Updated',
-        text: 'Your profile has been successfully updated.',
-        timer: 2000,
-        showConfirmButton: false,
-      });
+      toast.success('Profile Updated', 'Your changes have been saved successfully.');
     } catch (err) {
       console.error('Profile update failed:', err);
-      Swal.fire({
-        icon: 'error',
-        title: 'Update Failed',
-        text: err?.response?.data?.message || 'Could not save changes. Please try again.',
-      });
+      toast.error('Update Failed', err?.response?.data?.message || 'Could not save changes. Please try again.');
     } finally {
       setSaving(false);
     }

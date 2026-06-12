@@ -22,6 +22,8 @@ import './styles/theme.css'
 import VisitDetails from './views/VisitDetails';
 import PaymentDetails from './views/PaymentDetails';
 import appLogo from '/kinetix-logo.png';
+import PatientFeedback from './views/PatientFeedback';
+import PatientFeedbackDashboard from './views/PatientFeedbackDashboard';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -185,46 +187,57 @@ const App = () => {
         </div>
       )}
       <BrowserRouter>
-      <AuthProvider>
-        <NetworkStatusNotification />
-        <Suspense
-          fallback={
-            <div className="min-vh-100 d-flex justify-content-center align-items-center">
-              <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
-            </div>
-          }
-        >
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/"
-              element={
-                <PrivateRoute>
-                  <DefaultLayout />
-                </PrivateRoute>
-              }
-            >
-              <Route index element={<Navigate to="/dashboard" />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="bookings" element={<Bookings />} />
-              <Route path="bookings/:id" element={<BookingDetails />} />
-              <Route path="bookings/:id/history" element={<VisitHistory />} />
-              <Route path="bookings/:id/sessions" element={<SessionTracking />} />
-              <Route path="bookings/:id/home-exercises" element={<HomeExercises />} />
-              <Route path="bookings/:id/visit-details" element={<VisitDetails />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="clinic" element={<ClinicDetails />} />
-              <Route path="settings" element={<Settings />} />
+        <AuthProvider>
+          <NetworkStatusNotification />
+          <Suspense
+            fallback={
+              <div className="min-vh-100 d-flex justify-content-center align-items-center">
+                <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
+              </div>
+            }
+          >
+            <Routes>
+              <Route path="/login" element={<Login />} />
               <Route
-                path="/payment/:bookingId"
-                element={<PaymentDetails />}
-              />
-            </Route>
-            <Route path="*" element={<Navigate to="/dashboard" />} />
-          </Routes>
-        </Suspense>
-      </AuthProvider>
-    </BrowserRouter>
+                path="/"
+                element={
+                  <PrivateRoute>
+                    <DefaultLayout />
+                  </PrivateRoute>
+                }
+              >
+                <Route index element={<Navigate to="/dashboard" />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="bookings" element={<Bookings />} />
+                <Route path="bookings/:id" element={<BookingDetails />} />
+                <Route path="bookings/:id/history" element={<VisitHistory />} />
+                <Route path="bookings/:id/sessions" element={<SessionTracking />} />
+                <Route path="bookings/:id/home-exercises" element={<HomeExercises />} />
+                <Route path="bookings/:id/visit-details" element={<VisitDetails />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="clinic" element={<ClinicDetails />} />
+                <Route path="settings" element={<Settings />} />
+                <Route
+                  path="/payment/:bookingId"
+                  element={<PaymentDetails />}
+                />  <Route
+                  path="patient-feedback"
+                  element={<PatientFeedback />}
+                />
+                <Route
+                  path="PatientFeedbackDashboard"
+                  element={<PatientFeedbackDashboard />}
+                />
+
+              </Route>
+
+
+
+              <Route path="*" element={<Navigate to="/dashboard" />} />
+            </Routes>
+          </Suspense>
+        </AuthProvider>
+      </BrowserRouter >
     </>
   );
 };

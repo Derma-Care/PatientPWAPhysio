@@ -3,6 +3,7 @@ import {
   MapPin, Phone, Mail, Globe, Clock,
   ShieldCheck, ExternalLink, Award,
   Navigation, PlayCircle, ChevronRight,
+  Star,
 
 } from 'lucide-react';
 import CIcon from '@coreui/icons-react';
@@ -78,7 +79,7 @@ const ClinicDetails = () => {
             <div style={{ position: 'absolute', top: 20, right: 24, zIndex: 1 }}>
               <span className="app-status-pill app-status-confirmed">
                 <span className="app-status-dot" />
-                {clinic?.subscription || 'Verified'} Clinic
+                <Star size={13} style={{ color: 'var(--c-white)' }} />  {clinic?.hospitalOverallRating || '0'}/10
               </span>
             </div>
           </div>
@@ -227,15 +228,21 @@ const ClinicDetails = () => {
                   <h4 style={{ fontSize: 14, fontWeight: 800, margin: '0 0 6px' }}>
                     {branch.branchName}
                   </h4>
-                  <p style={{ fontSize: 12, color: 'var(--c-text-2)', margin: '0 0 14px', lineHeight: 1.5 }}>
+
+                  <p style={{ fontSize: 12, color: 'var(--c-text-2)', }}>
                     {branch.address}
                   </p>
                   <div style={{
                     borderTop: '1px solid var(--c-border)', paddingTop: 12,
-                    display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--c-text-2)'
+                    display: 'flex', alignItems: 'center', alignContent: "center", justifyContent: "space-between", gap: 6, fontSize: 12, color: 'var(--c-text-2)'
                   }}>
-                    <Phone size={12} style={{ color: 'var(--c-navy)', flexShrink: 0 }} />
-                    {branch.contactNumber}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}> <Phone size={12} style={{ color: 'var(--c-navy)', flexShrink: 0 }} />
+                      {branch.contactNumber}
+                    </div>
+
+                    <div style={{ fontSize: 12, color: 'var(--c-text-2)', }}>
+                      Rating :  {branch.branchOverallRating}/10
+                    </div>
                   </div>
                 </div>
               ))}
@@ -341,7 +348,7 @@ const ClinicDetails = () => {
           .clinic-two-col { grid-template-columns: 1fr !important; }
         }
       `}</style>
-    </div>
+    </div >
   );
 };
 

@@ -131,15 +131,17 @@ const MediaPreviewModal = ({ visible, onClose, mediaUrl, type }) => {
       <CModalBody style={{ padding: 0, background: '#0f172a', borderRadius: '0 0 16px 16px', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: type === 'audio' ? '150px' : '300px' }}>
         {type === 'video' ? (
           <video src={mediaUrl} controls className="w-100 h-100" style={{ maxHeight: '70vh' }} autoPlay />
-        ) : type === 'audio' ? (
-          <div style={{ width: '100%', padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <audio src={mediaUrl} controls className="w-100" autoPlay />
-          </div>
-        ) : type === 'file' ? (
-          <iframe src={mediaUrl} title="Document Preview" className="w-100" style={{ height: '70vh', border: 'none' }} />
-        ) : (
-          <img src={mediaUrl} alt="Preview" className="img-fluid" style={{ maxHeight: '70vh', objectFit: 'contain' }} />
-        )}
+        )
+          : type === 'audio' ? (
+            <div style={{ width: '100%', padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <audio src={mediaUrl} controls className="w-100" autoPlay />
+            </div>
+          )
+            : type === 'file' ? (
+              <iframe src={mediaUrl} title="Document Preview" className="w-100" style={{ height: '70vh', border: 'none' }} />
+            ) : (
+              <img src={mediaUrl} alt="Preview" className="img-fluid" style={{ maxHeight: '70vh', objectFit: 'contain' }} />
+            )}
       </CModalBody>
     </CModal>
   );
@@ -411,7 +413,7 @@ const SessionModal = ({ exercise, visible, onClose, clinicId, branchId, therapis
                                   { key: 'afterImage', label: 'After', type: 'image', icon: ImageIcon, colorClass: 'app-icon-navy' },
                                   { key: 'beforeVideo', label: 'Before', type: 'video', icon: Video, colorClass: 'app-icon-sky' },
                                   { key: 'afterVideo', label: 'After', type: 'video', icon: Video, colorClass: 'app-icon-sky' },
-                                  { key: 'voiceRecord', label: 'Voice', type: 'audio', icon: Mic, colorClass: 'app-icon-purple' },
+                                  // { key: 'voiceRecord', label: 'Voice', type: 'audio', icon: Mic, colorClass: 'app-icon-purple' },
                                   { key: 'consentPdfUrl', label: 'Consent Form', type: 'file', icon: FileText, colorClass: 'app-icon-purple' },
                                 ];
                                 return mediaItems.map(item => {

@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import { physiotherapyService, localPhysiotherapyService, IMAGE_BASE_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import Swal from 'sweetalert2';
+import { toast } from '../utils/toast';
 import { uploadFile } from '../services/S3UploadService';
 
 /* ── Media Preview Modal ─────────────────────────────────────── */
@@ -318,11 +318,7 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
 
     const limit = FILE_LIMITS[key];
     if (file.size > limit.maxBytes) {
-      Swal.fire({
-        icon: 'error', title: 'File too large',
-        text: `Maximum size for ${key} is ${limit.label}.`,
-        customClass: { popup: 'premium-swal-popup' },
-      });
+      toast.error('File Too Large', `Maximum size for ${key} is ${limit.label}.`);
       e.target.value = '';
       return;
     }
@@ -333,11 +329,7 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
       setFileKey(key, fileKey);
     } catch (err) {
       console.error(`S3 upload failed for ${key}:`, err);
-      Swal.fire({
-        icon: 'error', title: 'Upload Failed',
-        text: err.message || `Could not upload ${key}. Please try again.`,
-        customClass: { popup: 'premium-swal-popup' },
-      });
+      toast.error('Upload Failed', err.message || `Could not upload ${key}. Please try again.`);
       e.target.value = '';
     } finally {
       setUploading(prev => ({ ...prev, [key]: false }));
@@ -774,11 +766,11 @@ const HomeExercises = () => {
         if (freshRecord && freshRecord.success !== false) { console.log("Fresh record after save:", freshRecord); setTherapyRecords(prev => ({ ...prev, [exerciseId]: Array.isArray(freshRecord.data) ? freshRecord.data[0] : (freshRecord.data || freshRecord) })); }
       } catch (err) { console.error("Error re-fetching therapy record after save:", err); }
       setModalVisible(false);
-      Swal.fire({ icon: 'success', title: 'Activity Logged!', text: 'Great job! Your progress has been shared with your therapist.', timer: 2500, showConfirmButton: false, background: '#fff', customClass: { popup: 'premium-swal-popup' } });
+      toast.success('Activity Logged!', 'Great job! Your progress has been shared with your therapist.');
     } catch (error) {
       console.error("========== SAVE ERROR =========="); console.error("Error Message:", error.message); console.error("Error Status:", error.response?.status); console.error("Error Data:", error.response?.data); console.error("Full Error:", error); console.error("===============================");
       setModalVisible(false);
-      Swal.fire({ icon: 'error', title: 'Error Logging Progress', text: error.response?.data?.message || 'There was an issue saving your progress. Please try again.', timer: 3000, showConfirmButton: true });
+      toast.error('Error Logging Progress', error.response?.data?.message || 'There was an issue saving your progress. Please try again.');
     } finally { setSaving(false); }
   };
 

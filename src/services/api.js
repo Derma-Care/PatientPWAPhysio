@@ -156,4 +156,30 @@ export const localPhysiotherapyService = {
   }
 };
 
+export const feedbackService = {
+
+  createPatientFeedback: async (payload) => {
+    const response = await api.post(
+      '/clinic-admin/createPatientFeedback',
+      payload
+    );
+
+    return response.data;
+  },
+  getClinicStaffInfo: async (hospitalId, branchId) => {
+    const response = await api.get(
+      `api/customer/staff-info/${hospitalId}/${branchId}`
+    );
+
+    return response.data;
+  },
+  getByPatientFeedbackClinicIdAndBranchId: async (hospitalId, branchId, patientId) => {
+    const response = await api.get(
+      `api/customer/getByPatientFeedbackClinicIdAndBranchId/${hospitalId}/${branchId}/${patientId}`
+    );
+
+    return response.data;
+  },
+};
+
 export default api;

@@ -1,0 +1,527 @@
+/* ============================================================
+   PatientFeedback.css — scoped .pf- namespace
+   ============================================================ */
+
+.pf-root {
+    --pf-header-from: #1B4F8A;
+    --pf-header-to: #3d5a9e;
+    --pf-accent: #6c8dfa;
+    --pf-green: #1B4F8A;
+    --pf-green-dark: #1e5c52;
+    --pf-bg: #f1f4f9;
+    --pf-card: #ffffff;
+    --pf-border: #e2e8f0;
+    --pf-text: #1a2535;
+    --pf-muted: #64748b;
+    --pf-radius: 16px;
+    --pf-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+
+    min-height: 100vh;
+    background: var(--pf-bg);
+
+}
+
+/* ── Header ── */
+.pf-header {
+    background: linear-gradient(135deg, var(--pf-header-from) 0%, var(--pf-header-to) 100%);
+    position: relative;
+    overflow: hidden;
+    padding-bottom: 32px;
+}
+
+.pf-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-size: 22px 22px;
+    pointer-events: none;
+}
+
+.pf-header__inner {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 20px 20px 0;
+}
+
+.pf-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 13.5px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 100px;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: background 0.18s, border-color 0.18s;
+    margin-bottom: 24px;
+}
+
+.pf-back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+.pf-header__title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.pf-header__title {
+
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 4px;
+    line-height: 1.2;
+}
+
+.pf-header__ref {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0;
+}
+
+.pf-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(108, 141, 250, 0.25);
+    border: 1px solid rgba(108, 141, 250, 0.4);
+    color: #c4d2ff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    padding: 6px 14px;
+    border-radius: 100px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+
+.pf-badge__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #a5b4fc;
+}
+
+/* ── Body ── */
+.pf-body {
+    max-width: 680px;
+    margin: -20px auto 0;
+    padding: 0 16px 48px;
+    position: relative;
+    z-index: 2;
+}
+
+/* ── Patient info card ── */
+.pf-info-card {
+    background: var(--pf-card);
+    border-radius: var(--pf-radius);
+    padding: 18px 20px;
+    box-shadow: var(--pf-shadow);
+    margin-bottom: 20px;
+    border: 1px solid var(--pf-border);
+}
+
+.pf-info-card__label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--pf-muted);
+    margin: 0 0 14px;
+}
+
+.pf-info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pf-info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pf-info-item__icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--pf-muted);
+    flex-shrink: 0;
+}
+
+.pf-info-item__key {
+    display: block;
+    font-size: 11px;
+    color: var(--pf-muted);
+    margin-bottom: 2px;
+}
+
+.pf-info-item__val {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--pf-text);
+}
+
+/* ── Section divider label ── */
+.pf-section-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0 14px;
+}
+
+.pf-section-label__line {
+    flex: 1;
+    height: 1px;
+    background: var(--pf-border);
+}
+
+.pf-section-label__text {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--pf-muted);
+    white-space: nowrap;
+}
+
+.pf-section-label__opt {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #94a3b8;
+}
+
+/* ── Form card (hospital feedback) ── */
+.pf-form-card {
+    background: var(--pf-card);
+    border-radius: var(--pf-radius);
+    padding: 20px;
+    box-shadow: var(--pf-shadow);
+    border: 1px solid var(--pf-border);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 4px;
+}
+
+/* Card header row */
+.pf-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.pf-card-icon {
+    font-size: 28px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.pf-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--pf-text);
+    margin: 0 0 3px;
+}
+
+.pf-card-sub {
+    font-size: 12.5px;
+    color: var(--pf-muted);
+    margin: 0;
+}
+
+.pf-card-rating-badge {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(42, 125, 111, 0.08);
+    border: 1px solid rgba(42, 125, 111, 0.2);
+    border-radius: 100px;
+    padding: 4px 10px;
+    font-size: 13px;
+    color: var(--pf-green);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* ── Staff accordion list ── */
+.pf-staff-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.pf-staff-section {
+    background: var(--pf-card);
+    border: 1.5px solid var(--pf-border);
+    border-radius: var(--pf-radius);
+    overflow: hidden;
+    transition: border-color 0.18s, box-shadow 0.18s;
+    box-shadow: var(--pf-shadow);
+}
+
+.pf-staff-section--open {
+    border-color: rgba(42, 125, 111, 0.3);
+    box-shadow: 0 0 0 3px rgba(42, 125, 111, 0.06), var(--pf-shadow);
+}
+
+.pf-staff-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+}
+
+.pf-staff-header:hover {
+    background: #f8fafc;
+}
+
+.pf-staff-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.pf-staff-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--pf-text);
+    flex: 1;
+}
+
+.pf-staff-preview {
+    font-size: 12.5px;
+    color: var(--pf-green);
+    font-weight: 500;
+    background: rgba(42, 125, 111, 0.08);
+    border-radius: 100px;
+    padding: 3px 10px;
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+
+.pf-staff-chevron {
+    color: var(--pf-muted);
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.pf-staff-chevron--open {
+    transform: rotate(180deg);
+}
+
+.pf-staff-body {
+    padding: 0 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    border-top: 1px solid var(--pf-border);
+    padding-top: 18px;
+}
+
+/* ── Shared field ── */
+.pf-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pf-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--pf-text);
+}
+
+.pf-rating-label-text {
+    font-weight: 400;
+    color: var(--pf-green);
+}
+
+/* ── Select ── */
+.pf-select-wrap {
+    position: relative;
+}
+
+.pf-select {
+    width: 100%;
+    appearance: none;
+    background: #f8fafc;
+    border: 1.5px solid var(--pf-border);
+    border-radius: 10px;
+    padding: 11px 40px 11px 14px;
+    font-size: 14px;
+    color: var(--pf-text);
+
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+.pf-select:focus {
+    border-color: var(--pf-green);
+    box-shadow: 0 0 0 3px rgba(42, 125, 111, 0.1);
+    background: #fff;
+}
+
+.pf-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pf-select-arrow {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--pf-muted);
+}
+
+/* ── Rating grid ── */
+.pf-rating-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.pf-rating-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 4px;
+    background: #f8fafc;
+    border: 1.5px solid var(--pf-border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.pf-rating-btn:hover {
+    border-color: var(--pf-green);
+    background: #f0faf8;
+    transform: translateY(-2px);
+}
+
+.pf-rating-btn--active {
+    border-color: var(--pf-green);
+    background: rgba(42, 125, 111, 0.08);
+    box-shadow: 0 0 0 3px rgba(42, 125, 111, 0.12);
+    transform: translateY(-2px);
+}
+
+.pf-rating-emoji {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.pf-rating-num {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--pf-muted);
+}
+
+.pf-rating-btn--active .pf-rating-num {
+    color: var(--pf-green);
+}
+
+/* ── Textarea ── */
+.pf-textarea {
+    width: 100%;
+    background: #f8fafc;
+    border: 1.5px solid var(--pf-border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 14px;
+
+    color: var(--pf-text);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+    box-sizing: border-box;
+}
+
+.pf-textarea:focus {
+    border-color: var(--pf-green);
+    box-shadow: 0 0 0 3px rgba(42, 125, 111, 0.1);
+    background: #fff;
+}
+
+.pf-textarea::placeholder {
+    color: #94a3b8;
+}
+
+/* ── Submit ── */
+.pf-submit-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--pf-green);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+
+    cursor: pointer;
+    transition: background 0.18s, transform 0.15s, box-shadow 0.18s;
+}
+
+.pf-submit-btn:hover {
+    background: var(--pf-green-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(42, 125, 111, 0.3);
+}
+
+.pf-submit-btn:active {
+    transform: translateY(0);
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+    .pf-header__title {
+        font-size: 20px;
+    }
+
+    .pf-body {
+        padding: 0 12px 36px;
+    }
+
+    .pf-rating-grid {
+        gap: 5px;
+    }
+
+    .pf-rating-emoji {
+        font-size: 18px;
+    }
+
+    .pf-rating-btn {
+        padding: 8px 2px;
+    }
+}

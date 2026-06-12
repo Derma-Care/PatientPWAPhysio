@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CSpinner } from '@coreui/react';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/api';
-import Swal from 'sweetalert2';
+import { toast, confirmDialog } from '../utils/toast';
 import { Fingerprint, User, Lock, Eye, EyeOff, ArrowLeft, Heart } from 'lucide-react';
 
 const Login = () => {
@@ -25,70 +25,154 @@ const Login = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleLogin = async (e) => {
-    if (e) e.preventDefault();
-    setLoading(true);
+  const executeLogin = async (uName, pwd) => {
     try {
       const response = await authService.login({
-        userName,
-        password,
+        userName: uName,
+        password: pwd,
         deviceId: "doc3O1rkTCKSoTfadDR8ap:APA91bFizh_rYgFk5CcAOjOSajPpzvIApq21uqd7O0DKLbqoUGt7dF_nVLeQXKu4eau9iXYrtp7KmfjDrfbNy5ZsDNwSIC7_2h93zkxA_4ucoJ-kHLKLX7A"
       });
       if (response.success) {
         const isBioEnabled = localStorage.getItem('biometricEnabled') === 'true';
         if (!isBioEnabled && isMobileOrTab) {
-          const result = await Swal.fire({
-            title: 'Enable Biometric?',
-            text: 'Would you like to use biometric login for faster access next time?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, Enable',
-            cancelButtonText: 'Not now',
-            confirmButtonColor: '#1B4F8A',
-          });
-          if (result.isConfirmed) {
-            localStorage.setItem('biometricEnabled', 'true');
-            localStorage.setItem('savedUserName', userName);
+          const confirmed = await confirmDialog(
+            'Enable Biometric?',
+            'Would you like to use biometric login for faster access next time?',
+            { confirmText: 'Yes, Enable', cancelText: 'Not now' }
+          );
+          if (confirmed) {
+            let registrationSuccess = true;
+            if (window.PublicKeyCredential) {
+              try {
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
+                const userId = new Uint8Array(16);
+                window.crypto.getRandomValues(userId);
+                const cred = await navigator.credentials.create({
+                  publicKey: {
+                    challenge,
+                    rp: { name: "PhysioCare", id: window.location.hostname },
+                    user: { id: userId, name: uName, displayName: uName },
+                    pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+                    authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "preferred" },
+                    timeout: 60000,
+                  }
+                });
+                localStorage.setItem('bioCredId', btoa(String.fromCharCode.apply(null, new Uint8Array(cred.rawId))));
+              } catch (err) {
+                console.error("Registration failed:", err);
+                registrationSuccess = false;
+                if (err.name !== 'NotAllowedError' && err.name !== 'AbortError') {
+                  toast.error('Biometric Error', 'Could not register fingerprint/FaceID.');
+                }
+              }
+            }
+            if (registrationSuccess) {
+              localStorage.setItem('biometricEnabled', 'true');
+              localStorage.setItem('savedUserName', uName);
+              localStorage.setItem('savedPassKey', btoa(pwd));
+            }
           }
+        } else if (isBioEnabled) {
+          localStorage.setItem('savedUserName', uName);
+          localStorage.setItem('savedPassKey', btoa(pwd));
         }
         login(response.data);
-        Swal.fire({
-          icon: 'success',
-          title: 'Login Successful',
-          text: `Welcome back, ${response.data.customerName}!`,
-          timer: 2000,
-          showConfirmButton: false,
-        });
+        toast.success('Login Successful', `Welcome back, ${response.data.customerName}!`);
         navigate('/dashboard');
       } else {
-        Swal.fire('Error', response.message || 'Login failed', 'error');
+        toast.error('Login Failed', response.message || 'Invalid credentials. Please try again.');
       }
     } catch (error) {
-      Swal.fire('Error', 'Something went wrong. Please check your credentials.', 'error');
-    } finally {
-      setLoading(false);
+      toast.error('Error', 'Something went wrong. Please check your credentials.');
     }
   };
 
-  const handleBiometric = () => {
+  const handleLogin = async (e) => {
+    if (e) e.preventDefault();
+    setLoading(true);
+    await executeLogin(userName, password);
+    setLoading(false);
+  };
+
+  const handleBiometric = async () => {
+    const savedPass = localStorage.getItem('savedPassKey');
+    if (!savedPass) {
+      toast.error('Setup Required', 'Please sign in with your password once to complete biometric setup.');
+      setViewMode('form');
+      return;
+    }
+
     setBioLoading(true);
-    setTimeout(() => {
-      setBioLoading(false);
-      Swal.fire({
-        title: 'Biometric Authentication',
-        text: 'Confirm your identity with FaceID / TouchID',
-        icon: 'info',
-        showCancelButton: true,
-        confirmButtonText: 'Authenticate',
-        confirmButtonColor: '#1B4F8A',
-      }).then((result) => {
-        if (result.isConfirmed) {
-          const savedUser = localStorage.getItem('savedUserName');
-          if (savedUser) setUserName(savedUser);
-          handleLogin();
+    try {
+      if (window.PublicKeyCredential) {
+        const challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+        
+        let credId = localStorage.getItem('bioCredId');
+        
+        if (credId) {
+          // Prompt for existing fingerprint
+          const idBuffer = Uint8Array.from(atob(credId), c => c.charCodeAt(0));
+          await navigator.credentials.get({
+            publicKey: {
+              challenge,
+              allowCredentials: [{ type: "public-key", id: idBuffer }],
+              userVerification: "preferred"
+            }
+          });
+        } else {
+          // Register new fingerprint
+          const userId = new Uint8Array(16);
+          window.crypto.getRandomValues(userId);
+          const cred = await navigator.credentials.create({
+            publicKey: {
+              challenge,
+              rp: { name: "PhysioCare", id: window.location.hostname },
+              user: {
+                id: userId,
+                name: localStorage.getItem('savedUserName') || "Patient",
+                displayName: localStorage.getItem('savedUserName') || "Patient"
+              },
+              pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+              authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "preferred" },
+              timeout: 60000,
+            }
+          });
+          localStorage.setItem('bioCredId', btoa(String.fromCharCode.apply(null, new Uint8Array(cred.rawId))));
         }
-      });
-    }, 800);
+        
+        const savedUser = localStorage.getItem('savedUserName');
+        const savedPass = localStorage.getItem('savedPassKey');
+        if (savedUser) setUserName(savedUser);
+        if (savedPass) setPassword(atob(savedPass));
+        // Use the saved credentials directly to avoid stale state
+        const resolvedUser = savedUser || userName;
+        const resolvedPass = savedPass ? atob(savedPass) : password;
+        await executeLogin(resolvedUser, resolvedPass);
+      } else {
+        // Fallback for devices without biometric support or HTTP (not HTTPS)
+        const confirmed = await confirmDialog(
+          'Fingerprint Authentication',
+          'Touch the fingerprint sensor or simulate a scan to continue.',
+          { confirmText: 'Simulate Scan', cancelText: 'Cancel' }
+        );
+        if (confirmed) {
+          const savedUser = localStorage.getItem('savedUserName');
+          const savedPass = localStorage.getItem('savedPassKey');
+          const resolvedUser = savedUser || userName;
+          const resolvedPass = savedPass ? atob(savedPass) : password;
+          await executeLogin(resolvedUser, resolvedPass);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      if (error.name !== 'NotAllowedError' && error.name !== 'AbortError') {
+         toast.error('Biometric Failed', 'Authentication failed. Please use your password instead.');
+      }
+    } finally {
+      setBioLoading(false);
+    }
   };
 
   return (

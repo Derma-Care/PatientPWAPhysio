@@ -18,7 +18,8 @@ import '../styles/theme.css'; // ← shared theme
 import { CButton, CModal, CModalBody, CModalHeader, CModalTitle } from '@coreui/react';
 import DoctorModal from './DoctorModal';
 import { body } from 'framer-motion/client';
-
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 /* ── status helper ── */
 const statusClass = (s = '') => {
   const map = { confirmed: 'confirmed', pending: 'pending', cancelled: 'cancelled', completed: 'completed', 'in-progress': 'in-progress' };
@@ -53,7 +54,11 @@ const BookingDetails = () => {
   const [previewFile, setPreviewFile] = useState("");
   const [previewType, setPreviewType] = useState("");
   const [openAccordion, setOpenAccordion] = useState("case");
+  const [previewOpen, setPreviewOpen] = useState(false);
 
+  const [previewFiles, setPreviewFiles] = useState([]);
+
+  const [previewIndex, setPreviewIndex] = useState(0);
   const toggleAccordion = (section) => {
     setOpenAccordion(prev => prev === section ? null : section);
   };
@@ -62,6 +67,28 @@ const BookingDetails = () => {
     setPreviewFile(url);
     setPreviewType(type);
   };
+  const openPreviewModal = (files, index = 0) => {
+    const resolvedFiles = (files || []).map(f => resolveFileUrl(f, 'application/pdf'));
+    setPreviewFiles(resolvedFiles);
+    setPreviewIndex(index);
+    setPreviewOpen(true);
+  };
+  const nextFile = () => {
+
+    if (previewIndex < previewFiles.length - 1) {
+
+      setPreviewIndex(prev => prev + 1);
+    }
+  };
+
+  const prevFile = () => {
+
+    if (previewIndex > 0) {
+
+      setPreviewIndex(prev => prev - 1);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -229,7 +256,7 @@ const BookingDetails = () => {
       return resolveFileUrl(rawKey, 'application/pdf');
     }
     // It's an S3 key like "booking-reports/xxx.pdf" — prepend bucket base
-    return `${IMAGE_BASE_URL}/${rawKey}`;
+    return `${rawKey}`;
   };
 
   const navHistory = (extra = {}) => navigate(
@@ -283,6 +310,39 @@ const BookingDetails = () => {
   };
 
 
+
+  const downloadZip = async (files) => {
+
+    const zip = new JSZip();
+
+    for (let i = 0; i < files.length; i++) {
+      const url = resolveFileUrl(files[i], 'application/pdf');
+      const response = await fetch(url);
+
+      const blob = await response.blob();
+
+      zip.file(`Report-${i + 1}.pdf`, blob);
+    }
+
+    const zipBlob = await zip.generateAsync({
+      type: 'blob'
+    });
+
+    saveAs(zipBlob, 'Reports.zip');
+  };
+
+  const handleFeedback = (patient) => {
+    console.log(patient);
+    navigate("/patient-feedback", {
+      state: {
+        patientId: patient.patientId,
+        patientName: patient.patientName,
+        patientPhone: patient.patientPhone,
+        clinicId: patient.clinicId,
+        branchId: patient.branchId
+      }
+    });
+  };
 
   return (
     <div className="app-page">
@@ -381,17 +441,37 @@ const BookingDetails = () => {
 
           {/* LEFT */}
           <div>
-            {
-              booking.status.toLowerCase() !== "confirmed" && (
-                <div style={{ display: 'flex', justifyContent: 'end', marginBottom: "20px" }}>
-                  <button className="app-btn-payment" onClick={() =>
-                    navigate(`/payment/${booking.bookingId}`)
-                  }>
-                    < BadgeIndianRupee size={12} /> View Payment Details
-                  </button>
+            <div className="d-flex justify-content-center gap-2">
+              {
+                booking.status.toLowerCase() !== "confirmed" && (
+                  <div style={{ display: 'flex', justifyContent: 'end', marginBottom: "20px" }}>
+                    <button className="app-btn-payment" onClick={() =>
+                      navigate(`/payment/${booking.bookingId}`)
+                    }>
+                      < BadgeIndianRupee size={12} /> View Payment Details
+                    </button>
 
-                </div>
-              )}
+                  </div>
+                )}
+              {
+                (booking.status.toLowerCase() === "completed" || booking.status.toLowerCase() === "in-progress") && (
+                  <div style={{ display: 'flex', justifyContent: 'end', marginBottom: "20px" }}>
+                    <button className="app-btn-payment" onClick={() =>
+                      handleFeedback({
+                        patientId: booking.patientId,
+                        patientName: booking.name,
+                        patientPhone: booking.patientMobileNumber,
+                        clinicId: booking.clinicId,
+                        branchId: booking.branchId
+                      })
+                    }>
+                      < Star size={12} />  Give Feedback
+                    </button>
+
+                  </div>
+                )
+              }
+            </div>
             {/* Case Information */}
             <div className="app-card">
               <div className="app-card-header" onClick={() => toggleAccordion('case')} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -632,8 +712,8 @@ const BookingDetails = () => {
                         Images and consent forms
                       </p> */}
                         </div>
-                        {openAccordion === `therapy-${part}` ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                       </div>
+                      {openAccordion === `therapy-${part}` ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                     </div>
 
                     {openAccordion === `therapy-${part}` && (
@@ -851,21 +931,55 @@ const BookingDetails = () => {
                                 <p className="app-report-meta">{report.reportType} · {report.reportDate}</p>
                               </div>
                               {reportUrl ? (
-                                <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    gap: 8,
+                                    alignItems: 'center'
+                                  }}
+                                >
+
                                   <button
                                     className="pd-file-btn view"
-                                    style={{ padding: '4px 10px', fontSize: 12 }}
-                                    onClick={(e) => { e.stopPropagation(); openPreview(reportUrl, 'pdf'); }}
+                                    style={{
+                                      padding: '4px 10px',
+                                      fontSize: 12
+                                    }}
+                                    onClick={(e) => {
+
+                                      e.stopPropagation();
+
+                                      openPreviewModal(report.reportFile);
+                                    }}
                                   >
                                     <Eye size={13} />
                                   </button>
+
                                   <button
                                     className="pd-file-btn download"
-                                    style={{ padding: '4px 10px', fontSize: 12 }}
-                                    onClick={(e) => { e.stopPropagation(); handleFileDownload(reportUrl, `${report.reportName || 'Report'}.pdf`); }}
+                                    style={{
+                                      padding: '4px 10px',
+                                      fontSize: 12
+                                    }}
+                                    onClick={(e) => {
+
+                                      e.stopPropagation();
+
+                                      downloadZip(report.reportFile);
+                                    }}
                                   >
-                                    <Download size={13} />
+                                    ZIP
                                   </button>
+
+                                  <span
+                                    style={{
+                                      fontSize: 11,
+                                      fontWeight: 600
+                                    }}
+                                  >
+                                    {report.reportFile?.length || 0} Files
+                                  </span>
+
                                 </div>
                               ) : (
                                 <span className="app-report-dl" style={{ opacity: 0.4 }}><AlertCircle size={16} /></span>
@@ -899,8 +1013,8 @@ const BookingDetails = () => {
                         </button>
                       )}
                     </div>
+                    {openAccordion === 'history' ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                   </div>
-                  {openAccordion === 'history' ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
 
                 </div>
                 {openAccordion === 'history' && (
@@ -958,6 +1072,8 @@ const BookingDetails = () => {
                           </table>
                         </div>
 
+
+
                         {/* Mobile */}
                         <div className="d-flex d-md-none flex-column">
                           {visitHistory.slice(0, 3).map((visit, idx) => (
@@ -1004,6 +1120,10 @@ const BookingDetails = () => {
 
           </div>{/* end left */}
 
+
+
+
+
           {/* <button
             className="btn btn-success w-100 mt-3"
             onClick={() =>
@@ -1012,6 +1132,39 @@ const BookingDetails = () => {
           >
             View Payment Details
           </button> */}
+          <CModal
+            visible={previewOpen}
+            onClose={() => setPreviewOpen(false)}
+            alignment="center"
+            size="lg"
+          >
+            <CModalHeader>
+              <CModalTitle>
+                Report Preview ({previewFiles.length > 0 ? previewIndex + 1 : 0} / {previewFiles.length})
+              </CModalTitle>
+            </CModalHeader>
+            <CModalBody>
+              <div style={{ textAlign: 'center' }}>
+                <object
+                  data={previewFiles[previewIndex]}
+                  type="application/pdf"
+                  width="100%"
+                  height="600px"
+                  style={{ border: "none" }}
+                >
+                  <p>PDF preview not available.</p>
+                  <CButton onClick={() => window.open(previewFiles[previewIndex], '_blank')}>
+                    Open PDF
+                  </CButton>
+                </object>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
+                <CButton color="secondary" onClick={prevFile} disabled={previewIndex === 0}>Prev</CButton>
+                <CButton color="primary" onClick={() => handleFileDownload(previewFiles[previewIndex], `Report-${previewIndex + 1}.pdf`)}>Download</CButton>
+                <CButton color="secondary" onClick={nextFile} disabled={previewIndex === previewFiles.length - 1}>Next</CButton>
+              </div>
+            </CModalBody>
+          </CModal>
           <CModal
             visible={!!previewFile}
             onClose={() => setPreviewFile("")}
