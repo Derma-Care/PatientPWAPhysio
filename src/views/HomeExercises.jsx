@@ -214,8 +214,8 @@ const HomeExerciseCard = React.memo(({ item, index, record, onTrack, onPreview, 
               if (str.startsWith('http://') || str.startsWith('https://')) return str;
               // data: URI — use as-is
               if (str.startsWith('data:')) return str;
-              // S3 fileKey (e.g. 'before-images/abc123.jpg') — build full URL
-              if (str.includes('/') || str.includes('.')) return `${IMAGE_BASE_URL}/${str}`;
+              // // S3 fileKey (e.g. 'before-images/abc123.jpg') — build full URL
+              // if (str.includes('/') || str.includes('.')) return `${IMAGE_BASE_URL}/${str}`;
               // Legacy raw base64 — add MIME prefix
               return `data:${type === 'video' ? 'video/mp4' : 'image/jpeg'};base64,${str}`;
             };
@@ -299,10 +299,10 @@ const TrackingModal = ({ exercise, visible, onClose, onSave, saving }) => {
 
   // File size limits per field (bytes) — must match backend API
   const FILE_LIMITS = {
-    beforeImage: { maxBytes: 204800,   label: '200 KB', extension: 'jpg' },
-    afterImage:  { maxBytes: 204800,   label: '200 KB', extension: 'jpg' },
-    beforeVideo: { maxBytes: 2097152,  label: '2 MB',   extension: 'mp4' },
-    afterVideo:  { maxBytes: 2097152,  label: '2 MB',   extension: 'mp4' },
+    beforeImage: { maxBytes: 204800, label: '200 KB', extension: 'jpg' },
+    afterImage: { maxBytes: 204800, label: '200 KB', extension: 'jpg' },
+    beforeVideo: { maxBytes: 2097152, label: '2 MB', extension: 'mp4' },
+    afterVideo: { maxBytes: 2097152, label: '2 MB', extension: 'mp4' },
   };
 
   const setFileKey = (key, val) => {
@@ -612,7 +612,7 @@ const ViewProgressModal = ({ record, visible, onClose, onPreview }) => {
                       if (!str || str === "null") return null;
                       if (str.startsWith('http://') || str.startsWith('https://')) return str;
                       if (str.startsWith('data:')) return str;
-                      if (str.includes('/') || str.includes('.')) return `${IMAGE_BASE_URL}/${str}`;
+                      // if (str.includes('/') || str.includes('.')) return `${IMAGE_BASE_URL}/${str}`;
                       return `data:${type === 'video' ? 'video/mp4' : 'image/jpeg'};base64,${str}`;
                     };
                     const mediaItems = [
