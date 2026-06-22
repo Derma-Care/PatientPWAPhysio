@@ -11,7 +11,7 @@ import {
   ClipboardList,
   PersonStanding,
 } from 'lucide-react';
-import { customerService, clinicService, physiotherapyService, IMAGE_BASE_URL } from '../services/api';
+import { customerService, clinicService, physiotherapyService, IMAGE_BASE_URL, BASE_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Swal from 'sweetalert2';
 import '../styles/theme.css'; // ← shared theme
@@ -59,6 +59,27 @@ const BookingDetails = () => {
   const [previewFiles, setPreviewFiles] = useState([]);
 
   const [previewIndex, setPreviewIndex] = useState(0);
+
+  const [recoveryModalVisible, setRecoveryModalVisible] = useState(false);
+  const [recoveryList, setRecoveryList] = useState([]);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+
+  const handleOpenRecoveryModal = async (supportItems) => {
+    setRecoveryModalVisible(true);
+    setRecoveryLoading(true);
+    try {
+      const promises = supportItems.map(item =>
+        fetch(`${BASE_URL}/clinic-admin/getRecoverySupportById/${item.id}`)
+          .then(r => r.json())
+          .then(json => json.success ? json.data : null)
+      );
+      const results = await Promise.all(promises);
+      setRecoveryList(results.filter(Boolean));
+    } catch (e) {
+      console.error("Error fetching recovery supports:", e);
+    }
+    setRecoveryLoading(false);
+  };
   const toggleAccordion = (section) => {
     setOpenAccordion(prev => prev === section ? null : section);
   };
@@ -1059,6 +1080,11 @@ const BookingDetails = () => {
                                           <button className="app-btn-exercises" onClick={() => navigate(`/bookings/${booking.bookingId}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&doctorId=${visitDoctorId}`, { state: { visit } })}>
                                             <Home size={12} /> Exercises
                                           </button>
+                                          {visit.physiotherapyDoctorData?.recoverySupport?.length > 0 && (
+                                            <button className="app-btn-exercises" style={{ backgroundColor: 'var(--c-info)' }} onClick={() => handleOpenRecoveryModal(visit.physiotherapyDoctorData.recoverySupport)}>
+                                              <Shield size={12} /> Recovery
+                                            </button>
+                                          )}
                                         </>
                                       )}
                                       {/* <button className="app-btn-ghost" onClick={() => navHistory({ state: { singleVisit: true, visit } })}>
@@ -1104,6 +1130,11 @@ const BookingDetails = () => {
                                   <button className="app-btn-exercises" style={{ flex: 1, justifyContent: 'center' }} onClick={() => navigate(`/bookings/${booking.bookingId}/home-exercises?patientId=${visit.physiotherapyDoctorData?.patientInfo?.patientId}&therapistRecordId=${visit.physiotherapyDoctorData?.therapistRecordId}&clinicId=${visit.physiotherapyDoctorData?.clinicId}&branchId=${visit.physiotherapyDoctorData?.branchId}&doctorId=${visitDoctorId}`, { state: { visit } })}>
                                     <Home size={12} /> Exercises
                                   </button>
+                                  {visit.physiotherapyDoctorData?.recoverySupport?.length > 0 && (
+                                    <button className="app-btn-exercises" style={{ flex: 1, justifyContent: 'center', backgroundColor: 'var(--c-info)' }} onClick={() => handleOpenRecoveryModal(visit.physiotherapyDoctorData.recoverySupport)}>
+                                      <Shield size={12} /> Recovery
+                                    </button>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -1268,7 +1299,59 @@ const BookingDetails = () => {
         />
       }
 
-
+      {/* Recovery Support Modal */}
+      <CModal
+        visible={recoveryModalVisible}
+        onClose={() => setRecoveryModalVisible(false)}
+        alignment="center"
+        size="lg"
+        scrollable
+      >
+        <CModalHeader style={{ border: 'none', padding: '20px 24px 10px' }}>
+          <CModalTitle style={{ fontSize: '18px', fontWeight: 'bold' }}>
+            Recovery Support
+          </CModalTitle>
+        </CModalHeader>
+        <CModalBody style={{ padding: '20px 24px', background: 'var(--c-surface-2)' }}>
+          {recoveryLoading ? (
+            <div className="text-center py-4" style={{ color: 'var(--c-text-muted)' }}>Loading details...</div>
+          ) : recoveryList.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {recoveryList.map((item, idx) => (
+                <div key={idx} style={{ background: 'var(--c-surface)', borderRadius: '12px', padding: '16px', border: '1px solid var(--c-border)' }}>
+                  {item.image && (
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      style={{ width: '100%', maxHeight: '250px', objectFit: 'contain', borderRadius: '8px', marginBottom: '16px', background: 'var(--c-surface-2)' }}
+                    />
+                  )}
+                  <h5 style={{ fontWeight: 'bold', marginBottom: '8px', color: 'var(--c-text)' }}>{item.name}</h5>
+                  {item.category && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <span style={{
+                        background: 'var(--c-navy)',
+                        color: '#fff',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        textTransform: 'capitalize'
+                      }}>
+                        {item.category}
+                      </span>
+                    </div>
+                  )}
+                  <p style={{ fontSize: '14px', color: 'var(--c-text-muted)', whiteSpace: 'pre-wrap', lineHeight: '1.5', margin: 0 }}>
+                    {item.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4" style={{ color: 'var(--c-text-muted)' }}>No recovery support items found.</div>
+          )}
+        </CModalBody>
+      </CModal>
 
     </div>
   );

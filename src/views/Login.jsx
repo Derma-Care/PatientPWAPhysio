@@ -8,7 +8,7 @@ import { Fingerprint, User, Lock, Eye, EyeOff, ArrowLeft, Heart } from 'lucide-r
 import { getFCMToken } from '../firebase';
 
 const Login = () => {
-  const [userName, setUserName] = useState('000101_CR_');
+  const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -93,7 +93,11 @@ const Login = () => {
   const handleLogin = async (e) => {
     if (e) e.preventDefault();
     setLoading(true);
-    await executeLogin(userName, password);
+    const trimmedUser = userName.trim();
+    const trimmedPass = password.trim();
+    setUserName(trimmedUser);
+    setPassword(trimmedPass);
+    await executeLogin(trimmedUser, trimmedPass);
     setLoading(false);
   };
 
@@ -110,9 +114,9 @@ const Login = () => {
       if (window.PublicKeyCredential) {
         const challenge = new Uint8Array(32);
         window.crypto.getRandomValues(challenge);
-        
+
         let credId = localStorage.getItem('bioCredId');
-        
+
         if (credId) {
           // Prompt for existing fingerprint
           const idBuffer = Uint8Array.from(atob(credId), c => c.charCodeAt(0));
@@ -143,7 +147,7 @@ const Login = () => {
           });
           localStorage.setItem('bioCredId', btoa(String.fromCharCode.apply(null, new Uint8Array(cred.rawId))));
         }
-        
+
         const savedUser = localStorage.getItem('savedUserName');
         const savedPass = localStorage.getItem('savedPassKey');
         if (savedUser) setUserName(savedUser);
@@ -170,7 +174,7 @@ const Login = () => {
     } catch (error) {
       console.error(error);
       if (error.name !== 'NotAllowedError' && error.name !== 'AbortError') {
-         toast.error('Biometric Failed', 'Authentication failed. Please use your password instead.');
+        toast.error('Biometric Failed', 'Authentication failed. Please use your password instead.');
       }
     } finally {
       setBioLoading(false);

@@ -106,6 +106,10 @@ export const clinicService = {
     const response = await api.get(`/clinic-admin/doctor/${doctorId}`);
     return response.data;
   },
+  getRecoverySupportById: async (id) => {
+    const response = await api.get(`/clinic-admin/getRecoverySupportById/${id}`);
+    return response.data;
+  },
 };
 
 export const physiotherapyService = {
