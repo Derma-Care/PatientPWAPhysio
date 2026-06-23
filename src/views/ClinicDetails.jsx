@@ -7,7 +7,7 @@ import {
 
 } from 'lucide-react';
 import CIcon from '@coreui/icons-react';
-import { cibFacebook, cibTwitter, cibInstagram } from '@coreui/icons';
+import { cibFacebook, cibYoutube, cibInstagram } from '@coreui/icons';
 import { clinicService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -264,11 +264,11 @@ const ClinicDetails = () => {
               </div>
               <div className="app-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[
-                  { icon: cibInstagram, label: 'Instagram', handle: '@kinetixwellness', iconColor: '#e1306c', bg: '#fce4ec' },
-                  { icon: cibTwitter, label: 'Twitter', handle: '@kinetixcare', iconColor: '#1da1f2', bg: '#e0f2fe' },
-                  { icon: cibFacebook, label: 'Facebook', handle: 'Kinetix Wellness', iconColor: '#1877f2', bg: '#e8f0fe' },
-                ].map(({ icon, label, handle, iconColor, bg }) => (
-                  <a key={label} href="#" className="app-info-item"
+                  { icon: cibInstagram, label: 'Instagram', handle: '@kinetixwellness', iconColor: '#e1306c', bg: '#fce4ec', url: 'https://www.instagram.com/kinetixwellnesscare' },
+                  { icon: cibYoutube, label: 'YouTube', handle: 'Kinetix Wellness', iconColor: '#ff0000', bg: '#ffe0e0', url: 'https://www.youtube.com/channel/UC1HodsrG-Mz0Sicp2a9OFyQ' },
+                  { icon: cibFacebook, label: 'Facebook', handle: 'Kinetix Wellness', iconColor: '#1877f2', bg: '#e8f0fe', url: 'https://www.facebook.com/people/Kinetix-Wellness-Care/61578653939238/' },
+                ].map(({ icon, label, handle, iconColor, bg, url }) => (
+                  <a key={label} href={url} target="_blank" rel="noopener noreferrer" className="app-info-item"
                     style={{ textDecoration: 'none', cursor: 'pointer', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{
