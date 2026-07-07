@@ -73,6 +73,7 @@ const Login = () => {
               localStorage.setItem('biometricEnabled', 'true');
               localStorage.setItem('savedUserName', uName);
               localStorage.setItem('savedPassKey', btoa(pwd));
+
             }
           }
         } else if (isBioEnabled) {

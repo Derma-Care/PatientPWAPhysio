@@ -186,4 +186,32 @@ export const feedbackService = {
   },
 };
 
+export const bookingService = {
+  getBranches: async (hospitalId) => {
+    const response = await api.get(`/clinic-admin/getBranchesByClinicId/${hospitalId}`);
+    return response.data;
+  },
+  getDoctorsByBranch: async (hospitalId, branchId) => {
+    const response = await api.get(`/clinic-admin/getDoctorsByHospitalIdAndBranchId/${hospitalId}/${branchId}`);
+    return response.data;
+  },
+  getSlots: async (hospitalId, branchId, doctorId) => {
+    const response = await api.get(`/clinic-admin/getDoctorSlots/${hospitalId}/${branchId}/${doctorId}`);
+    return response.data;
+  },
+  getQuestionsByKey: async (parts) => {
+    const response = await api.post('/api/customer/physiotherapy/questions/getByKey', { keys: parts });
+    return response.data;
+  },
+  postBooking: async (payload) => {
+    const response = await api.post('/clinic-admin/physioAppointment', payload);
+    return response.data;
+  },
+  postFollowUpBooking: async (payload) => {
+    const response = await api.post('/api/customer/bookService', payload);
+    return response.data;
+  },
+};
+
 export default api;
+

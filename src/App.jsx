@@ -26,6 +26,8 @@ import appLogo from '/kinetix-logo.png';
 import PatientFeedback from './views/PatientFeedback';
 import PatientFeedbackDashboard from './views/PatientFeedbackDashboard';
 import Notifications from './views/Notifications';
+import BookAppointment from './views/BookAppointment';
+import FollowUpBooking from './views/FollowUpBooking';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -234,6 +236,14 @@ const App = () => {
                 <Route
                   path="notifications"
                   element={<Notifications />}
+                />
+                <Route
+                  path="book-appointment"
+                  element={<BookAppointment />}
+                />
+                <Route
+                  path="follow-up-booking"
+                  element={<FollowUpBooking />}
                 />
 
               </Route>

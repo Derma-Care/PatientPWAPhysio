@@ -46,10 +46,10 @@ const Field = ({ label, icon: Icon, value, name, editing, onChange }) => (
 const Profile = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  const [profile, setProfile] = useState(null);
-  const [draft, setDraft] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { profile, draft, loading } = useAuth();
+  // const [profile, setProfile] = useState(null);
+  // const [draft, setDraft] = useState(null);
+  // const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [previewImage, setPreviewImage] = useState(
@@ -57,22 +57,7 @@ const Profile = () => {
   );
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        if (user?.customerId) {
-          const response = await customerService.getProfile(user.customerId);
-          setProfile(response.data);
-          setDraft(response.data);
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
-  }, [user]);
+
 
   const patch = (key, val) =>
     setDraft(d => ({ ...d, [key]: val }));

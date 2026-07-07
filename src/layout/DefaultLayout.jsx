@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   CContainer, CHeader, CHeaderBrand, CHeaderNav, CNavItem, CNavLink,
   CSidebar, CSidebarBrand, CSidebarNav, CHeaderToggler,
@@ -10,7 +10,7 @@ import CIcon from '@coreui/icons-react';
 import { cilHome, cilCalendarCheck, cilUser, cilHospital, cilMenu, cilHistory } from '@coreui/icons';
 import { useAuth } from '../context/AuthContext';
 import { clinicService } from '../services/api';
-import { LogOut, User, Settings, Bell, Activity, ChevronRight } from 'lucide-react';
+import { LogOut, User, Settings, Bell, Activity, ChevronRight, Calendar } from 'lucide-react';
 import { confirmDialog } from '../utils/toast';
 import { useNotifications } from '../context/NotificationContext';
 
@@ -25,6 +25,7 @@ const NAV = [
 const DefaultLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [visible, setVisible] = React.useState(true);
   const { unreadCount } = useNotifications();
   const [clinic, setClinic] = React.useState(null);
@@ -37,6 +38,8 @@ const DefaultLayout = () => {
       if (user?.hospitalId) {
         try {
           const response = await clinicService.getClinic(user.hospitalId);
+          localStorage.setItem('selectedHospital', JSON.stringify(response.data))
+
           setClinic(response.data);
         } catch (error) {
           console.error('Error fetching clinic info:', error);
@@ -368,6 +371,37 @@ const DefaultLayout = () => {
         }}>
           © {new Date().getFullYear()} {clinic?.name || 'Kinetix Wellness Care'}. All rights reserved.
         </footer>
+        {/* ── Floating Action Button ────────────────────────────────────────── */}
+        {!['/book-appointment', '/follow-up-booking'].includes(location.pathname) && (
+          <button
+            onClick={() => navigate('/book-appointment')}
+            style={{
+              position: 'fixed',
+              bottom: 24,
+              right: 24,
+              zIndex: 1050,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '14px 20px',
+              borderRadius: 30,
+              background: 'var(--g-navy-soft)',
+              color: '#fff',
+              border: 'none',
+              boxShadow: 'var(--s-xl)',
+              fontWeight: 700,
+              fontSize: 14,
+              cursor: 'pointer',
+              transition: 'transform 0.2s',
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+            onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+          >
+            <Calendar size={18} />
+            <span className="d-none d-sm-inline">Book Appointment</span>
+          </button>
+        )}
       </div>
     </div>
   );

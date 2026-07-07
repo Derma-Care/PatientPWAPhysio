@@ -80,9 +80,24 @@ const Dashboard = () => {
     <div className="app-page p-3">
 
       {/* Page heading */}
-      <div style={{ marginBottom: 24 }}>
-        <h2 className="app-page-heading">Dashboard</h2>
-        <p className="app-page-sub">Overview of your healthcare journey</p>
+      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h2 className="app-page-heading">Dashboard</h2>
+          <p className="app-page-sub">Overview of your healthcare journey</p>
+        </div>
+        {/* <button
+          onClick={() => navigate('/book-appointment')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '11px 20px', borderRadius: 'var(--r-sm)',
+            border: 'none', background: 'var(--g-navy-soft)',
+            color: '#fff', fontWeight: 700, fontSize: 14,
+            cursor: 'pointer', boxShadow: 'var(--s-navy)',
+            fontFamily: 'var(--font-body)',
+          }}
+        >
+          <Calendar size={17} /> Book Appointment
+        </button> */}
       </div>
 
       {/* ── STATS GRID ── */}

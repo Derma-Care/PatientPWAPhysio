@@ -1,0 +1,538 @@
+/*
+  BookAppointment responsive layer
+  ---------------------------------
+  Mobile-first. Desktop rules kick in at 768px+ and again refine at 1080px+.
+  Colors/tokens reuse the existing var(--c-*) design tokens already defined
+  in ../styles/theme.css — nothing new is introduced here.
+*/
+
+/* ---------- Page shell ---------- */
+.ba-page {
+    width: 100%;
+}
+
+.ba-body {
+    max-width: 720px;
+    margin: -32px auto 0;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.ba-hero-inner {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    .ba-body {
+        max-width: 880px;
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+
+    .ba-hero-inner {
+        max-width: 880px;
+    }
+}
+
+@media (min-width: 1080px) {
+    .ba-body {
+        max-width: 1040px;
+    }
+
+    .ba-hero-inner {
+        max-width: 1040px;
+    }
+}
+
+/* ---------- Stepper ---------- */
+.ba-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.ba-step-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 13px;
+    transition: all .3s;
+}
+
+.ba-step-label {
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.ba-step-connector {
+    height: 2px;
+    flex: 1;
+    max-width: 60px;
+    margin: 0 6px 18px;
+    transition: background .3s;
+}
+
+@media (min-width: 768px) {
+    .ba-step-dot {
+        width: 38px;
+        height: 38px;
+        font-size: 15px;
+    }
+
+    .ba-step-label {
+        font-size: 12px;
+    }
+
+    .ba-step-connector {
+        max-width: 110px;
+        margin-bottom: 20px;
+    }
+}
+
+/* ---------- Section titles ---------- */
+.ba-section-title,
+.ba-card-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--c-navy);
+    margin-bottom: 10px;
+}
+
+.ba-card-title {
+    font-size: 14px;
+    border-bottom: 1px solid var(--c-border);
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+}
+
+/* ---------- Visit type ---------- */
+.ba-visit-type-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.ba-visit-type-btn {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--c-border);
+    background: var(--c-surface);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .2s;
+    color: var(--c-text-2);
+}
+
+.ba-visit-type-btn.is-active {
+    border: 2px solid var(--c-navy);
+    background: var(--c-navy-xlight);
+    color: var(--c-navy);
+}
+
+@media (min-width: 768px) {
+    .ba-visit-type-row {
+        max-width: 420px;
+    }
+
+    .ba-visit-type-btn {
+        font-size: 14px;
+        padding: 13px 16px;
+    }
+}
+
+/* ---------- Branch / Doctor selection ---------- */
+.ba-branch-doctor-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.ba-option-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+    max-height: none;
+}
+
+.ba-option-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--r-sm);
+    border: 1.5px solid var(--c-border);
+    background: var(--c-surface);
+    cursor: pointer;
+    text-align: left;
+    transition: all .2s;
+    width: 100%;
+}
+
+.ba-option-btn.is-selected {
+    border: 2px solid var(--c-navy);
+    background: var(--c-navy-xlight);
+}
+
+.ba-option-btn.is-disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+@media (min-width: 768px) {
+    .ba-branch-doctor-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+        align-items: start;
+    }
+
+    .ba-option-list {
+        max-height: 420px;
+        overflow-y: auto;
+        padding-right: 4px;
+        margin-bottom: 0;
+    }
+
+    .ba-option-btn:hover {
+        border-color: var(--c-navy);
+    }
+}
+
+/* ---------- Date strip ---------- */
+.ba-date-strip {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.ba-date-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 14px;
+    border-radius: var(--r-md);
+    min-width: 76px;
+    border: 1px solid var(--c-border);
+    background: var(--c-surface);
+    color: var(--c-text);
+    box-shadow: var(--s-xs);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+.ba-date-chip.is-selected {
+    border: none;
+    background: var(--g-navy-soft);
+    color: #fff;
+    box-shadow: var(--s-navy);
+    transform: scale(1.05);
+}
+
+@media (min-width: 768px) {
+    .ba-date-strip {
+        flex-wrap: wrap;
+        overflow-x: visible;
+    }
+
+    .ba-date-chip {
+        min-width: 84px;
+        cursor: pointer;
+    }
+
+    .ba-date-chip:hover:not(.is-selected) {
+        border-color: var(--c-navy);
+    }
+}
+
+/* ---------- Slot grid ---------- */
+.ba-slot-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.ba-slot-btn {
+    padding: 12px 6px;
+    border-radius: var(--r-sm);
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid var(--c-border);
+    background: var(--c-surface);
+    color: var(--c-text);
+    cursor: pointer;
+    text-align: center;
+    transition: all .2s;
+    box-shadow: var(--s-xs);
+}
+
+.ba-slot-btn.is-selected {
+    border: 2px solid var(--c-navy);
+    background: var(--c-navy-xlight);
+    color: var(--c-navy);
+    box-shadow: none;
+}
+
+.ba-slot-btn.is-booked {
+    border: 1px dashed var(--c-border);
+    background: var(--c-surface-3);
+    color: var(--c-text-3);
+    cursor: not-allowed;
+    opacity: 0.5;
+    text-decoration: line-through;
+    box-shadow: none;
+}
+
+@media (min-width: 768px) {
+    .ba-slot-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+    }
+
+    .ba-slot-btn:hover:not(.is-selected):not(.is-booked) {
+        border-color: var(--c-navy);
+    }
+}
+
+@media (min-width: 1080px) {
+    .ba-slot-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+/* ---------- Step 2 layout (form + body map) ---------- */
+.ba-step2-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+@media (min-width: 1080px) {
+    .ba-step2-layout {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 20px;
+        align-items: start;
+    }
+}
+
+/* ---------- Form grid (lifestyle fields) ---------- */
+.ba-form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+.ba-field-full {
+    grid-column: 1 / -1;
+}
+
+.ba-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--c-text-2);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.ba-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--c-border);
+    border-radius: var(--r-sm);
+    font-size: 13px;
+    background: var(--c-surface-2);
+    outline: none;
+    font-family: var(--font-body);
+    color: var(--c-text);
+}
+
+.ba-textarea {
+    resize: none;
+}
+
+.ba-choice-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+
+.ba-choice-btn {
+    padding: 10px 8px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--c-border);
+    background: var(--c-surface);
+    color: var(--c-text-2);
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all .2s;
+}
+
+.ba-choice-btn.is-selected {
+    border: 2px solid var(--c-navy);
+    background: var(--c-navy-xlight);
+    color: var(--c-navy);
+}
+
+@media (min-width: 768px) {
+    .ba-form-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 14px 16px;
+    }
+
+    .ba-choice-grid-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .ba-choice-btn:hover:not(.is-selected) {
+        border-color: var(--c-navy);
+    }
+
+    .ba-input:focus {
+        border-color: var(--c-navy);
+    }
+}
+
+/* ---------- Attachments ---------- */
+.ba-attachment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+}
+
+.ba-attachment-item {
+    position: relative;
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    background: var(--c-surface-2);
+}
+
+.ba-attachment-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    color: white;
+    background: rgba(220, 53, 69, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+@media (min-width: 768px) {
+    .ba-attachment-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+}
+
+/* ---------- Confirm step ---------- */
+.ba-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+}
+
+.ba-confirm-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+}
+
+@media (min-width: 768px) {
+    .ba-summary-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 20px;
+    }
+
+    .ba-confirm-grid {
+        grid-template-columns: 1.3fr 1fr;
+        gap: 0 20px;
+        align-items: start;
+    }
+}
+
+/* ---------- Footer nav ---------- */
+.ba-footer-nav {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    padding-bottom: 8px;
+}
+
+.ba-btn {
+    padding: 14px;
+    border-radius: var(--r-sm);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: transform .15s, filter .15s;
+}
+
+.ba-btn-secondary {
+    flex: 1;
+    border: 1.5px solid var(--c-border);
+    background: var(--c-surface);
+    color: var(--c-text);
+}
+
+.ba-btn-primary {
+    flex: 2;
+    border: none;
+    background: var(--g-navy-soft);
+    color: #fff;
+    box-shadow: var(--s-navy);
+}
+
+.ba-btn-primary.is-disabled {
+    background: var(--c-border);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+@media (min-width: 768px) {
+    .ba-footer-nav {
+        max-width: 420px;
+        margin-left: auto;
+        margin-right: 0;
+    }
+
+    .ba-btn:hover:not(.is-disabled) {
+        filter: brightness(1.05);
+    }
+
+    .ba-btn-secondary:hover {
+        border-color: var(--c-navy);
+    }
+}
+
+/* Keep the confirm/summary footer full width on desktop too since it follows a wide card */
+@media (min-width: 1080px) {
+    .ba-footer-nav {
+        max-width: 520px;
+    }
+}

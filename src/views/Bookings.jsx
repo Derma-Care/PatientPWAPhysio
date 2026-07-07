@@ -15,13 +15,20 @@ import { customerService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 /* ── Status helpers ──────────────────────────────────────────── */
-const getStatusClass = (status) => {
-  switch (status?.toLowerCase()) {
-    case 'in-progress': return 'app-status-in-progress';
-    case 'confirmed': return 'app-status-confirmed';
-    case 'completed': return 'app-status-completed';
-    default: return 'app-status-default';
-  }
+const getStatusStyle = (status) => {
+  const s = (status || '').toLowerCase().trim();
+  if (s.includes('due for')) return { background: 'var(--c-warning-light)', color: 'var(--c-warning)' };
+  if (s.includes('investigation done')) return { background: 'var(--c-info-light)', color: 'var(--c-info)' };
+  if (s === 'in-progress' || s === 'on-going' || s === 'ongoing') return { background: 'var(--c-navy-xlight)', color: 'var(--c-navy)' };
+  if (s === 'follow-up' || s === 'followup') return { background: 'var(--c-purple-light)', color: 'var(--c-purple)' };
+  if (s === 'cancelled' || s === 'canceled') return { background: 'var(--c-danger-light)', color: 'var(--c-danger)' };
+  if (s === 'rescheduled' || s.includes('resudule')) return { background: 'var(--c-orange-light)', color: 'var(--c-orange)' };
+  
+  if (s === 'pending') return { background: 'var(--c-orange-light)', color: 'var(--c-orange)' };
+  if (s === 'confirmed') return { background: 'var(--c-success-light)', color: 'var(--c-success)' };
+  if (s === 'completed') return { background: 'var(--c-purple-light)', color: 'var(--c-purple)' };
+  
+  return { background: 'var(--c-surface-3)', color: 'var(--c-text-3)' };
 };
 
 const Bookings = () => {
@@ -66,15 +73,7 @@ const Bookings = () => {
       bookingId.toLowerCase().includes(search) ||
       branchname.toLowerCase().includes(search);
 
-    const isCompleted =
-      booking?.status?.toLowerCase() === 'completed';
-
-    const matchesTab =
-      activeTab === 'completed'
-        ? isCompleted
-        : !isCompleted;
-
-    return matchesSearch && matchesTab;
+    return matchesSearch;
   });
 
   if (loading) {
@@ -278,8 +277,8 @@ const BookingCard = ({ booking, onClick }) => {
         </div>
 
         <span
-          className={`app-booking-chip ${getStatusClass(booking.status)}`}
-          style={{ flexShrink: 0, fontSize: '11px', color: 'var(--c-primary)' }}
+          className="app-booking-chip"
+          style={{ flexShrink: 0, fontSize: '11px', textTransform: 'capitalize', ...getStatusStyle(booking.status) }}
         >
           {booking.status}
         </span>
