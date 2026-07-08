@@ -171,28 +171,27 @@ export default function BodyAssessment({ onPartClick, initialSelected = [], init
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            flexDirection: "column",
             width: '100%',
             maxWidth: 450,
-            gap: "10px",
+            gap: "12px",
             marginTop: "14px",
           }}
         >
           {selected.length > 0 ? (
-            <div style={{ color: PRIMARY_COLOR, fontSize: 13, fontWeight: 600 }}>
+            <div style={{ color: PRIMARY_COLOR, fontSize: 13, fontWeight: 600, width: '100%' }}>
               <b>Selected:</b> {selected.join(", ")}
             </div>
           ) : (
-            <div style={{ color: 'var(--c-text-3)', fontSize: 13 }}>
+            <div style={{ color: 'var(--c-text-3)', fontSize: 13, width: '100%' }}>
               Tap body areas above to draw/mark pain locations.
             </div>
           )}
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, width: '100%' }}>
             <button
               className="btn btn-outline-secondary btn-sm"
               onClick={handleClear}
-              style={{ fontSize: 13 }}
+              style={{ fontSize: 13, flex: 1 }}
             >
               Clear
             </button>
@@ -200,7 +199,7 @@ export default function BodyAssessment({ onPartClick, initialSelected = [], init
               className="btn btn-primary btn-sm"
               onClick={sendToParent}
               disabled={loading}
-              style={{ backgroundColor: PRIMARY_COLOR, border: 'none', color: '#fff', fontSize: 13 }}
+              style={{ backgroundColor: PRIMARY_COLOR, border: 'none', color: '#fff', fontSize: 13, flex: 1 }}
             >
               {loading ? (
                 <span><CSpinner size="sm" /> Generating...</span>

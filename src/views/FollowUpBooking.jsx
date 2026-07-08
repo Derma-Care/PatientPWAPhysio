@@ -136,6 +136,7 @@ const FollowUpBooking = () => {
     }
 
     setStep(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   /* ── Submit follow-up booking ────────────────────────────── */
@@ -180,8 +181,45 @@ const FollowUpBooking = () => {
   };
 
   /* ── Slots helpers ───────────────────────────────────────── */
-  const slotsForDate = dateMap[selectedDate] || [];
+  const rawSlots = dateMap[selectedDate] || [];
   const isBooked = (s) => s.slotbooked === true || s.slotbooked === 'true';
+
+  const getFilteredSlots = () => {
+    if (!selectedDate || !rawSlots) return [];
+    
+    const localDateObj = new Date(selectedDate.includes('-') ? selectedDate.replace(/-/g, '/') : selectedDate);
+    localDateObj.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isToday = localDateObj.getTime() === today.getTime();
+    
+    const now = new Date();
+
+    return rawSlots.filter(s => {
+      if (!isToday) return true;
+      
+      const timeStr = (s.slot || '').toUpperCase();
+      let modifier = '';
+      let time = timeStr;
+      
+      if (timeStr.includes('AM')) { modifier = 'AM'; time = timeStr.replace('AM', '').trim(); }
+      else if (timeStr.includes('PM')) { modifier = 'PM'; time = timeStr.replace('PM', '').trim(); }
+      
+      let [hours, minutes] = time.split(':');
+      hours = parseInt(hours, 10) || 0;
+      minutes = parseInt(minutes, 10) || 0;
+      
+      if (modifier === 'PM' && hours < 12) hours += 12;
+      if (modifier === 'AM' && hours === 12) hours = 0;
+      
+      const slotTime = new Date();
+      slotTime.setHours(hours, minutes, 0, 0);
+      
+      return slotTime > now;
+    });
+  };
+
+  const slotsForDate = getFilteredSlots();
 
   const getCategorizedSlots = () => {
     const morning = [];
@@ -208,7 +246,14 @@ const FollowUpBooking = () => {
       {/* Hero */}
       <div className="app-hero">
         <div className="app-hero-inner">
-          <button className="app-back-btn" onClick={() => step > 0 ? setStep(s => s - 1) : navigate(-1)}>
+          <button className="app-back-btn" onClick={() => {
+            if (step > 0) {
+              setStep(s => s - 1);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+              navigate(-1);
+            }
+          }}>
             <ArrowLeft size={14} /> {step > 0 ? 'Back' : 'Cancel'}
           </button>
           <h1 className="app-hero-title">Follow-Up Booking</h1>
@@ -481,6 +526,7 @@ const FollowUpBooking = () => {
                 onClick={() => {
                   if (!selectedSlot) { toast.error('Required', 'Please select a time slot.'); return; }
                   setStep(2);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 style={{
                   width: '100%', padding: 14, borderRadius: 'var(--r-sm)',
@@ -561,7 +607,7 @@ const FollowUpBooking = () => {
 
               {/* Footer */}
               <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-                <button onClick={() => setStep(1)}
+                <button onClick={() => { setStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                   style={{
                     flex: 1, padding: 14, borderRadius: 'var(--r-sm)',
                     border: '1.5px solid var(--c-border)', background: 'var(--c-surface)',

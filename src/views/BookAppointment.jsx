@@ -63,6 +63,7 @@ const BookAppointment = () => {
   const hospital = JSON.parse(localStorage.getItem('selectedHospital') || '{}');
   const profile = JSON.parse(sessionStorage.getItem('profile') || '{}');
   const hospitalId = hospital.hospitalId;
+  const doctorSectionRef = React.useRef(null);
 
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -220,9 +221,13 @@ const BookAppointment = () => {
       }
     }
     setStep(s => s + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const goPrev = () => setStep(s => s - 1);
+  const goPrev = () => {
+    setStep(s => s - 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   /* ── submit ──────────────────────────────────────────────── */
   const handleSubmit = async () => {
@@ -383,7 +388,43 @@ const BookAppointment = () => {
   // ALL slots for selected date (no filtering — show both available and booked)
   const rawSlots = dateMap[selectedDate] || [];
   const isBooked = (s) => s.slotbooked === true || s.slotbooked === 'true';
-  const slotsForDate = rawSlots;
+  
+  const getFilteredSlots = () => {
+    if (!selectedDate || !rawSlots) return [];
+    
+    const localDateObj = new Date(selectedDate.includes('-') ? selectedDate.replace(/-/g, '/') : selectedDate);
+    localDateObj.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isToday = localDateObj.getTime() === today.getTime();
+    
+    const now = new Date();
+
+    return rawSlots.filter(s => {
+      if (!isToday) return true;
+      
+      const timeStr = (s.slot || '').toUpperCase();
+      let modifier = '';
+      let time = timeStr;
+      
+      if (timeStr.includes('AM')) { modifier = 'AM'; time = timeStr.replace('AM', '').trim(); }
+      else if (timeStr.includes('PM')) { modifier = 'PM'; time = timeStr.replace('PM', '').trim(); }
+      
+      let [hours, minutes] = time.split(':');
+      hours = parseInt(hours, 10) || 0;
+      minutes = parseInt(minutes, 10) || 0;
+      
+      if (modifier === 'PM' && hours < 12) hours += 12;
+      if (modifier === 'AM' && hours === 12) hours = 0;
+      
+      const slotTime = new Date();
+      slotTime.setHours(hours, minutes, 0, 0);
+      
+      return slotTime > now;
+    });
+  };
+
+  const slotsForDate = getFilteredSlots();
 
   // Categorize slots into Morning and Afternoon/Evening
   const getCategorizedSlots = () => {
@@ -496,7 +537,10 @@ const BookAppointment = () => {
                       {branches.map((b) => {
                         const sel = selectedBranch?.branchId === b.branchId;
                         return (
-                          <button key={b.branchId} onClick={() => setSelectedBranch(b)}
+                          <button key={b.branchId} onClick={() => {
+                              setSelectedBranch(b);
+                              setTimeout(() => doctorSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+                            }}
                             className={`ba-option-btn ${sel ? 'is-selected' : ''}`}>
                             <div className="app-icon-box app-icon-navy" style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0 }}>
                               <MapPin size={16} />
@@ -515,7 +559,7 @@ const BookAppointment = () => {
 
                 {/* Doctor */}
                 {selectedBranch && (
-                  <div>
+                  <div ref={doctorSectionRef}>
                     <p className="ba-section-title">
                       <Stethoscope size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />Select Doctor
                     </p>
@@ -579,7 +623,13 @@ const BookAppointment = () => {
                   {/* Date strip */}
                   <div className="hide-scrollbar ba-date-strip">
                     {Object.keys(dateMap)
-                      .filter(d => new Date(d) >= new Date(new Date().toISOString().split('T')[0]))
+                      .filter(d => {
+                        const localDateObj = new Date(d.includes('-') ? d.replace(/-/g, '/') : d);
+                        localDateObj.setHours(0, 0, 0, 0);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return localDateObj >= today;
+                      })
                       .sort()
                       .map(d => {
                         const sel = selectedDate === d;
