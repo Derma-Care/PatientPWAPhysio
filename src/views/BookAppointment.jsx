@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import BodyAssessment from '../components/BodyAssessment';
 import '../styles/theme.css';
-import '../styles/BookAppointment.responsive.css';
+import '../styles/BookappointmentResponsive.css';
 import { uploadFile } from './S3UploadService';
 import imageCompression from 'browser-image-compression';
 

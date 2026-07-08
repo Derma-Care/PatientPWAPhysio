@@ -4,7 +4,27 @@
   Mobile-first. Desktop rules kick in at 768px+ and again refine at 1080px+.
   Colors/tokens reuse the existing var(--c-*) design tokens already defined
   in ../styles/theme.css — nothing new is introduced here.
+
+  Revision notes:
+  - Bigger touch targets on mobile (44px min-height on tappable controls)
+  - Sticky footer nav on mobile with safe-area padding
+  - Scroll-snap date strip, hidden scrollbar
+  - Stepper labels collapse under 360px to avoid wrap/overlap
+  - :focus-visible states added across all interactive elements
+  - Consistent hover elevation on desktop for cards/options/slots/chips
+  - Sticky pain-assessment sidebar on large screens (step 2)
+  - prefers-reduced-motion respected
 */
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
 
 /* ---------- Page shell ---------- */
 .ba-page {
@@ -16,6 +36,8 @@
     margin: -32px auto 0;
     padding-left: 16px;
     padding-right: 16px;
+    /* leave room for the sticky footer nav on mobile */
+    padding-bottom: 96px;
 }
 
 .ba-hero-inner {
@@ -28,6 +50,7 @@
         max-width: 880px;
         padding-left: 24px;
         padding-right: 24px;
+        padding-bottom: 32px;
     }
 
     .ba-hero-inner {
@@ -51,6 +74,7 @@
     align-items: center;
     justify-content: center;
     margin-bottom: 24px;
+    padding: 0 4px;
 }
 
 .ba-step-dot {
@@ -62,13 +86,15 @@
     justify-content: center;
     font-weight: 800;
     font-size: 13px;
-    transition: all .3s;
+    transition: all 0.3s;
+    flex-shrink: 0;
 }
 
 .ba-step-label {
     font-size: 10px;
     font-weight: 700;
     white-space: nowrap;
+    text-align: center;
 }
 
 .ba-step-connector {
@@ -76,7 +102,25 @@
     flex: 1;
     max-width: 60px;
     margin: 0 6px 18px;
-    transition: background .3s;
+    transition: background 0.3s;
+}
+
+/* On very narrow phones, drop the text labels so the stepper never wraps */
+@media (max-width: 359px) {
+    .ba-step-label {
+        display: none;
+    }
+
+    .ba-step-dot {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .ba-step-connector {
+        margin-bottom: 0;
+        max-width: 36px;
+    }
 }
 
 @media (min-width: 768px) {
@@ -121,6 +165,7 @@
 
 .ba-visit-type-btn {
     flex: 1;
+    min-height: 46px;
     padding: 12px 14px;
     border-radius: var(--r-sm);
     border: 1px solid var(--c-border);
@@ -128,7 +173,7 @@
     font-weight: 700;
     font-size: 13px;
     cursor: pointer;
-    transition: all .2s;
+    transition: all 0.2s;
     color: var(--c-text-2);
 }
 
@@ -146,6 +191,11 @@
     .ba-visit-type-btn {
         font-size: 14px;
         padding: 13px 16px;
+    }
+
+    .ba-visit-type-btn:hover:not(.is-active) {
+        border-color: var(--c-navy);
+        background: var(--c-surface-2);
     }
 }
 
@@ -168,13 +218,14 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    min-height: 56px;
     padding: 12px 14px;
     border-radius: var(--r-sm);
     border: 1.5px solid var(--c-border);
     background: var(--c-surface);
     cursor: pointer;
     text-align: left;
-    transition: all .2s;
+    transition: all 0.2s;
     width: 100%;
 }
 
@@ -200,10 +251,12 @@
         overflow-y: auto;
         padding-right: 4px;
         margin-bottom: 0;
+        scrollbar-width: thin;
     }
 
-    .ba-option-btn:hover {
+    .ba-option-btn:hover:not(.is-disabled):not(.is-selected) {
         border-color: var(--c-navy);
+        box-shadow: var(--s-xs);
     }
 }
 
@@ -215,6 +268,16 @@
     padding-bottom: 12px;
     margin-bottom: 20px;
     -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+}
+
+.hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
 }
 
 .ba-date-chip {
@@ -225,6 +288,7 @@
     padding: 12px 14px;
     border-radius: var(--r-md);
     min-width: 76px;
+    min-height: 76px;
     border: 1px solid var(--c-border);
     background: var(--c-surface);
     color: var(--c-text);
@@ -232,6 +296,7 @@
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
+    scroll-snap-align: start;
 }
 
 .ba-date-chip.is-selected {
@@ -246,6 +311,7 @@
     .ba-date-strip {
         flex-wrap: wrap;
         overflow-x: visible;
+        scroll-snap-type: none;
     }
 
     .ba-date-chip {
@@ -255,6 +321,7 @@
 
     .ba-date-chip:hover:not(.is-selected) {
         border-color: var(--c-navy);
+        box-shadow: var(--s-sm, var(--s-xs));
     }
 }
 
@@ -266,6 +333,7 @@
 }
 
 .ba-slot-btn {
+    min-height: 44px;
     padding: 12px 6px;
     border-radius: var(--r-sm);
     font-size: 12px;
@@ -275,7 +343,7 @@
     color: var(--c-text);
     cursor: pointer;
     text-align: center;
-    transition: all .2s;
+    transition: all 0.2s;
     box-shadow: var(--s-xs);
 }
 
@@ -304,6 +372,7 @@
 
     .ba-slot-btn:hover:not(.is-selected):not(.is-booked) {
         border-color: var(--c-navy);
+        transform: translateY(-1px);
     }
 }
 
@@ -326,6 +395,12 @@
         grid-template-columns: 1.15fr 0.85fr;
         gap: 20px;
         align-items: start;
+    }
+
+    /* Keep the body-map card in view alongside the longer lifestyle form */
+    .ba-step2-layout>.app-card:last-child {
+        position: sticky;
+        top: 20px;
     }
 }
 
@@ -350,6 +425,7 @@
 
 .ba-input {
     width: 100%;
+    min-height: 44px;
     padding: 10px 12px;
     border: 1.5px solid var(--c-border);
     border-radius: var(--r-sm);
@@ -358,10 +434,12 @@
     outline: none;
     font-family: var(--font-body);
     color: var(--c-text);
+    transition: border-color 0.2s;
 }
 
 .ba-textarea {
     resize: none;
+    min-height: unset;
 }
 
 .ba-choice-grid {
@@ -371,6 +449,7 @@
 }
 
 .ba-choice-btn {
+    min-height: 40px;
     padding: 10px 8px;
     border-radius: var(--r-sm);
     border: 1px solid var(--c-border);
@@ -379,7 +458,7 @@
     font-weight: 700;
     font-size: 12px;
     cursor: pointer;
-    transition: all .2s;
+    transition: all 0.2s;
 }
 
 .ba-choice-btn.is-selected {
@@ -402,9 +481,13 @@
         border-color: var(--c-navy);
     }
 
-    .ba-input:focus {
-        border-color: var(--c-navy);
+    .ba-input:hover {
+        border-color: var(--c-border-strong, var(--c-navy-light));
     }
+}
+
+.ba-input:focus {
+    border-color: var(--c-navy);
 }
 
 /* ---------- Attachments ---------- */
@@ -430,10 +513,10 @@
     background: rgba(220, 53, 69, 0.9);
     border: none;
     border-radius: 50%;
-    width: 18px;
-    height: 18px;
+    width: 22px;
+    height: 22px;
     cursor: pointer;
-    font-size: 11px;
+    font-size: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -477,10 +560,21 @@
     display: flex;
     gap: 10px;
     margin-top: 14px;
-    padding-bottom: 8px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    /* Sticky on mobile so the primary action is always reachable */
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin-left: -16px;
+    margin-right: -16px;
+    background: var(--c-surface, #fff);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.06);
+    z-index: 10;
 }
 
 .ba-btn {
+    min-height: 48px;
     padding: 14px;
     border-radius: var(--r-sm);
     font-weight: 700;
@@ -490,7 +584,7 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    transition: transform .15s, filter .15s;
+    transition: transform 0.15s, filter 0.15s;
 }
 
 .ba-btn-secondary {
@@ -516,9 +610,13 @@
 
 @media (min-width: 768px) {
     .ba-footer-nav {
+        position: static;
         max-width: 420px;
         margin-left: auto;
         margin-right: 0;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
     }
 
     .ba-btn:hover:not(.is-disabled) {
@@ -528,6 +626,10 @@
     .ba-btn-secondary:hover {
         border-color: var(--c-navy);
     }
+
+    .ba-btn:active:not(.is-disabled) {
+        transform: translateY(1px);
+    }
 }
 
 /* Keep the confirm/summary footer full width on desktop too since it follows a wide card */
@@ -535,4 +637,16 @@
     .ba-footer-nav {
         max-width: 520px;
     }
+}
+
+/* ---------- Accessibility: consistent keyboard focus ring ---------- */
+.ba-visit-type-btn:focus-visible,
+.ba-option-btn:focus-visible,
+.ba-date-chip:focus-visible,
+.ba-slot-btn:focus-visible,
+.ba-choice-btn:focus-visible,
+.ba-input:focus-visible,
+.ba-btn:focus-visible {
+    outline: 2px solid var(--c-navy);
+    outline-offset: 2px;
 }
