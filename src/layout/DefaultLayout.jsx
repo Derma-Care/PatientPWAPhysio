@@ -137,9 +137,9 @@ const DefaultLayout = () => {
                 fontWeight: 800, fontSize: 17,
                 color: 'var(--c-text)', lineHeight: 1.15, letterSpacing: '-.3px',
               }}>
-                {clinic?.name?.split(' ')[0] || 'Kinetix'}
+                {clinic?.name?.split(' ')[0] || 'PhysioElite'}
                 <span style={{ color: 'var(--c-navy)', fontWeight: 700 }}>
-                  {' '}{clinic?.name?.split(' ').slice(1).join(' ') || 'Wellness'}
+                  {' '}{clinic?.name?.split(' ').slice(1).join(' ')}
                 </span>
               </div>
               <div style={{
@@ -369,7 +369,7 @@ const DefaultLayout = () => {
           color: 'var(--c-text-3)', borderTop: '1px solid var(--c-border)',
           background: 'var(--c-surface)', fontWeight: 500,
         }}>
-          © {new Date().getFullYear()} {clinic?.name || 'Kinetix Wellness Care'}. All rights reserved.
+          © {new Date().getFullYear()} {clinic?.name || 'PhysioElite'}. All rights reserved.
         </footer>
         {/* ── Floating Action Button ────────────────────────────────────────── */}
         {!['/book-appointment', '/follow-up-booking'].includes(location.pathname) && (

@@ -13,8 +13,8 @@ export default defineConfig({
         enabled: true,
       },
       manifest: {
-        name: 'Kinetix App',
-        short_name: 'Kinetix App',
+        name: 'PhysioElite App',
+        short_name: 'PhysioElite App',
         description: 'Your personal health companion for physiotherapy tracking and bookings.',
         theme_color: 'var(--c-navy)',
         display: 'standalone',

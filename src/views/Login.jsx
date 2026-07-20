@@ -17,7 +17,15 @@ const Login = () => {
   const [isMobileOrTab, setIsMobileOrTab] = useState(window.innerWidth <= 1024);
   const { login } = useAuth();
   const navigate = useNavigate();
+  useEffect(() => {
+    sessionStorage.clear();
+    localStorage.clear();
 
+    const handleResize = () => setIsMobileOrTab(window.innerWidth <= 1024);
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   useEffect(() => {
     const handleResize = () => setIsMobileOrTab(window.innerWidth <= 1024);
     window.addEventListener('resize', handleResize);
@@ -240,11 +248,11 @@ const Login = () => {
                 backdropFilter: 'blur(8px)',
               }}
             >
-              <img src="../kinetix-logo.png" alt="Kinetix Logo" style={{ width: 36, height: 36 }} />
+              <img src="../kinetix-logo.png" alt="Clinic Logo" style={{ width: 36, height: 36 }} />
               {/* <Heart size={26} color="#fff" strokeWidth={2.5} /> */}
             </div>
             <h1 className="app-hero-title" style={{ fontSize: 22, textAlign: 'center' }}>
-              Kinetix Wellness Care
+              PhysioElite
             </h1>
             <p className="app-hero-sub mb-2" style={{ textAlign: 'center' }}>
               {viewMode === 'biometric' && isMobileOrTab
@@ -325,7 +333,7 @@ const Login = () => {
                   <input
                     type="text"
                     placeholder="Enter your username"
-                    value={userName}
+                    value={userName.toUpperCase()}
                     onChange={(e) => setUserName(e.target.value)}
                     required
                     style={{
@@ -436,7 +444,7 @@ const Login = () => {
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
           }}>
             <Heart size={11} color="var(--c-orange)" fill="var(--c-orange)" />
-            Secured Patient Portal · Kinetix Wellness
+            Secured Patient Portal · PhysioElite
           </p>
         </div>
       </div>

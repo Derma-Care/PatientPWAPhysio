@@ -53,8 +53,8 @@ const App = () => {
     return () => { clearTimeout(fadeTimer); clearTimeout(removeTimer); };
   }, []);
 
-  const hospitalData = JSON.parse(localStorage.getItem('selectedClinic') || '{}');
-  const hospitalName = hospitalData?.hospitalName || hospitalData?.clinicName || 'Kinetix Wellness';
+  const hospitalData = JSON.parse(localStorage.getItem('selectedHospital') || '{}');
+  const hospitalName = hospitalData?.name || hospitalData?.clinicName || 'PhysioElite';
   const hospitalLogo = hospitalData?.hospitalLogo
     ? `data:image/webp;base64,${hospitalData.hospitalLogo}`
     : appLogo;
@@ -196,63 +196,63 @@ const App = () => {
             <NetworkStatusNotification />
             <Suspense
               fallback={
-              <div className="min-vh-100 d-flex justify-content-center align-items-center">
-                <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
-              </div>
-            }
-          >
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route
-                path="/"
-                element={
-                  <PrivateRoute>
-                    <DefaultLayout />
-                  </PrivateRoute>
-                }
-              >
-                <Route index element={<Navigate to="/dashboard" />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="bookings" element={<Bookings />} />
-                <Route path="bookings/:id" element={<BookingDetails />} />
-                <Route path="bookings/:id/history" element={<VisitHistory />} />
-                <Route path="bookings/:id/sessions" element={<SessionTracking />} />
-                <Route path="bookings/:id/home-exercises" element={<HomeExercises />} />
-                <Route path="bookings/:id/visit-details" element={<VisitDetails />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="clinic" element={<ClinicDetails />} />
-                <Route path="settings" element={<Settings />} />
+                <div className="min-vh-100 d-flex justify-content-center align-items-center">
+                  <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
+                </div>
+              }
+            >
+              <Routes>
+                <Route path="/login" element={<Login />} />
                 <Route
-                  path="/payment/:bookingId"
-                  element={<PaymentDetails />}
-                />  <Route
-                  path="patient-feedback"
-                  element={<PatientFeedback />}
-                />
-                <Route
-                  path="PatientFeedbackDashboard"
-                  element={<PatientFeedbackDashboard />}
-                />
-                <Route
-                  path="notifications"
-                  element={<Notifications />}
-                />
-                <Route
-                  path="book-appointment"
-                  element={<BookAppointment />}
-                />
-                <Route
-                  path="follow-up-booking"
-                  element={<FollowUpBooking />}
-                />
+                  path="/"
+                  element={
+                    <PrivateRoute>
+                      <DefaultLayout />
+                    </PrivateRoute>
+                  }
+                >
+                  <Route index element={<Navigate to="/dashboard" />} />
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="bookings" element={<Bookings />} />
+                  <Route path="bookings/:id" element={<BookingDetails />} />
+                  <Route path="bookings/:id/history" element={<VisitHistory />} />
+                  <Route path="bookings/:id/sessions" element={<SessionTracking />} />
+                  <Route path="bookings/:id/home-exercises" element={<HomeExercises />} />
+                  <Route path="bookings/:id/visit-details" element={<VisitDetails />} />
+                  <Route path="profile" element={<Profile />} />
+                  <Route path="clinic" element={<ClinicDetails />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route
+                    path="/payment/:bookingId"
+                    element={<PaymentDetails />}
+                  />  <Route
+                    path="patient-feedback"
+                    element={<PatientFeedback />}
+                  />
+                  <Route
+                    path="PatientFeedbackDashboard"
+                    element={<PatientFeedbackDashboard />}
+                  />
+                  <Route
+                    path="notifications"
+                    element={<Notifications />}
+                  />
+                  <Route
+                    path="book-appointment"
+                    element={<BookAppointment />}
+                  />
+                  <Route
+                    path="follow-up-booking"
+                    element={<FollowUpBooking />}
+                  />
 
-              </Route>
+                </Route>
 
 
 
-              <Route path="*" element={<Navigate to="/dashboard" />} />
-            </Routes>
-          </Suspense>
+                <Route path="*" element={<Navigate to="/dashboard" />} />
+              </Routes>
+            </Suspense>
           </NotificationProvider>
         </AuthProvider>
       </BrowserRouter >

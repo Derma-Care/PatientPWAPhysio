@@ -279,7 +279,7 @@ const ClinicDetails = () => {
                       </div>
                       <div>
                         <p className="app-info-value" style={{ fontSize: 13, marginBottom: 1 }}>{label}</p>
-                        <p className="app-info-label" style={{ textTransform: 'none', letterSpacing: 0, margin: 0 }}>{handle}</p>
+                        {/* <p className="app-info-label" style={{ textTransform: 'none', letterSpacing: 0, margin: 0 }}>{handle}</p> */}
                       </div>
                     </div>
                     <ChevronRight size={15} style={{ color: 'var(--c-text-3)', flexShrink: 0 }} />

@@ -20,7 +20,7 @@ const SplashScreen = ({ onFinish }) => {
   return (
     <div className={`splash-screen ${isFadingOut ? 'fade-out' : ''}`}>
       <div className="splash-logo-container">
-        <img src="/kinetix-logo.png" alt="Kinetix Logo" className="splash-logo pulse-animation" />
+        <img src="/kinetix-logo.png" alt="Clinic Logo" className="splash-logo pulse-animation" />
       </div>
     </div>
   );
