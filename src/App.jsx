@@ -28,14 +28,18 @@ import PatientFeedbackDashboard from './views/PatientFeedbackDashboard';
 import Notifications from './views/Notifications';
 import BookAppointment from './views/BookAppointment';
 import FollowUpBooking from './views/FollowUpBooking';
-
+const hospitalData = JSON.parse(localStorage.getItem('selectedHospital') || '{}');
+const hospitalName = hospitalData?.name || hospitalData?.clinicName || 'PhysioElite';
+const hospitalLogo = hospitalData?.hospitalLogo
+  ? `data:image/webp;base64,${hospitalData.hospitalLogo}`
+  : appLogo;
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
     return (
       <div className="min-vh-100 d-flex justify-content-center align-items-center">
-        <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
+        <img src={hospitalLogo} className="logo-spinner-grow" alt="Loading..." />
       </div>
     );
   }
@@ -53,11 +57,6 @@ const App = () => {
     return () => { clearTimeout(fadeTimer); clearTimeout(removeTimer); };
   }, []);
 
-  const hospitalData = JSON.parse(localStorage.getItem('selectedHospital') || '{}');
-  const hospitalName = hospitalData?.name || hospitalData?.clinicName || 'PhysioElite';
-  const hospitalLogo = hospitalData?.hospitalLogo
-    ? `data:image/webp;base64,${hospitalData.hospitalLogo}`
-    : appLogo;
 
   return (
     <>
@@ -197,7 +196,7 @@ const App = () => {
             <Suspense
               fallback={
                 <div className="min-vh-100 d-flex justify-content-center align-items-center">
-                  <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
+                  <img src={hospitalLogo} className="logo-spinner-grow" alt="Loading..." />
                 </div>
               }
             >

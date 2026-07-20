@@ -13,7 +13,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { customerService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-
+import appLogo from '/kinetix-logo.png';
 /* ── Status helpers ──────────────────────────────────────────── */
 const getStatusStyle = (status) => {
   const s = (status || '').toLowerCase().trim();
@@ -23,11 +23,11 @@ const getStatusStyle = (status) => {
   if (s === 'follow-up' || s === 'followup') return { background: 'var(--c-purple-light)', color: 'var(--c-purple)' };
   if (s === 'cancelled' || s === 'canceled') return { background: 'var(--c-danger-light)', color: 'var(--c-danger)' };
   if (s === 'rescheduled' || s.includes('resudule')) return { background: 'var(--c-orange-light)', color: 'var(--c-orange)' };
-  
+
   if (s === 'pending') return { background: 'var(--c-orange-light)', color: 'var(--c-orange)' };
   if (s === 'confirmed') return { background: 'var(--c-success-light)', color: 'var(--c-success)' };
   if (s === 'completed') return { background: 'var(--c-purple-light)', color: 'var(--c-purple)' };
-  
+
   return { background: 'var(--c-surface-3)', color: 'var(--c-text-3)' };
 };
 
@@ -38,7 +38,11 @@ const Bookings = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('ongoing');
-
+  const hospitalData = JSON.parse(localStorage.getItem('selectedHospital') || '{}');
+  const hospitalName = hospitalData?.name || hospitalData?.clinicName || 'PhysioElite';
+  const hospitalLogo = hospitalData?.hospitalLogo
+    ? `data:image/webp;base64,${hospitalData.hospitalLogo}`
+    : appLogo;
   useEffect(() => {
     const fetchBookings = async () => {
       setLoading(true);
@@ -79,7 +83,7 @@ const Bookings = () => {
   if (loading) {
     return (
       <div className="app-loading">
-        <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
+        <img src={hospitalLogo} className="logo-spinner-grow" alt="Loading..." />
       </div>
     );
   }

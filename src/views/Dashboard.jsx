@@ -8,13 +8,17 @@ import { useNavigate } from 'react-router-dom';
 import { customerService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import '../styles/theme.css'; // ← shared theme
-
+import appLogo from '/kinetix-logo.png';
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const hospitalData = JSON.parse(localStorage.getItem('selectedHospital') || '{}');
+  const hospitalName = hospitalData?.name || hospitalData?.clinicName || 'PhysioElite';
+  const hospitalLogo = hospitalData?.hospitalLogo
+    ? `data:image/webp;base64,${hospitalData.hospitalLogo}`
+    : appLogo;
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -66,11 +70,19 @@ const Dashboard = () => {
   ];
 
   /* ── loading ── */
+  // if (loading) {
+  //   return (
+  //     <div className="app-loading">
+  //       <div className="app-loading-ring" />
+  //       <p className="app-loading-text">Loading dashboard…</p>
+
+  //     </div>
+  //   );
+  // }
   if (loading) {
     return (
       <div className="app-loading">
-        <div className="app-loading-ring" />
-        <p className="app-loading-text">Loading dashboard…</p>
+        <img src={hospitalLogo} className="logo-spinner-grow" alt="Loading dashboard…" />
       </div>
     );
   }

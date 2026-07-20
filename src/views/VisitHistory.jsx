@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { physiotherapyService, customerService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-
+import appLogo from '/kinetix-logo.png';
 /* ── Media Preview Modal ─────────────────────────────────────── */
 const MediaPreviewModal = ({ visible, onClose, mediaUrl, type }) => {
   if (!mediaUrl) return null;
@@ -127,7 +127,10 @@ const VisitHistory = () => {
   const urlClinicId = urlParams.get('clinicId') || '';
   const urlBranchId = urlParams.get('branchId') || '';
   const urlDoctorId = urlParams.get('doctorId') || '';
-
+  const hospitalName = hospitalData?.name || hospitalData?.clinicName || 'PhysioElite';
+  const hospitalLogo = hospitalData?.hospitalLogo
+    ? `data:image/webp;base64,${hospitalData.hospitalLogo}`
+    : appLogo;
   useEffect(() => {
     const abortController = new AbortController();
 
@@ -193,7 +196,7 @@ const VisitHistory = () => {
   if (loading) {
     return (
       <div className="app-loading">
-        <img src="/favicon.png" className="logo-spinner-grow" alt="Loading..." />
+        <img src={hospitalLogo} className="logo-spinner-grow" alt="Loading..." />
       </div>
     );
   }

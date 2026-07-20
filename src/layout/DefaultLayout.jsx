@@ -372,7 +372,7 @@ const DefaultLayout = () => {
           © {new Date().getFullYear()} {clinic?.name || 'PhysioElite'}. All rights reserved.
         </footer>
         {/* ── Floating Action Button ────────────────────────────────────────── */}
-        {!['/book-appointment', '/follow-up-booking'].includes(location.pathname) && (
+        {/* {!['/book-appointment', '/follow-up-booking'].includes(location.pathname) && (
           <button
             onClick={() => navigate('/book-appointment')}
             style={{
@@ -401,7 +401,7 @@ const DefaultLayout = () => {
             <Calendar size={18} />
             <span className="d-none d-sm-inline">Book Appointment</span>
           </button>
-        )}
+        )} */}
       </div>
     </div>
   );
