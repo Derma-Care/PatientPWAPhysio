@@ -121,12 +121,15 @@ const VisitHistory = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [previewData, setPreviewData] = useState({ visible: false, url: '', type: '' });
+  const [loadingPdfId, setLoadingPdfId] = useState(null);
+  const [loadingDownloadId, setLoadingDownloadId] = useState(null);
 
   const urlParams = new URLSearchParams(location.search);
   const urlPatientId = urlParams.get('patientId');
   const urlClinicId = urlParams.get('clinicId') || '';
   const urlBranchId = urlParams.get('branchId') || '';
   const urlDoctorId = urlParams.get('doctorId') || '';
+  const hospitalData = JSON.parse(localStorage.getItem('selectedHospital') || '{}');
   const hospitalName = hospitalData?.name || hospitalData?.clinicName || 'PhysioElite';
   const hospitalLogo = hospitalData?.hospitalLogo
     ? `data:image/webp;base64,${hospitalData.hospitalLogo}`
@@ -381,19 +384,29 @@ const VisitHistory = () => {
                                 <button
                                   className="app-btn-navy"
                                   style={{ padding: '7px 14px', fontSize: 12 }}
+                                  disabled={loadingPdfId === visit.visitNumber}
                                   onClick={async () => {
+                                    setLoadingPdfId(visit.visitNumber);
                                     const url = await openPdf();
+                                    setLoadingPdfId(null);
                                     if (url) setPreviewData({ visible: true, url, type: 'pdf' });
                                   }}
                                 >
-                                  <FileText size={13} /> View
+                                  {loadingPdfId === visit.visitNumber ? (
+                                    <CSpinner size="sm" className="me-1" />
+                                  ) : (
+                                    <FileText size={13} />
+                                  )}{' '}
+                                  View
                                 </button>
 
                                 <button
                                   className="app-btn-orange"
                                   style={{ padding: '7px 14px', fontSize: 12 }}
+                                  disabled={loadingDownloadId === visit.visitNumber}
                                   onClick={async () => {
                                     try {
+                                      setLoadingDownloadId(visit.visitNumber);
                                       let url;
                                       let isBlobUrl = false;
                                       if (pdfData.startsWith('http://') || pdfData.startsWith('https://')) {
@@ -417,10 +430,17 @@ const VisitHistory = () => {
                                     } catch (error) {
                                       console.error('Error downloading PDF:', error);
                                       alert('Failed to download PDF document.');
+                                    } finally {
+                                      setLoadingDownloadId(null);
                                     }
                                   }}
                                 >
-                                  <Download size={13} /> Download
+                                  {loadingDownloadId === visit.visitNumber ? (
+                                    <CSpinner size="sm" className="me-1" />
+                                  ) : (
+                                    <Download size={13} />
+                                  )}{' '}
+                                  Download
                                 </button>
                               </div>
                             </div>
