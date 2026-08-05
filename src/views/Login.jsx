@@ -316,7 +316,7 @@ const Login = () => {
               {/* Username */}
               <div style={{ marginBottom: 16 }}>
                 <label className="app-info-label" style={{ marginBottom: 6, display: 'block' }}>
-                  Username / Patient ID
+                  Username / Customer ID
                 </label>
                 <div className="app-info-item" style={{
                   padding: '0 14px', borderRadius: 'var(--r-sm)',

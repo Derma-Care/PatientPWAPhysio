@@ -1034,8 +1034,8 @@ const BookingDetails = () => {
                         </button>
                       )}
                     </div>
-                    {openAccordion === 'history' ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                   </div>
+                  {openAccordion === 'history' ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
 
                 </div>
                 {openAccordion === 'history' && (
